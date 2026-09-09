@@ -33,19 +33,27 @@ jobs:
       - name: Generate Test Coverage Reports
         run: pnpm turbo test:cov
 
+      - name: Check Sonar Token Availability
+        id: sonar-check
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          if [ -n "$SONAR_TOKEN" ]; then
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::SONAR_TOKEN secret is not set. Skipping SonarQube analysis."
+          fi
+
       - name: SonarQube Scan
-        if: ${{ secrets.SONAR_TOKEN != '' }}
+        if: steps.sonar-check.outputs.has_token == 'true'
         uses: SonarSource/sonarqube-scan-action@v8.2.1
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: SonarQube Quality Gate Check
-        if: ${{ secrets.SONAR_TOKEN != '' }}
+        if: steps.sonar-check.outputs.has_token == 'true'
         uses: SonarSource/sonarqube-quality-gate-action@v1.2.1
         timeout-minutes: 5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-      - name: Notice when SONAR_TOKEN is missing
-        if: ${{ secrets.SONAR_TOKEN == '' }}
-        run: echo "::warning::SONAR_TOKEN secret is not set. Skipping SonarQube scan and quality gate check."
