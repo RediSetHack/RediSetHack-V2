@@ -92,7 +92,7 @@ PAYLOAD=$(cat <<'EOF'
 EOF
 )
 
-if [ -n "$EXISTING_RULESET_ID" ]; then
+if [[ -n "$EXISTING_RULESET_ID" ]]; then
   echo "Updating existing ruleset $EXISTING_RULESET_ID..."
   gh api --method PUT "repos/$REPO/rulesets/$EXISTING_RULESET_ID" --input - <<< "$PAYLOAD"
 else
