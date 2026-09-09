@@ -1,0 +1,50 @@
+name: "Set up workspace"
+description: "Universal workspace bootstrapper with runtime setup, package manager cache, frozen-lockfile install, and build-time env placeholders."
+
+inputs:
+  node-version:
+    description: "Node.js version to setup"
+    required: false
+    default: "24"
+  package-manager:
+    description: "Package manager (pnpm, npm, yarn, bun)"
+    required: false
+    default: "pnpm"
+  ignore-scripts:
+    description: "Skip lifecycle scripts during install (true for static analysis jobs)"
+    required: false
+    default: "false"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Package Manager (pnpm)
+      if: inputs.package-manager == 'pnpm'
+      uses: pnpm/action-setup@v4
+
+    - name: Setup Node.js Runtime
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: ${{ inputs.package-manager }}
+
+    - name: Install Dependencies
+      shell: bash
+      run: |
+        if [ "${{ inputs.ignore-scripts }}" = "true" ]; then
+          ${{ inputs.package-manager }} install --frozen-lockfile --ignore-scripts
+        else
+          ${{ inputs.package-manager }} install --frozen-lockfile
+        fi
+
+    - name: Inject Build-Time Env Placeholders
+      shell: bash
+      run: |
+        cat >> "$GITHUB_ENV" <<'EOF'
+        DATABASE_URL=postgres://postgres:postgres@localhost:5432/redisethack
+        NEXT_PUBLIC_API_URL=http://localhost:3000
+        NEXT_PUBLIC_APP_URL=http://localhost:3000
+        NEXT_PUBLIC_AUTH_PUBLISHABLE_KEY=pk_test_placeholder
+        AUTH_SECRET_KEY=sk_test_placeholder
+        SITE_URL=http://localhost:3000
+        EOF
