@@ -28,11 +28,33 @@ build
 dist
 
 
-# Debug
+# Debug & Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+.pnpm-debug.log*
+
+# TypeScript & Linter Caches
+*.tsbuildinfo
+.eslintcache
+
+# IDEs, Editors & OS
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+*.swo
+
+# Local Tools & Obsidian
+.obsidian/
+graphify-out/
+
+# Docker Local Overrides
+docker-compose.override.yml
 
 # Misc
-.DS_Store
 *.pem
+
+# LEGACY
+LEGACY
