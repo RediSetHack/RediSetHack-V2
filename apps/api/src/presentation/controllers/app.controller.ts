@@ -1,12 +1,12 @@
 import { Controller, Get } from '@nestjs/common';
-import { AppService } from '../../application/services/app.service.js';
+import { GetHelloUseCase } from '../../application/use-cases/get-hello.use-case.js';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(private readonly getHelloUseCase: GetHelloUseCase) {}
 
   @Get()
   getHello(): string {
-    return this.appService.getHello();
+    return this.getHelloUseCase.execute();
   }
 }

@@ -3,6 +3,6 @@
  * Contains enterprise business rules, entities, value objects, and repository interfaces.
  */
 
-export interface DomainEntity<TId = string> {
-  readonly id: TId;
+export interface DomainEntity {
+  readonly id: string;
 }
