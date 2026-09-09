@@ -106,25 +106,25 @@ graph TD
     end
 ```
 
-#### 1. Domain Layer (`apps/api/src/domain/` and `src/modules/<resource>/domain/`)
+#### 1. Domain Layer (`apps/api/src/modules/<resource>/domain/`)
 
 - **Entities**: Plain TypeScript classes holding domain attributes and business invariants (e.g., `Stage`, `Quest`, `User`).
 - **Repository Interfaces**: Abstract classes/interfaces defining data persistence contracts (e.g., `QuestRepository`).
 - **Invariants**: Contains zero NestJS decorators, database schema imports, or HTTP abstractions.
 
-#### 2. Application Layer (`apps/api/src/application/` and `src/modules/<resource>/application/`)
+#### 2. Application Layer (`apps/api/src/modules/<resource>/application/`)
 
 - **Use Cases**: Encapsulate discrete application actions (e.g., `CreateStageUseCase`, `SubmitQuestUseCase`).
 - Each usecase has a single entrypoint: `execute(input: InputType): Promise<OutputType>`.
 - Injects repository abstractions via NestJS dependency injection tokens.
 
-#### 3. Infrastructure Layer (`apps/api/src/infrastructure/` and `src/modules/<resource>/infrastructure/`)
+#### 3. Infrastructure Layer (`apps/api/src/modules/<resource>/infrastructure/`)
 
 - **Persistence Adapters**: Implements domain repository interfaces using Drizzle ORM (e.g., `DrizzleStageRepository`).
 - **Persistence Mappers**: Bidirectional converters between database records and domain entities (`StagePersistenceMapper`).
 - **External Services**: Integrations with external execution sandboxes (Codelab), email, or payment providers.
 
-#### 4. Presentation Layer (`apps/api/src/presentation/` and `src/modules/<resource>/presentation/`)
+#### 4. Presentation Layer (`apps/api/src/modules/<resource>/presentation/`)
 
 - **Controllers**: NestJS HTTP handlers routing requests to application use cases.
 - **DTOs**: Validated request inputs decorated with `class-validator` (e.g., `CreateQuestRequestDto`).
