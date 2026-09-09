@@ -1,0 +1,3 @@
+# Clean Architecture with Single-Action Controllers
+
+For issue #1, use Clean Architecture with Domain, Application, Infrastructure, and Presentation boundaries, with dependencies directed inward so business rules and use cases remain independent of HTTP and persistence implementations. Expose each HTTP action through its own NestJS controller class, delegating to an application use case; shared business rules and cross-cutting concerns remain shared. The user selected this structure over the proposed three-layer design on 2026-09-09, accepting explicit boundaries and more controller classes to obtain this separation and action-level organization.
