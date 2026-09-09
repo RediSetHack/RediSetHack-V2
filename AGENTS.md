@@ -44,8 +44,10 @@ This repository maintains a knowledge graph at `graphify-out/` detailing symbols
 **Rules for Agents:**
 
 - **Prefer Graph Query over Grep**: For questions about codebase architecture, symbol connections, module relationships, or finding references, **always run `rtk graphify query "<question>"` first** when `graphify-out/graph.json` exists instead of running broad `grep` or reading multiple source files sequentially.
+- **Impact Analysis & Blast Radius**: Before refactoring or altering symbols, run `rtk graphify affected "<Symbol>"` to trace all incoming dependencies, callers, imports, and tests.
 - **Trace Relationships**: Use `rtk graphify path "<Concept A>" "<Concept B>"` to find the shortest dependency path between components.
 - **Explain Concepts**: Use `rtk graphify explain "<concept>"` for focused explanations of a specific node or symbol.
+- **Architectural Hubs**: Run `rtk graphify god-nodes` to identify central hubs and shared components.
 - **High-Level Navigation**: If `graphify-out/wiki/index.md` exists, consult it for navigation rather than reading raw file trees.
 - **Architecture Review**: Consult `graphify-out/GRAPH_REPORT.md` for high-level community overviews and god nodes.
 - **Keep Graph Current**: After modifying code files, run `rtk graphify update .` to keep the knowledge graph synchronized (AST-only, fast, zero token cost).
@@ -60,7 +62,7 @@ When the user types `/graphify`, use the installed graphify skill or instruction
 
 Rules:
 
-- For codebase questions, first run `rtk graphify query "<question>"` when graphify-out/graph.json exists. Use `rtk graphify path "<A>" "<B>"` for relationships and `rtk graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- For codebase questions, first run `rtk graphify query "<question>"` when graphify-out/graph.json exists. Use `rtk graphify path "<A>" "<B>"` for relationships, `rtk graphify explain "<concept>"` for focused concepts, and `rtk graphify affected "<symbol>"` for impact analysis. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
 - Dirty graphify-out/ files are expected after hooks or incremental updates; dirty graph files are not a reason to skip graphify. Only skip graphify if the task is about stale or incorrect graph output, or the user explicitly says not to use it.
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
