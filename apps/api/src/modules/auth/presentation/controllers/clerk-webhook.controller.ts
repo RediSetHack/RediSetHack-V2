@@ -23,6 +23,26 @@ type WebhookEvent = {
   data?: Record<string, unknown>;
 };
 
+function extractId(id: unknown): string {
+  if (typeof id === "string") {
+    return id;
+  }
+  if (typeof id === "number") {
+    return String(id);
+  }
+  return "";
+}
+
+function extractDisplayName(firstName: unknown, lastName: unknown): string | null {
+  const first = typeof firstName === "string" && firstName.length > 0 ? firstName : null;
+  const last = typeof lastName === "string" && lastName.length > 0 ? lastName : null;
+
+  if (first && last) {
+    return `${first} ${last}`;
+  }
+  return last ?? first;
+}
+
 function toClerkAuthenticatedUser(data: Record<string, unknown>): ClerkAuthenticatedUser {
   const addresses = Array.isArray(data["email_addresses"])
     ? (data["email_addresses"] as Array<Record<string, unknown>>)
@@ -30,8 +50,6 @@ function toClerkAuthenticatedUser(data: Record<string, unknown>): ClerkAuthentic
   const primaryId = data["primary_email_address_id"];
   const primary = addresses.find((address) => address["id"] === primaryId) ?? addresses[0];
   const email = primary?.["email_address"];
-  const firstName = data["first_name"];
-  const lastName = data["last_name"];
   const metadata = data["public_metadata"];
   const role =
     metadata != null &&
@@ -41,14 +59,9 @@ function toClerkAuthenticatedUser(data: Record<string, unknown>): ClerkAuthentic
       ? "admin"
       : "user";
   return {
-    id: String(data["id"] ?? ""),
+    id: extractId(data["id"]),
     email: typeof email === "string" && email.length > 0 ? email : null,
-    name:
-      typeof lastName === "string" && lastName.length > 0
-        ? `${typeof firstName === "string" ? firstName : ""} ${lastName}`.trim()
-        : typeof firstName === "string" && firstName.length > 0
-          ? firstName
-          : null,
+    name: extractDisplayName(data["first_name"], data["last_name"]),
     role,
   };
 }

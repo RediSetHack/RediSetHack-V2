@@ -102,6 +102,50 @@ describe("ClerkWebhookController", () => {
     });
   });
 
+  it("derives name from last_name only when first_name is missing", async () => {
+    const { body, headers } = sign(
+      JSON.stringify({
+        type: "user.created",
+        data: {
+          id: "user_789",
+          email_addresses: [{ id: "idn_3", email_address: "hopper@example.com" }],
+          first_name: null,
+          last_name: "Hopper",
+        },
+      }),
+    );
+
+    await request(app.getHttpServer()).post("/v1/api/clerk/webhook").set(headers).send(body);
+
+    expect(ensureUser.execute).toHaveBeenCalledWith({
+      id: "user_789",
+      email: "hopper@example.com",
+      name: "Hopper",
+      role: "user",
+    });
+  });
+
+  it("sets name to null when both first_name and last_name are missing", async () => {
+    const { body, headers } = sign(
+      JSON.stringify({
+        type: "user.created",
+        data: {
+          id: "user_000",
+          email_addresses: [{ id: "idn_4", email_address: "anon@example.com" }],
+        },
+      }),
+    );
+
+    await request(app.getHttpServer()).post("/v1/api/clerk/webhook").set(headers).send(body);
+
+    expect(ensureUser.execute).toHaveBeenCalledWith({
+      id: "user_000",
+      email: "anon@example.com",
+      name: null,
+      role: "user",
+    });
+  });
+
   it("rejects requests with an invalid signature", async () => {
     const { headers } = sign(JSON.stringify({ type: "user.created", data: { id: "user_1" } }));
 

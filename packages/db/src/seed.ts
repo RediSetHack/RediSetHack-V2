@@ -81,10 +81,11 @@ export async function seed(databaseUrl?: string) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  seed()
-    .then(() => process.exit(0))
-    .catch((err) => {
-      console.error("Seeding failed:", err);
-      process.exit(1);
-    });
+  try {
+    await seed();
+    process.exit(0);
+  } catch (err) {
+    console.error("Seeding failed:", err);
+    process.exit(1);
+  }
 }
