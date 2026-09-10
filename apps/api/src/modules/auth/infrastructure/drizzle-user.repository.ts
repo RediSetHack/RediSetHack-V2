@@ -6,7 +6,7 @@ import { DB } from "../../../database/database.module.js";
 import { User } from "../domain/entities/user.entity.js";
 import { UserRepository } from "../domain/ports/user.repository.js";
 import { ClerkAuthenticatedUser } from "../domain/ports/clerk-auth.port.js";
-import { UserNotFoundError } from "../application/select-character.use-case.js";
+import { UserNotFoundError } from "../domain/errors.js";
 
 type UserRow = typeof users.$inferSelect;
 

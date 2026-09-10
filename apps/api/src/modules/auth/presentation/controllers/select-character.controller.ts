@@ -1,7 +1,7 @@
 import { Body, Controller, NotFoundException, Patch, UseGuards } from "@nestjs/common";
 
 import { SelectCharacterUseCase } from "../../application/select-character.use-case.js";
-import { CharacterNotFoundError } from "../../application/select-character.use-case.js";
+import { CharacterNotFoundError } from "../../domain/errors.js";
 import { ClerkAuthGuard } from "../guards/clerk-auth.guard.js";
 import { CurrentUser } from "../decorators/current-user.decorator.js";
 import { SelectCharacterRequestDto } from "../dto/select-character-request.dto.js";

@@ -4,11 +4,8 @@ import { Character } from "./domain/entities/character.entity.js";
 import { User } from "./domain/entities/user.entity.js";
 import { CharacterRepository } from "./domain/ports/character.repository.js";
 import { UserRepository } from "./domain/ports/user.repository.js";
-import {
-  CharacterNotFoundError,
-  SelectCharacterUseCase,
-  UserNotFoundError,
-} from "./application/select-character.use-case.js";
+import { CharacterNotFoundError, UserNotFoundError } from "./domain/errors.js";
+import { SelectCharacterUseCase } from "./application/select-character.use-case.js";
 
 const learner = new User("user_1", "learner@example.com", "Learner", null, 0);
 
