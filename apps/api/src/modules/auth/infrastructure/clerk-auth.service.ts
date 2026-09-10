@@ -47,11 +47,19 @@ function toClerkAuthenticatedUser(
   userId: string,
   claims: Claims,
 ): ClerkAuthenticatedUser {
-  const name = readString(claims, "name") ?? readString(claims, "firstName");
-  const lastName = readString(claims, "lastName");
+  const email =
+    readString(claims, "email") ??
+    readString(claims, "primary_email_address") ??
+    readString(claims, "email_address");
+  const name =
+    readString(claims, "name") ??
+    readString(claims, "full_name") ??
+    readString(claims, "firstName") ??
+    readString(claims, "first_name");
+  const lastName = readString(claims, "lastName") ?? readString(claims, "last_name");
   return {
     id: userId,
-    email: readString(claims, "email"),
+    email,
     name: formatDisplayName(name, lastName),
     role: readRole(claims),
   };

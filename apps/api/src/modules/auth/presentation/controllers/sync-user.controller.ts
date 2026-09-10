@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Post,
@@ -9,6 +10,7 @@ import type { IncomingMessage } from "node:http";
 
 import { ClerkAuthPort, type ClerkAuthenticatedUser } from "../../domain/ports/clerk-auth.port.js";
 import { EnsureUserUseCase } from "../../application/ensure-user.use-case.js";
+import { InvalidUserEmailError } from "../../domain/errors.js";
 import { UserPresenter } from "../presenters/user.presenter.js";
 
 export class SyncUserRequestDto {
@@ -39,7 +41,14 @@ export class SyncUserController {
       name: body?.name && body.name.length > 0 ? body.name : session.name,
     };
 
-    const user = await this.ensureUser.execute(identity);
-    return UserPresenter.toResponse(user);
+    try {
+      const user = await this.ensureUser.execute(identity);
+      return UserPresenter.toResponse(user);
+    } catch (error) {
+      if (error instanceof InvalidUserEmailError) {
+        throw new BadRequestException(error.message);
+      }
+      throw error;
+    }
   }
 }

@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, UnauthorizedException } from "@nestjs/common";
 import type { IncomingMessage } from "node:http";
 
 import { User } from "./domain/entities/user.entity.js";
+import { InvalidUserEmailError } from "./domain/errors.js";
 import { ClerkAuthPort } from "./domain/ports/clerk-auth.port.js";
 import { EnsureUserUseCase } from "./application/ensure-user.use-case.js";
 import { SyncUserController } from "./presentation/controllers/sync-user.controller.js";
@@ -79,5 +80,24 @@ describe("SyncUserController", () => {
       name: "Learner",
       role: "user",
     });
+  });
+
+  it("throws BadRequestException when user has no valid email", async () => {
+    const session = {
+      id: "user_1",
+      email: null,
+      name: null,
+      role: "user" as const,
+    };
+    const clerkAuth: ClerkAuthPort = {
+      authenticate: vi.fn().mockResolvedValue(session),
+    };
+    const ensureUser = {
+      execute: vi.fn().mockRejectedValue(new InvalidUserEmailError("user_1")),
+    } as unknown as EnsureUserUseCase;
+    const controller = new SyncUserController(clerkAuth, ensureUser);
+
+    const req = {} as IncomingMessage;
+    await expect(controller.handle(req)).rejects.toBeInstanceOf(BadRequestException);
   });
 });
