@@ -3,6 +3,7 @@
 import { Module } from "@nestjs/common";
 
 import { AuthModule } from "./auth/auth.module.js";
+import { DailyEventModule } from "./daily-event/daily-event.module.js";
 
-@Module({ imports: [AuthModule] })
+@Module({ imports: [AuthModule, DailyEventModule] })
 export class FeaturesModule {}
