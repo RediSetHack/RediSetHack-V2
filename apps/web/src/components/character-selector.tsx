@@ -7,11 +7,24 @@ import {
   selectUserCharacter,
   type CharacterOption,
 } from "@/lib/api-client";
-import { Button } from "@/components/ui/button";
 
 interface CharacterSelectorProps {
-  initialCharacterId?: number | null;
-  apiUrl?: string;
+  readonly initialCharacterId?: number | null;
+  readonly apiUrl?: string;
+}
+
+function getButtonLabel(
+  isLoading: boolean,
+  isSelected: boolean,
+  isActive: boolean,
+): string {
+  if (isLoading && isSelected) {
+    return "Updating...";
+  }
+  if (isActive) {
+    return "Selected";
+  }
+  return "Choose Avatar";
 }
 
 export function CharacterSelector({
@@ -25,8 +38,8 @@ export function CharacterSelector({
   );
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
+    readonly type: "success" | "error";
+    readonly text: string;
   } | null>(null);
 
   const handleSelect = async (character: CharacterOption) => {
@@ -85,18 +98,21 @@ export function CharacterSelector({
         {DEFAULT_CHARACTERS.map((char) => {
           const isCurrentActive = activeCharacterId === char.id;
           const isSelected = selectedId === char.id;
+          const buttonLabel = getButtonLabel(isLoading, isSelected, isCurrentActive);
 
           return (
-            <div
+            <button
+              type="button"
               key={char.id}
-              onClick={() => !isLoading && handleSelect(char)}
-              className={`group relative flex flex-col p-5 rounded-xl border transition-all cursor-pointer select-none ${
+              disabled={isLoading}
+              onClick={() => handleSelect(char)}
+              className={`group relative flex flex-col text-left p-5 rounded-xl border transition-all cursor-pointer select-none ${
                 isCurrentActive
                   ? "border-primary bg-primary/5 ring-2 ring-primary/30 shadow-md"
                   : "border-border hover:border-foreground/30 hover:bg-muted/40"
               } ${isLoading && isSelected ? "opacity-70 pointer-events-none" : ""}`}
             >
-              <div className="flex items-center justify-between gap-2 mb-3">
+              <div className="flex items-center justify-between gap-2 mb-3 w-full">
                 <span className="text-3xl" role="img" aria-label={char.name}>
                   {char.avatarIcon}
                 </span>
@@ -112,21 +128,18 @@ export function CharacterSelector({
               <p className="text-xs text-muted-foreground flex-1 leading-relaxed">
                 {char.description}
               </p>
-              <div className="mt-4 pt-3 border-t border-border/50">
-                <Button
-                  variant={isCurrentActive ? "default" : "outline"}
-                  size="sm"
-                  disabled={isLoading}
-                  className="w-full text-xs"
+              <div className="mt-4 pt-3 border-t border-border/50 w-full">
+                <span
+                  className={`inline-flex items-center justify-center w-full rounded-lg text-xs font-medium py-1.5 transition-colors ${
+                    isCurrentActive
+                      ? "bg-primary text-primary-foreground"
+                      : "border border-input bg-background hover:bg-muted hover:text-foreground"
+                  }`}
                 >
-                  {isLoading && isSelected
-                    ? "Updating..."
-                    : isCurrentActive
-                      ? "Selected"
-                      : "Choose Avatar"}
-                </Button>
+                  {buttonLabel}
+                </span>
               </div>
-            </div>
+            </button>
           );
         })}
       </div>

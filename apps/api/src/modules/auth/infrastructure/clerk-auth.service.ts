@@ -34,6 +34,13 @@ function readString(claims: Claims, key: string): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
+function formatDisplayName(name: string | null, lastName: string | null): string | null {
+  if (lastName) {
+    return name ? `${name} ${lastName}` : lastName;
+  }
+  return name;
+}
+
 function toClerkAuthenticatedUser(
   userId: string,
   claims: Claims,
@@ -43,7 +50,7 @@ function toClerkAuthenticatedUser(
   return {
     id: userId,
     email: readString(claims, "email"),
-    name: lastName ? (name ? `${name} ${lastName}` : lastName) : name,
+    name: formatDisplayName(name, lastName),
     role: readRole(claims),
   };
 }

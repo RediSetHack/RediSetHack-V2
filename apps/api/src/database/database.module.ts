@@ -1,9 +1,9 @@
 import { Global, Module } from "@nestjs/common";
-import { createDb, type Database } from "@repo/db";
+import { createDb } from "@repo/db";
 
 export const DB = Symbol("DB");
 
-export type { Database };
+export type { Database } from "@repo/db";
 
 @Global()
 @Module({
