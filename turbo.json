@@ -14,10 +14,10 @@
       "dependsOn": ["^build", "^check-types"]
     },
     "test": {
-      "dependsOn": []
+      "dependsOn": ["^build"]
     },
     "test:cov": {
-      "dependsOn": [],
+      "dependsOn": ["^build"],
       "outputs": ["coverage/**"]
     },
     "dev": {
