@@ -39,6 +39,13 @@ export class DrizzleUserRepository implements UserRepository {
     return row ? toDomain(row) : null;
   }
 
+  async findByEmail(email: string): Promise<User | null> {
+    const row = await this.database.query.users.findFirst({
+      where: eq(users.email, email),
+    });
+    return row ? toDomain(row) : null;
+  }
+
   async updateCharacter(userId: string, characterId: number): Promise<User> {
     const rows = await this.database
       .update(users)

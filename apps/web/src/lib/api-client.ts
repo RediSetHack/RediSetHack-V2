@@ -93,3 +93,66 @@ export async function selectUserCharacter(
 
   return (await response.json()) as UpdatedUserResponse;
 }
+
+export async function syncUser(
+  apiBaseUrl: string,
+  token: string,
+  fetchFn: typeof fetch = fetch,
+): Promise<UpdatedUserResponse> {
+  if (!token) {
+    throw new ApiError(401, "Authentication token is required");
+  }
+
+  const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/user/sync`;
+  const response = await fetchFn(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}));
+    const message =
+      typeof errorBody === "object" && errorBody && "message" in errorBody
+        ? String(errorBody.message)
+        : `Request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return (await response.json()) as UpdatedUserResponse;
+}
+
+export async function getCurrentUser(
+  apiBaseUrl: string,
+  token: string,
+  fetchFn: typeof fetch = fetch,
+): Promise<UpdatedUserResponse | null> {
+  if (!token) {
+    throw new ApiError(401, "Authentication token is required");
+  }
+
+  const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/user/me`;
+  const response = await fetchFn(endpoint, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}));
+    const message =
+      typeof errorBody === "object" && errorBody && "message" in errorBody
+        ? String(errorBody.message)
+        : `Request failed with status ${response.status}`;
+    throw new ApiError(response.status, message);
+  }
+
+  return (await response.json()) as UpdatedUserResponse;
+}
