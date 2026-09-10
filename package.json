@@ -10,6 +10,8 @@
     "test": "turbo run test",
     "test:cov": "turbo run test:cov",
     "generate:resource": "node scripts/generate-resource.mjs",
+    "db:migrate": "pnpm --filter @repo/db db:migrate",
+    "db:seed": "pnpm --filter @repo/db db:seed",
     "graph:update": "./scripts/update-graph.sh"
   },
   "devDependencies": {
