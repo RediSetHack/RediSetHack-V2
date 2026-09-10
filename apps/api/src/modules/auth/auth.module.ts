@@ -12,14 +12,20 @@ import { DrizzleCharacterRepository } from "./infrastructure/drizzle-character.r
 import { ClerkAuthGuard } from "./presentation/guards/clerk-auth.guard.js";
 import { AdminGuard } from "./presentation/guards/admin.guard.js";
 import { SelectCharacterController } from "./presentation/controllers/select-character.controller.js";
+import { ClerkWebhookController, CLERK_WEBHOOK_SECRET } from "./presentation/controllers/clerk-webhook.controller.js";
 
 @Global()
 @Module({
-  controllers: [SelectCharacterController],
+  controllers: [SelectCharacterController, ClerkWebhookController],
   providers: [
     {
       provide: CLERK_CLIENT,
       useFactory: clerkClientFactory,
+      inject: [ConfigService],
+    },
+    {
+      provide: CLERK_WEBHOOK_SECRET,
+      useFactory: (config: ConfigService) => config.get<string>("CLERK_WEBHOOK_SECRET") ?? "",
       inject: [ConfigService],
     },
     { provide: ClerkAuthPort, useClass: ClerkAuthService },
