@@ -29,7 +29,7 @@ export function UnregisteredUserCard({
       if (!token) {
         throw new Error("Unable to obtain authentication session token");
       }
-      await syncUser(apiUrl, token);
+      await syncUser(apiUrl, token, { email });
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to register account");

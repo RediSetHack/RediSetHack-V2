@@ -97,6 +97,7 @@ export async function selectUserCharacter(
 export async function syncUser(
   apiBaseUrl: string,
   token: string,
+  userData?: { email?: string | null; name?: string | null },
   fetchFn: typeof fetch = fetch,
 ): Promise<UpdatedUserResponse> {
   if (!token) {
@@ -110,6 +111,7 @@ export async function syncUser(
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
+    body: JSON.stringify(userData ?? {}),
   });
 
   if (!response.ok) {

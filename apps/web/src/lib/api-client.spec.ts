@@ -122,7 +122,12 @@ describe("api-client", () => {
         }),
       });
 
-      const result = await syncUser("http://localhost:3001", "test-token", mockFetch as unknown as typeof fetch);
+      const result = await syncUser(
+        "http://localhost:3001",
+        "test-token",
+        { email: "test@example.com", name: "Test User" },
+        mockFetch as unknown as typeof fetch,
+      );
 
       expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/user/sync", {
         method: "POST",
@@ -130,6 +135,7 @@ describe("api-client", () => {
           "Content-Type": "application/json",
           Authorization: "Bearer test-token",
         },
+        body: JSON.stringify({ email: "test@example.com", name: "Test User" }),
       });
       expect(result.id).toBe("user_123");
     });

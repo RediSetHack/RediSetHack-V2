@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Post,
   Req,
@@ -6,9 +7,14 @@ import {
 } from "@nestjs/common";
 import type { IncomingMessage } from "node:http";
 
-import { ClerkAuthPort } from "../../domain/ports/clerk-auth.port.js";
+import { ClerkAuthPort, type ClerkAuthenticatedUser } from "../../domain/ports/clerk-auth.port.js";
 import { EnsureUserUseCase } from "../../application/ensure-user.use-case.js";
 import { UserPresenter } from "../presenters/user.presenter.js";
+
+export class SyncUserRequestDto {
+  email?: string;
+  name?: string;
+}
 
 @Controller("v1/api/user")
 export class SyncUserController {
@@ -18,13 +24,22 @@ export class SyncUserController {
   ) {}
 
   @Post("sync")
-  async handle(@Req() request: IncomingMessage) {
+  async handle(
+    @Req() request: IncomingMessage,
+    @Body() body?: SyncUserRequestDto,
+  ) {
     const session = await this.clerkAuth.authenticate(request);
     if (!session) {
       throw new UnauthorizedException("Missing or invalid authentication token");
     }
 
-    const user = await this.ensureUser.execute(session);
+    const identity: ClerkAuthenticatedUser = {
+      ...session,
+      email: body?.email && body.email.length > 0 ? body.email : session.email,
+      name: body?.name && body.name.length > 0 ? body.name : session.name,
+    };
+
+    const user = await this.ensureUser.execute(identity);
     return UserPresenter.toResponse(user);
   }
 }

@@ -51,4 +51,33 @@ describe("SyncUserController", () => {
       totalXp: 0,
     });
   });
+
+  it("uses email and name provided in the request body when present", async () => {
+    const session = {
+      id: "user_1",
+      email: null,
+      name: null,
+      role: "user" as const,
+    };
+    const clerkAuth: ClerkAuthPort = {
+      authenticate: vi.fn().mockResolvedValue(session),
+    };
+    const ensureUser = {
+      execute: vi.fn().mockResolvedValue(learner),
+    } as unknown as EnsureUserUseCase;
+    const controller = new SyncUserController(clerkAuth, ensureUser);
+
+    const req = {} as IncomingMessage;
+    await controller.handle(req, {
+      email: "learner@example.com",
+      name: "Learner",
+    });
+
+    expect(ensureUser.execute).toHaveBeenCalledWith({
+      id: "user_1",
+      email: "learner@example.com",
+      name: "Learner",
+      role: "user",
+    });
+  });
 });

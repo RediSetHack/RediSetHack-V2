@@ -7,7 +7,9 @@ import { ClerkAuthPort, type ClerkAuthenticatedUser } from "../domain/ports/cler
 
 export const CLERK_CLIENT = Symbol("CLERK_CLIENT");
 
-export type ClerkRequestClient = Pick<ClerkClient, "authenticateRequest">;
+export type ClerkRequestClient = Pick<ClerkClient, "authenticateRequest"> & {
+  users?: Pick<ClerkClient["users"], "getUser">;
+};
 
 type ClerkClientFactory = (config: ConfigService) => ClerkRequestClient;
 
@@ -74,7 +76,31 @@ export class ClerkAuthService implements ClerkAuthPort {
       this.logger.warn("Signed-in request state returned no userId");
       return null;
     }
-    return toClerkAuthenticatedUser(auth.userId, auth.sessionClaims);
+    let authenticatedUser = toClerkAuthenticatedUser(auth.userId, auth.sessionClaims);
+
+    if (!authenticatedUser.email && this.clerk.users?.getUser) {
+      try {
+        const user = await this.clerk.users.getUser(auth.userId);
+        const addresses = user.emailAddresses ?? [];
+        const primary =
+          addresses.find((e) => e.id === user.primaryEmailAddressId) ?? addresses[0];
+        const email = primary?.emailAddress ?? null;
+        const name =
+          authenticatedUser.name ??
+          (user.firstName
+            ? formatDisplayName(user.firstName, user.lastName ?? null)
+            : null);
+        authenticatedUser = {
+          ...authenticatedUser,
+          email,
+          name,
+        };
+      } catch (error) {
+        this.logger.warn(`Could not fetch user details from Clerk for ${auth.userId}: ${error}`);
+      }
+    }
+
+    return authenticatedUser;
   }
 
   private toWebRequest(request: IncomingMessage): Request {
