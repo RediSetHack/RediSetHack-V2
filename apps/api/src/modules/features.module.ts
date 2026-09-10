@@ -3,6 +3,7 @@
 import { Module } from "@nestjs/common";
 
 import { AuthModule } from "./auth/auth.module.js";
+import { ContentModule } from "./content/content.module.js";
 
-@Module({ imports: [AuthModule] })
+@Module({ imports: [AuthModule, ContentModule] })
 export class FeaturesModule {}
