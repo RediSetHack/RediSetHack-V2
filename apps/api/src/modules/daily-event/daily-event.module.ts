@@ -11,5 +11,6 @@ import { GetTodayEventController } from "./presentation/controllers/get-today-ev
     { provide: DailyEventRepository, useClass: DrizzleDailyEventRepository },
     GetTodayEventUseCase,
   ],
+  exports: [GetTodayEventUseCase],
 })
 export class DailyEventModule {}
