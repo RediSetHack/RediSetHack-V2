@@ -3,7 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 import { Stage } from "../content/domain/entities/stage.entity.js";
 import type { StageRepository } from "../content/domain/ports/stage.repository.js";
 import { DailyEvent } from "../daily-event/domain/entities/daily-event.entity.js";
-import type { GetTodayEventUseCase } from "../daily-event/application/get-today-event.use-case.js";
+import type { DailyEventRepository } from "../daily-event/domain/ports/daily-event.repository.js";
+import { GetTodayEventUseCase } from "../daily-event/application/get-today-event.use-case.js";
 import { MarkStageCompleteUseCase } from "./application/mark-stage-complete.use-case.js";
 import type { ProgressRepository } from "./domain/ports/progress.repository.js";
 import { StageAlreadyCompletedError, StageLockedError, StageNotFoundError } from "./domain/errors.js";
@@ -23,9 +24,11 @@ function makeStageRepo(overrides: Partial<StageRepository> = {}): StageRepositor
 }
 
 function makeEvent(eventType: "normal" | "bonus", xpMultiplier: number): GetTodayEventUseCase {
-  return {
-    execute: vi.fn().mockResolvedValue(new DailyEvent(1, "2026-09-11", eventType, xpMultiplier)),
-  } as unknown as GetTodayEventUseCase;
+  const repo: DailyEventRepository = {
+    findByDate: vi.fn().mockResolvedValue(new DailyEvent(1, "2026-09-11", eventType, xpMultiplier)),
+    create: vi.fn(),
+  };
+  return new GetTodayEventUseCase(repo);
 }
 
 function makeProgress(awarded = true): ProgressRepository {

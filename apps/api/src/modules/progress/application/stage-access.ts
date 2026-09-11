@@ -26,7 +26,8 @@ export async function getStageAccess(
 }
 
 export function isUnlocked(access: StageAccess): boolean {
-  if (access.index <= 0) return true;
+  if (access.index < 0) return false;
+  if (access.index === 0) return true;
   const predecessor = access.sorted[access.index - 1];
   return predecessor !== undefined && access.completedIds.has(predecessor.id);
 }
