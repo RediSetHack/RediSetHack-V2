@@ -4,6 +4,7 @@ import { Module } from "@nestjs/common";
 
 import { AuthModule } from "./auth/auth.module.js";
 import { ContentModule } from "./content/content.module.js";
+import { DailyEventModule } from "./daily-event/daily-event.module.js";
 
-@Module({ imports: [AuthModule, ContentModule] })
+@Module({ imports: [AuthModule, ContentModule, DailyEventModule] })
 export class FeaturesModule {}
