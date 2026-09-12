@@ -8,6 +8,13 @@
       "when": 1789040666305,
       "tag": "0000_mean_stephen_strange",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789225583754,
+      "tag": "0001_nebulous_cobalt_man",
+      "breakpoints": true
     }
   ]
 }

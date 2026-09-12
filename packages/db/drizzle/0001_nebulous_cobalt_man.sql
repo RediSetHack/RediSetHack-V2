@@ -1,0 +1,2 @@
+ALTER TABLE "stages" ALTER COLUMN "lesson_content" SET DATA TYPE jsonb USING "lesson_content"::jsonb;--> statement-breakpoint
+ALTER TABLE "quests" ADD COLUMN "questions_json" jsonb DEFAULT '[]'::jsonb NOT NULL;
