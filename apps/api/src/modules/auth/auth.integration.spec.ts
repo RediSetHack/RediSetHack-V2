@@ -62,6 +62,21 @@ describe("auth integration", () => {
       userStore.set(userId, updated);
       return updated;
     },
+    async awardXp(userId, amount) {
+      const existing = userStore.get(userId);
+      if (!existing) {
+        throw new Error(`user ${userId} not found`);
+      }
+      const updated = new User(
+        existing.id,
+        existing.email,
+        existing.name,
+        existing.characterId,
+        existing.totalXp + amount,
+      );
+      userStore.set(userId, updated);
+      return updated;
+    },
   };
 
   const fakeCharacters: CharacterRepository = {
