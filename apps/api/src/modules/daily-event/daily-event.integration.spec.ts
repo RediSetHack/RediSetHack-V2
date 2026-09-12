@@ -68,7 +68,6 @@ describe("daily-event integration", () => {
     await request(app.getHttpServer()).get("/v1/api/events/today");
     expect(store.size).toBe(1);
 
-    const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Manila" });
     store.clear();
 
     const res = await request(app.getHttpServer()).get("/v1/api/events/today");

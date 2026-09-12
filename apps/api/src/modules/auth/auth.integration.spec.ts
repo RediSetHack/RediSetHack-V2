@@ -14,6 +14,9 @@ import { SelectCharacterUseCase } from "./application/select-character.use-case.
 import { AdminGuard } from "./presentation/guards/admin.guard.js";
 import { ClerkAuthGuard } from "./presentation/guards/clerk-auth.guard.js";
 import { SelectCharacterController } from "./presentation/controllers/select-character.controller.js";
+import { GetUserMeController } from "./presentation/controllers/get-user-me.controller.js";
+import { SyncUserController } from "./presentation/controllers/sync-user.controller.js";
+import { GetUserUseCase } from "./application/get-user.use-case.js";
 
 @Controller("v1/api/test")
 class AdminProbeController {
@@ -53,6 +56,12 @@ describe("auth integration", () => {
     async findById(id) {
       return userStore.get(id) ?? null;
     },
+    async findByEmail(email) {
+      for (const u of userStore.values()) {
+        if (u.email === email) return u;
+      }
+      return null;
+    },
     async updateCharacter(userId, characterId) {
       const existing = userStore.get(userId);
       if (!existing) {
@@ -88,7 +97,12 @@ describe("auth integration", () => {
   beforeEach(async () => {
     userStore.clear();
     const moduleRef = await Test.createTestingModule({
-      controllers: [SelectCharacterController, AdminProbeController],
+      controllers: [
+        SelectCharacterController,
+        GetUserMeController,
+        SyncUserController,
+        AdminProbeController,
+      ],
       providers: [
         { provide: ClerkAuthPort, useValue: fakeClerk },
         { provide: UserRepository, useValue: fakeUsers },
@@ -96,6 +110,7 @@ describe("auth integration", () => {
         ClerkAuthGuard,
         AdminGuard,
         EnsureUserUseCase,
+        GetUserUseCase,
         SelectCharacterUseCase,
       ],
     }).compile();
@@ -171,5 +186,42 @@ describe("auth integration", () => {
       .send({});
 
     expect(res.status).toBe(400);
+  });
+
+  it("returns 404 with 'No account associated with this email, please sign up' when user is not in database", async () => {
+    const res = await request(app.getHttpServer())
+      .get("/v1/api/user/me")
+      .set("authorization", "Bearer valid-token");
+
+    expect(res.status).toBe(404);
+    expect(res.body.message).toBe("No account associated with this email, please sign up");
+  });
+
+  it("stores the user in the database on sync (signup) and allows retrieval on /me", async () => {
+    // 1. Initially no user in database
+    expect(userStore.size).toBe(0);
+
+    // 2. User syncs after signup
+    const syncRes = await request(app.getHttpServer())
+      .post("/v1/api/user/sync")
+      .set("authorization", "Bearer valid-token");
+
+    expect(syncRes.status).toBe(201);
+    expect(syncRes.body).toMatchObject({
+      id: "user_learner",
+      email: "learner@example.com",
+    });
+    expect(userStore.get("user_learner")).not.toBeUndefined();
+
+    // 3. User can now be retrieved via /me
+    const meRes = await request(app.getHttpServer())
+      .get("/v1/api/user/me")
+      .set("authorization", "Bearer valid-token");
+
+    expect(meRes.status).toBe(200);
+    expect(meRes.body).toMatchObject({
+      id: "user_learner",
+      email: "learner@example.com",
+    });
   });
 });

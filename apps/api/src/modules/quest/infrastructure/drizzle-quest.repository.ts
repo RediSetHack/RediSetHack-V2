@@ -1,11 +1,28 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { and, asc, eq, inArray } from "drizzle-orm";
-import { quests, questQuestions, questOptions, questXpAwards, results, type Database } from "@repo/db";
+import { Inject, Injectable } from '@nestjs/common';
+import { and, asc, eq, inArray } from 'drizzle-orm';
+import {
+  quests,
+  questQuestions,
+  questOptions,
+  questXpAwards,
+  results,
+  type Database,
+} from '@repo/db';
 
-import { DB } from "../../../database/database.module.js";
-import { Quest, QuestOption, QuestQuestion } from "../domain/entities/quest.entity.js";
-import { QuestResult, type QuestResponse } from "../domain/entities/quest-result.entity.js";
-import { QuestRepository, type CreateResultInput } from "../domain/ports/quest.repository.js";
+import { DB } from '../../../database/database.module.js';
+import {
+  Quest,
+  QuestOption,
+  QuestQuestion,
+} from '../domain/entities/quest.entity.js';
+import {
+  QuestResult,
+  type QuestResponse,
+} from '../domain/entities/quest-result.entity.js';
+import {
+  QuestRepository,
+  type CreateResultInput,
+} from '../domain/ports/quest.repository.js';
 
 type QuestRow = typeof quests.$inferSelect;
 type ResultRow = typeof results.$inferSelect;
@@ -39,12 +56,16 @@ export class DrizzleQuestRepository implements QuestRepository {
   constructor(@Inject(DB) private readonly database: Database) {}
 
   async findAll(): Promise<Quest[]> {
-    const rows = await this.database.query.quests.findMany({ orderBy: asc(quests.id) });
+    const rows = await this.database.query.quests.findMany({
+      orderBy: asc(quests.id),
+    });
     return rows.map(toQuest);
   }
 
   async findById(questId: number): Promise<Quest | null> {
-    const row = await this.database.query.quests.findFirst({ where: eq(quests.id, questId) });
+    const row = await this.database.query.quests.findFirst({
+      where: eq(quests.id, questId),
+    });
     return row ? toQuest(row) : null;
   }
 
@@ -71,7 +92,12 @@ export class DrizzleQuestRepository implements QuestRepository {
     }
 
     return questionRows.map(
-      (row) => new QuestQuestion(row.id, row.prompt, optionsByQuestion.get(row.id) ?? []),
+      (row) =>
+        new QuestQuestion(
+          row.id,
+          row.prompt,
+          optionsByQuestion.get(row.id) ?? [],
+        ),
     );
   }
 
@@ -98,7 +124,9 @@ export class DrizzleQuestRepository implements QuestRepository {
   }
 
   async findResultById(resultId: number): Promise<QuestResult | null> {
-    const row = await this.database.query.results.findFirst({ where: eq(results.id, resultId) });
+    const row = await this.database.query.results.findFirst({
+      where: eq(results.id, resultId),
+    });
     return row ? toResult(row) : null;
   }
 
