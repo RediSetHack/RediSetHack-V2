@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { EvaluateBadgesUseCase } from "../badge/application/evaluate-badges.use-case.js";
+import type { BadgeRepository } from "../badge/domain/ports/badge.repository.js";
 import { Stage } from "../content/domain/entities/stage.entity.js";
 import type { StageRepository } from "../content/domain/ports/stage.repository.js";
 import { DailyEvent } from "../daily-event/domain/entities/daily-event.entity.js";
@@ -35,6 +37,19 @@ function makeProgress(awarded = true): ProgressRepository {
   return { markCompleted: vi.fn().mockResolvedValue(awarded) };
 }
 
+function makeEvaluateBadges(): EvaluateBadgesUseCase {
+  const repo: BadgeRepository = {
+    findAll: vi.fn().mockResolvedValue([]),
+    countAwards: vi.fn(),
+    awardMany: vi.fn(),
+    findEarnedByUser: vi.fn(),
+    countCompletedStages: vi.fn(),
+    countPassedQuests: vi.fn(),
+    isZoneCompleted: vi.fn(),
+  };
+  return new EvaluateBadgesUseCase(repo);
+}
+
 describe("MarkStageCompleteUseCase", () => {
   it("awards base XP when today's event is Normal", async () => {
     const repo = makeStageRepo({
@@ -42,7 +57,7 @@ describe("MarkStageCompleteUseCase", () => {
       findCompletedStageIds: vi.fn().mockResolvedValue([1]),
     });
     const progress = makeProgress();
-    const useCase = new MarkStageCompleteUseCase(repo, progress, makeEvent("normal", 1));
+    const useCase = new MarkStageCompleteUseCase(repo, progress, makeEvent("normal", 1), makeEvaluateBadges());
 
     const completion = await useCase.execute("user_1", 2);
 
@@ -61,7 +76,7 @@ describe("MarkStageCompleteUseCase", () => {
       findCompletedStageIds: vi.fn().mockResolvedValue([1]),
     });
     const progress = makeProgress();
-    const useCase = new MarkStageCompleteUseCase(repo, progress, makeEvent("bonus", 2));
+    const useCase = new MarkStageCompleteUseCase(repo, progress, makeEvent("bonus", 2), makeEvaluateBadges());
 
     const completion = await useCase.execute("user_1", 2);
 
@@ -74,7 +89,7 @@ describe("MarkStageCompleteUseCase", () => {
   it("allows completing stage 1 without any progression", async () => {
     const repo = makeStageRepo({ findById: vi.fn().mockResolvedValue(stages[0]) });
     const progress = makeProgress();
-    const useCase = new MarkStageCompleteUseCase(repo, progress, makeEvent("normal", 1));
+    const useCase = new MarkStageCompleteUseCase(repo, progress, makeEvent("normal", 1), makeEvaluateBadges());
 
     const completion = await useCase.execute("user_1", 1);
 
@@ -87,7 +102,7 @@ describe("MarkStageCompleteUseCase", () => {
       findCompletedStageIds: vi.fn().mockResolvedValue([]),
     });
     const progress = makeProgress();
-    const useCase = new MarkStageCompleteUseCase(repo, progress, makeEvent("normal", 1));
+    const useCase = new MarkStageCompleteUseCase(repo, progress, makeEvent("normal", 1), makeEvaluateBadges());
 
     await expect(useCase.execute("user_1", 2)).rejects.toBeInstanceOf(StageLockedError);
     expect(progress.markCompleted).not.toHaveBeenCalled();
@@ -99,7 +114,7 @@ describe("MarkStageCompleteUseCase", () => {
       findCompletedStageIds: vi.fn().mockResolvedValue([1, 2]),
     });
     const progress = makeProgress();
-    const useCase = new MarkStageCompleteUseCase(repo, progress, makeEvent("normal", 1));
+    const useCase = new MarkStageCompleteUseCase(repo, progress, makeEvent("normal", 1), makeEvaluateBadges());
 
     await expect(useCase.execute("user_1", 2)).rejects.toBeInstanceOf(StageAlreadyCompletedError);
     expect(progress.markCompleted).not.toHaveBeenCalled();
@@ -111,7 +126,7 @@ describe("MarkStageCompleteUseCase", () => {
       findCompletedStageIds: vi.fn().mockResolvedValue([1]),
     });
     const progress = makeProgress(false);
-    const useCase = new MarkStageCompleteUseCase(repo, progress, makeEvent("normal", 1));
+    const useCase = new MarkStageCompleteUseCase(repo, progress, makeEvent("normal", 1), makeEvaluateBadges());
 
     await expect(useCase.execute("user_1", 2)).rejects.toBeInstanceOf(StageAlreadyCompletedError);
   });
@@ -119,7 +134,7 @@ describe("MarkStageCompleteUseCase", () => {
   it("throws StageNotFoundError when stage does not exist", async () => {
     const repo = makeStageRepo({ findById: vi.fn().mockResolvedValue(null) });
     const progress = makeProgress();
-    const useCase = new MarkStageCompleteUseCase(repo, progress, makeEvent("normal", 1));
+    const useCase = new MarkStageCompleteUseCase(repo, progress, makeEvent("normal", 1), makeEvaluateBadges());
 
     await expect(useCase.execute("user_1", 999)).rejects.toBeInstanceOf(StageNotFoundError);
     expect(progress.markCompleted).not.toHaveBeenCalled();

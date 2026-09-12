@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 
+import { BadgeModule } from "../badge/badge.module.js";
 import { DailyEventModule } from "../daily-event/daily-event.module.js";
 import { QuestRepository } from "./domain/ports/quest.repository.js";
 import { DrizzleQuestRepository } from "./infrastructure/drizzle-quest.repository.js";
@@ -13,7 +14,7 @@ import { SubmitQuestController } from "./presentation/controllers/submit-quest.c
 import { ViewQuestResultController } from "./presentation/controllers/view-quest-result.controller.js";
 
 @Module({
-  imports: [DailyEventModule],
+  imports: [BadgeModule, DailyEventModule],
   controllers: [
     ListQuestsController,
     StartQuestController,

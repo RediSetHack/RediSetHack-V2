@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 
 import { UserRepository } from "../auth/domain/ports/user.repository.js";
 import { User } from "../auth/domain/entities/user.entity.js";
+import { EvaluateBadgesUseCase } from "../badge/application/evaluate-badges.use-case.js";
+import { BadgeRepository } from "../badge/domain/ports/badge.repository.js";
 import { DailyEvent } from "../daily-event/domain/entities/daily-event.entity.js";
 import { GetTodayEventUseCase } from "../daily-event/application/get-today-event.use-case.js";
 import { DailyEventRepository } from "../daily-event/domain/ports/daily-event.repository.js";
@@ -60,11 +62,24 @@ function makeGetTodayEvent(multiplier = 1): GetTodayEventUseCase {
   return new GetTodayEventUseCase(repo);
 }
 
+function makeEvaluateBadges(): EvaluateBadgesUseCase {
+  const repo: BadgeRepository = {
+    findAll: vi.fn().mockResolvedValue([]),
+    countAwards: vi.fn(),
+    awardMany: vi.fn(),
+    findEarnedByUser: vi.fn(),
+    countCompletedStages: vi.fn(),
+    countPassedQuests: vi.fn(),
+    isZoneCompleted: vi.fn(),
+  };
+  return new EvaluateBadgesUseCase(repo);
+}
+
 describe("SubmitQuestUseCase", () => {
   it("scores correct responses and marks the attempt as passed", async () => {
     const quests = makeQuestRepo();
     const users = makeUserRepo();
-    const useCase = new SubmitQuestUseCase(quests, users, makeGetTodayEvent());
+    const useCase = new SubmitQuestUseCase(quests, users, makeGetTodayEvent(), makeEvaluateBadges());
 
     const { result } = await useCase.execute({
       userId: "user_1",
@@ -82,7 +97,7 @@ describe("SubmitQuestUseCase", () => {
   it("scores partial and failing responses against passingScore", async () => {
     const quests = makeQuestRepo();
     const users = makeUserRepo();
-    const useCase = new SubmitQuestUseCase(quests, users, makeGetTodayEvent());
+    const useCase = new SubmitQuestUseCase(quests, users, makeGetTodayEvent(), makeEvaluateBadges());
 
     const { result } = await useCase.execute({
       userId: "user_1",
@@ -100,7 +115,7 @@ describe("SubmitQuestUseCase", () => {
   it("never exposes correct-answer keys through the questions it reads for scoring", async () => {
     const quests = makeQuestRepo();
     const users = makeUserRepo();
-    const useCase = new SubmitQuestUseCase(quests, users, makeGetTodayEvent());
+    const useCase = new SubmitQuestUseCase(quests, users, makeGetTodayEvent(), makeEvaluateBadges());
 
     // The use case only ever returns score/passed/xp — never the fetched
     // question set, so a caller can't recover isCorrect flags from the response.
@@ -116,7 +131,7 @@ describe("SubmitQuestUseCase", () => {
   it("awards XP on first pass", async () => {
     const quests = makeQuestRepo();
     const users = makeUserRepo();
-    const useCase = new SubmitQuestUseCase(quests, users, makeGetTodayEvent());
+    const useCase = new SubmitQuestUseCase(quests, users, makeGetTodayEvent(), makeEvaluateBadges());
 
     const { xpAwarded } = await useCase.execute({
       userId: "user_1",
@@ -134,7 +149,7 @@ describe("SubmitQuestUseCase", () => {
   it("doubles the XP award on a Bonus event day", async () => {
     const quests = makeQuestRepo();
     const users = makeUserRepo();
-    const useCase = new SubmitQuestUseCase(quests, users, makeGetTodayEvent(2));
+    const useCase = new SubmitQuestUseCase(quests, users, makeGetTodayEvent(2), makeEvaluateBadges());
 
     const { xpAwarded } = await useCase.execute({
       userId: "user_1",
@@ -152,7 +167,7 @@ describe("SubmitQuestUseCase", () => {
   it("awards zero XP on a passing retake", async () => {
     const quests = makeQuestRepo({ claimXpAward: vi.fn().mockResolvedValue(false) });
     const users = makeUserRepo();
-    const useCase = new SubmitQuestUseCase(quests, users, makeGetTodayEvent());
+    const useCase = new SubmitQuestUseCase(quests, users, makeGetTodayEvent(), makeEvaluateBadges());
 
     const { xpAwarded, result } = await useCase.execute({
       userId: "user_1",
@@ -171,7 +186,7 @@ describe("SubmitQuestUseCase", () => {
   it("records a new Result on every retake, passing or not", async () => {
     const quests = makeQuestRepo({ claimXpAward: vi.fn().mockResolvedValue(false) });
     const users = makeUserRepo();
-    const useCase = new SubmitQuestUseCase(quests, users, makeGetTodayEvent());
+    const useCase = new SubmitQuestUseCase(quests, users, makeGetTodayEvent(), makeEvaluateBadges());
 
     await useCase.execute({
       userId: "user_1",
@@ -188,7 +203,7 @@ describe("SubmitQuestUseCase", () => {
     const zeroRewardQuest = new Quest(2, 10, "Free quiz", null, 60, 70, 0);
     const quests = makeQuestRepo({ findById: vi.fn().mockResolvedValue(zeroRewardQuest) });
     const users = makeUserRepo();
-    const useCase = new SubmitQuestUseCase(quests, users, makeGetTodayEvent());
+    const useCase = new SubmitQuestUseCase(quests, users, makeGetTodayEvent(), makeEvaluateBadges());
 
     const { xpAwarded } = await useCase.execute({
       userId: "user_1",

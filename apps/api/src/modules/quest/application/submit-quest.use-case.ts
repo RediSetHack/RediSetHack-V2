@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 
 import { UserRepository } from "../../auth/domain/ports/user.repository.js";
+import { EvaluateBadgesUseCase } from "../../badge/application/evaluate-badges.use-case.js";
 import { GetTodayEventUseCase } from "../../daily-event/application/get-today-event.use-case.js";
 import { QuestQuestion } from "../domain/entities/quest.entity.js";
 import { QuestResult, type QuestResponse } from "../domain/entities/quest-result.entity.js";
@@ -37,6 +38,7 @@ export class SubmitQuestUseCase {
     private readonly quests: QuestRepository,
     private readonly users: UserRepository,
     private readonly getTodayEvent: GetTodayEventUseCase,
+    private readonly evaluateBadges: EvaluateBadgesUseCase,
   ) {}
 
   async execute(input: SubmitQuestInput): Promise<SubmitQuestOutput> {
@@ -68,6 +70,10 @@ export class SubmitQuestUseCase {
         xpAwarded = quest.xpReward * event.xpMultiplier;
         await this.users.awardXp(input.userId, xpAwarded);
       }
+    }
+
+    if (passed) {
+      await this.evaluateBadges.execute(input.userId);
     }
 
     return { result, xpAwarded };

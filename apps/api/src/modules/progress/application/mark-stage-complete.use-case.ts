@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 
+import { EvaluateBadgesUseCase } from "../../badge/application/evaluate-badges.use-case.js";
 import { StageRepository } from "../../content/domain/ports/stage.repository.js";
 import { ProgressRepository } from "../domain/ports/progress.repository.js";
 import { StageAlreadyCompletedError, StageLockedError, StageNotFoundError } from "../domain/errors.js";
@@ -19,6 +20,7 @@ export class MarkStageCompleteUseCase {
     private readonly stages: StageRepository,
     private readonly progress: ProgressRepository,
     private readonly getTodayEvent: GetTodayEventUseCase,
+    private readonly evaluateBadges: EvaluateBadgesUseCase,
   ) {}
 
   async execute(userId: string, stageId: number): Promise<StageCompletion> {
@@ -34,6 +36,8 @@ export class MarkStageCompleteUseCase {
 
     const awarded = await this.progress.markCompleted(userId, stage.id, xpEarned);
     if (!awarded) throw new StageAlreadyCompletedError(stageId);
+
+    await this.evaluateBadges.execute(userId);
 
     return {
       stageId: stage.id,
