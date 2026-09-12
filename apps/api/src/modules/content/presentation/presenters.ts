@@ -1,5 +1,11 @@
-import { Character } from "../../auth/domain/entities/character.entity.js";
-import { BadgeDefinition, Quest, Region, Stage, Zone } from "../domain/entities.js";
+import { Character } from '../../auth/domain/entities/character.entity.js';
+import {
+  BadgeDefinition,
+  Quest,
+  Region,
+  Stage,
+  Zone,
+} from '../domain/entities.js';
 
 export class RegionPresenter {
   static toResponse(entity: Region) {

@@ -15,6 +15,7 @@ import {
 } from '../domain/entities.js';
 import {
   BadgeDefinitionNotFoundError,
+  CharacterNotFoundError,
   ParentRegionNotFoundError,
   ParentStageNotFoundError,
   ParentZoneNotFoundError,
@@ -31,12 +32,7 @@ import {
   ZoneRepository,
 } from '../domain/ports.js';
 
-export class CharacterNotFoundError extends Error {
-  constructor(id: number) {
-    super(`Character with id ${id} does not exist`);
-    this.name = 'CharacterNotFoundError';
-  }
-}
+export { CharacterNotFoundError };
 
 // --- Regions ---------------------------------------------------------------
 

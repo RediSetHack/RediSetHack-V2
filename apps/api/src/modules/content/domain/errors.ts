@@ -33,6 +33,13 @@ export class BadgeDefinitionNotFoundError extends Error {
   }
 }
 
+export class CharacterNotFoundError extends Error {
+  constructor(id: number) {
+    super(`Character with id ${id} does not exist`);
+    this.name = 'CharacterNotFoundError';
+  }
+}
+
 export class ParentRegionNotFoundError extends Error {
   constructor(id: number) {
     super(`Region with id ${id} does not exist`);

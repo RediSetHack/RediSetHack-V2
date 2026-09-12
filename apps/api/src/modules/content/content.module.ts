@@ -1,20 +1,21 @@
-import { Module } from "@nestjs/common";
+import { Module } from '@nestjs/common';
 
-import { CharacterRepository } from "../auth/domain/ports/character.repository.js";
+import { AuthModule } from '../auth/auth.module.js';
+import { CharacterRepository } from '../auth/domain/ports/character.repository.js';
 import {
   BadgeDefinitionRepository,
   QuestRepository,
   RegionRepository,
   StageRepository,
   ZoneRepository,
-} from "./domain/ports.js";
+} from './domain/ports.js';
 import {
   DrizzleBadgeDefinitionRepository,
   DrizzleQuestRepository,
   DrizzleRegionRepository,
   DrizzleStageRepository,
   DrizzleZoneRepository,
-} from "./infrastructure/drizzle-repositories.js";
+} from './infrastructure/drizzle-repositories.js';
 import {
   CreateBadgeDefinitionUseCase,
   CreateCharacterUseCase,
@@ -40,7 +41,7 @@ import {
   UpdateRegionUseCase,
   UpdateStageUseCase,
   UpdateZoneUseCase,
-} from "./application/use-cases.js";
+} from './application/use-cases.js';
 import {
   CreateBadgeDefinitionController,
   CreateCharacterController,
@@ -66,9 +67,10 @@ import {
   UpdateRegionController,
   UpdateStageController,
   UpdateZoneController,
-} from "./presentation/controllers.js";
+} from './presentation/controllers.js';
 
 @Module({
+  imports: [AuthModule],
   controllers: [
     CreateRegionController,
     GetRegionController,
@@ -100,7 +102,10 @@ import {
     { provide: ZoneRepository, useClass: DrizzleZoneRepository },
     { provide: StageRepository, useClass: DrizzleStageRepository },
     { provide: QuestRepository, useClass: DrizzleQuestRepository },
-    { provide: BadgeDefinitionRepository, useClass: DrizzleBadgeDefinitionRepository },
+    {
+      provide: BadgeDefinitionRepository,
+      useClass: DrizzleBadgeDefinitionRepository,
+    },
     {
       provide: CreateRegionUseCase,
       useFactory: (repo: RegionRepository) => new CreateRegionUseCase(repo),
@@ -123,7 +128,8 @@ import {
     },
     {
       provide: CreateZoneUseCase,
-      useFactory: (repo: ZoneRepository, regions: RegionRepository) => new CreateZoneUseCase(repo, regions),
+      useFactory: (repo: ZoneRepository, regions: RegionRepository) =>
+        new CreateZoneUseCase(repo, regions),
       inject: [ZoneRepository, RegionRepository],
     },
     {
@@ -143,7 +149,8 @@ import {
     },
     {
       provide: CreateStageUseCase,
-      useFactory: (repo: StageRepository, zones: ZoneRepository) => new CreateStageUseCase(repo, zones),
+      useFactory: (repo: StageRepository, zones: ZoneRepository) =>
+        new CreateStageUseCase(repo, zones),
       inject: [StageRepository, ZoneRepository],
     },
     {
@@ -163,7 +170,8 @@ import {
     },
     {
       provide: CreateQuestUseCase,
-      useFactory: (repo: QuestRepository, stages: StageRepository) => new CreateQuestUseCase(repo, stages),
+      useFactory: (repo: QuestRepository, stages: StageRepository) =>
+        new CreateQuestUseCase(repo, stages),
       inject: [QuestRepository, StageRepository],
     },
     {
@@ -183,27 +191,32 @@ import {
     },
     {
       provide: CreateBadgeDefinitionUseCase,
-      useFactory: (repo: BadgeDefinitionRepository) => new CreateBadgeDefinitionUseCase(repo),
+      useFactory: (repo: BadgeDefinitionRepository) =>
+        new CreateBadgeDefinitionUseCase(repo),
       inject: [BadgeDefinitionRepository],
     },
     {
       provide: GetBadgeDefinitionUseCase,
-      useFactory: (repo: BadgeDefinitionRepository) => new GetBadgeDefinitionUseCase(repo),
+      useFactory: (repo: BadgeDefinitionRepository) =>
+        new GetBadgeDefinitionUseCase(repo),
       inject: [BadgeDefinitionRepository],
     },
     {
       provide: UpdateBadgeDefinitionUseCase,
-      useFactory: (repo: BadgeDefinitionRepository) => new UpdateBadgeDefinitionUseCase(repo),
+      useFactory: (repo: BadgeDefinitionRepository) =>
+        new UpdateBadgeDefinitionUseCase(repo),
       inject: [BadgeDefinitionRepository],
     },
     {
       provide: DeleteBadgeDefinitionUseCase,
-      useFactory: (repo: BadgeDefinitionRepository) => new DeleteBadgeDefinitionUseCase(repo),
+      useFactory: (repo: BadgeDefinitionRepository) =>
+        new DeleteBadgeDefinitionUseCase(repo),
       inject: [BadgeDefinitionRepository],
     },
     {
       provide: CreateCharacterUseCase,
-      useFactory: (repo: CharacterRepository) => new CreateCharacterUseCase(repo),
+      useFactory: (repo: CharacterRepository) =>
+        new CreateCharacterUseCase(repo),
       inject: [CharacterRepository],
     },
     {
@@ -213,12 +226,14 @@ import {
     },
     {
       provide: UpdateCharacterUseCase,
-      useFactory: (repo: CharacterRepository) => new UpdateCharacterUseCase(repo),
+      useFactory: (repo: CharacterRepository) =>
+        new UpdateCharacterUseCase(repo),
       inject: [CharacterRepository],
     },
     {
       provide: DeleteCharacterUseCase,
-      useFactory: (repo: CharacterRepository) => new DeleteCharacterUseCase(repo),
+      useFactory: (repo: CharacterRepository) =>
+        new DeleteCharacterUseCase(repo),
       inject: [CharacterRepository],
     },
   ],

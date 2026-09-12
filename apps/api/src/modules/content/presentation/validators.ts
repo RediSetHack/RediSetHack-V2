@@ -1,21 +1,30 @@
-import { registerDecorator, ValidationOptions } from "class-validator";
+import { registerDecorator, ValidationOptions } from 'class-validator';
 
-const LESSON_BLOCK_TYPES = ["text", "code", "image"];
-const BADGE_TRIGGERS = ["cumulative", "category", "activity"];
+const LESSON_BLOCK_TYPES = ['text', 'code', 'image'];
+const BADGE_TRIGGERS = ['cumulative', 'category', 'activity'];
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function isLessonBlock(block: unknown): boolean {
-  if (!isPlainObject(block) || !LESSON_BLOCK_TYPES.includes(block.type as string)) return false;
+  if (
+    !isPlainObject(block) ||
+    !LESSON_BLOCK_TYPES.includes(block.type as string)
+  )
+    return false;
   switch (block.type) {
-    case "text":
-      return typeof block.content === "string" && block.content.length > 0;
-    case "code":
-      return typeof block.language === "string" && typeof block.code === "string";
-    case "image":
-      return typeof block.url === "string" && (block.caption === undefined || typeof block.caption === "string");
+    case 'text':
+      return typeof block.content === 'string' && block.content.length > 0;
+    case 'code':
+      return (
+        typeof block.language === 'string' && typeof block.code === 'string'
+      );
+    case 'image':
+      return (
+        typeof block.url === 'string' &&
+        (block.caption === undefined || typeof block.caption === 'string')
+      );
     default:
       return false;
   }
@@ -25,7 +34,7 @@ function isLessonBlock(block: unknown): boolean {
 export function IsLessonContent(validationOptions?: ValidationOptions) {
   return function (object: object, propertyName: string) {
     registerDecorator({
-      name: "isLessonContent",
+      name: 'isLessonContent',
       target: object.constructor,
       propertyName,
       options: validationOptions,
@@ -43,22 +52,33 @@ export function IsLessonContent(validationOptions?: ValidationOptions) {
 
 function isQuestQuestion(question: unknown): boolean {
   if (!isPlainObject(question)) return false;
-  if (typeof question.id !== "string" || typeof question.prompt !== "string") return false;
-  if (!Array.isArray(question.options) || question.options.length < 2) return false;
+  if (typeof question.id !== 'string' || typeof question.prompt !== 'string')
+    return false;
+  if (!Array.isArray(question.options) || question.options.length < 2)
+    return false;
   const options = question.options as unknown[];
   const optionIds = new Set<string>();
   for (const option of options) {
-    if (!isPlainObject(option) || typeof option.id !== "string" || typeof option.text !== "string") return false;
+    if (
+      !isPlainObject(option) ||
+      typeof option.id !== 'string' ||
+      typeof option.text !== 'string' ||
+      optionIds.has(option.id)
+    )
+      return false;
     optionIds.add(option.id);
   }
-  return typeof question.correctOptionId === "string" && optionIds.has(question.correctOptionId);
+  return (
+    typeof question.correctOptionId === 'string' &&
+    optionIds.has(question.correctOptionId)
+  );
 }
 
 /** Validates an array of quest questions with options and a correct-option reference. */
 export function IsQuestQuestions(validationOptions?: ValidationOptions) {
   return function (object: object, propertyName: string) {
     registerDecorator({
-      name: "isQuestQuestions",
+      name: 'isQuestQuestions',
       target: object.constructor,
       propertyName,
       options: validationOptions,
@@ -78,7 +98,7 @@ export function IsQuestQuestions(validationOptions?: ValidationOptions) {
 export function IsBadgeCriteria(validationOptions?: ValidationOptions) {
   return function (object: object, propertyName: string) {
     registerDecorator({
-      name: "isBadgeCriteria",
+      name: 'isBadgeCriteria',
       target: object.constructor,
       propertyName,
       options: validationOptions,
@@ -87,9 +107,9 @@ export function IsBadgeCriteria(validationOptions?: ValidationOptions) {
           if (!isPlainObject(value)) return false;
           return (
             BADGE_TRIGGERS.includes(value.trigger as string) &&
-            typeof value.target === "string" &&
+            typeof value.target === 'string' &&
             value.target.length > 0 &&
-            typeof value.threshold === "number" &&
+            typeof value.threshold === 'number' &&
             value.threshold > 0
           );
         },

@@ -1,7 +1,23 @@
-import { IsInt, IsNotEmpty, IsOptional, IsString, IsUrl, Matches, Min } from "class-validator";
+import {
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUrl,
+  Matches,
+  Min,
+} from 'class-validator';
 
-import type { BadgeCriteria, LessonBlock, QuestQuestion } from "../domain/entities.js";
-import { IsBadgeCriteria, IsLessonContent, IsQuestQuestions } from "./validators.js";
+import type {
+  BadgeCriteria,
+  LessonBlock,
+  QuestQuestion,
+} from '../domain/entities.js';
+import {
+  IsBadgeCriteria,
+  IsLessonContent,
+  IsQuestQuestions,
+} from './validators.js';
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
