@@ -54,7 +54,10 @@ export class MarkStageCompleteUseCase {
     try {
       await this.evaluateBadges.execute(userId);
     } catch (error) {
-      this.logger.error(`Badge evaluation failed for user ${userId}`, error as Error);
+      this.logger.error(
+        `Badge evaluation failed for user ${userId}`,
+        error as Error,
+      );
     }
 
     return {
