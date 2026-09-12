@@ -10,6 +10,8 @@ export default function SignUpPage() {
               card: "shadow-lg border border-border rounded-xl",
             },
           }}
+          fallbackRedirectUrl="/sign-up/complete"
+          forceRedirectUrl="/sign-up/complete"
         />
       </div>
     </div>

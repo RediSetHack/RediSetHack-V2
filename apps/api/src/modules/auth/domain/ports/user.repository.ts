@@ -4,5 +4,6 @@ import { ClerkAuthenticatedUser } from "./clerk-auth.port.js";
 export abstract class UserRepository {
   abstract upsert(identity: ClerkAuthenticatedUser): Promise<User>;
   abstract findById(id: string): Promise<User | null>;
+  abstract findByEmail(email: string): Promise<User | null>;
   abstract updateCharacter(userId: string, characterId: number): Promise<User>;
 }

@@ -51,37 +51,21 @@ describe("GetTodayEventUseCase", () => {
     expect(repo.create).toHaveBeenCalledWith("2026-09-10", expect.any(String), expect.any(Number));
   });
 
-  it("uses Asia/Manila timezone for today's date", async () => {
-    const repo = makeRepo({ findByDate: vi.fn().mockResolvedValue(null), create: vi.fn() });
-    // 2026-09-10T00:30:00+08:00 is still Sep 10 in Manila
-    vi.setSystemTime(new Date("2026-09-10T00:30:00+08:00"));
-
-    const useCase = new GetTodayEventUseCase(repo);
-    await useCase.execute();
-
-    expect(repo.create).toHaveBeenCalledWith("2026-09-10", expect.any(String), expect.any(Number));
-  });
-
-  it("rolls over at midnight Manila time, not UTC", async () => {
-    const repo = makeRepo({ findByDate: vi.fn().mockResolvedValue(null), create: vi.fn() });
+  it.each([
+    // still Sep 10 in Manila
+    ["2026-09-10T00:30:00+08:00", "2026-09-10"],
     // 2026-09-10T15:59:59Z = 2026-09-10 23:59:59 PST → still Sep 10
-    vi.setSystemTime(new Date("2026-09-10T15:59:59Z"));
-
-    const useCase = new GetTodayEventUseCase(repo);
-    await useCase.execute();
-
-    expect(repo.create).toHaveBeenCalledWith("2026-09-10", expect.any(String), expect.any(Number));
-  });
-
-  it("creates event for next day after midnight Manila", async () => {
+    ["2026-09-10T15:59:59Z", "2026-09-10"],
+    // 2026-09-10T16:00:00Z = 2026-09-11 00:00:00 PST → rolled over
+    ["2026-09-10T16:00:00Z", "2026-09-11"],
+  ])("calculates the Asia/Manila calendar day for %s as %s", async (systemTime, expectedDate) => {
     const repo = makeRepo({ findByDate: vi.fn().mockResolvedValue(null), create: vi.fn() });
-    // 2026-09-10T16:00:00Z = 2026-09-11 00:00:00 PST
-    vi.setSystemTime(new Date("2026-09-10T16:00:00Z"));
+    vi.setSystemTime(new Date(systemTime));
 
     const useCase = new GetTodayEventUseCase(repo);
     await useCase.execute();
 
-    expect(repo.create).toHaveBeenCalledWith("2026-09-11", expect.any(String), expect.any(Number));
+    expect(repo.create).toHaveBeenCalledWith(expectedDate, expect.any(String), expect.any(Number));
   });
 
   it("returns the same event for repeated calls on same day", async () => {

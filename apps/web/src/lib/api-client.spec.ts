@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import {
   DEFAULT_CHARACTERS,
   selectUserCharacter,
+  syncUser,
+  getCurrentUser,
   ApiError,
 } from "./api-client.js";
 
@@ -100,6 +102,91 @@ describe("api-client", () => {
     ).rejects.toMatchObject({
       status: 403,
       message: "Admin privileges required",
+    });
+  });
+
+  describe("syncUser", () => {
+    it("throws ApiError 401 when token is missing", async () => {
+      await expect(syncUser("http://localhost:3001", "")).rejects.toThrowError(ApiError);
+    });
+
+    it("sends POST request to /v1/api/user/sync and returns user data", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          id: "user_123",
+          email: "test@example.com",
+          name: "Test User",
+          characterId: null,
+          totalXp: 0,
+        }),
+      });
+
+      const result = await syncUser(
+        "http://localhost:3001",
+        "test-token",
+        { email: "test@example.com", name: "Test User" },
+        mockFetch as unknown as typeof fetch,
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/user/sync", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer test-token",
+        },
+        body: JSON.stringify({ email: "test@example.com", name: "Test User" }),
+      });
+      expect(result.id).toBe("user_123");
+    });
+  });
+
+  describe("getCurrentUser", () => {
+    it("throws ApiError 401 when token is missing", async () => {
+      await expect(getCurrentUser("http://localhost:3001", "")).rejects.toThrowError(ApiError);
+    });
+
+    it("returns null when API returns 404 (user not found in database)", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        json: async () => ({
+          message: "No account associated with this email, please sign up",
+        }),
+      });
+
+      const result = await getCurrentUser("http://localhost:3001", "test-token", mockFetch as unknown as typeof fetch);
+
+      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/user/me", {
+        method: "GET",
+        headers: {
+          Authorization: "Bearer test-token",
+        },
+      });
+      expect(result).toBeNull();
+    });
+
+    it("returns user data when API returns 200", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          id: "user_123",
+          email: "test@example.com",
+          name: "Test User",
+          characterId: 1,
+          totalXp: 50,
+        }),
+      });
+
+      const result = await getCurrentUser("http://localhost:3001", "test-token", mockFetch as unknown as typeof fetch);
+
+      expect(result).toEqual({
+        id: "user_123",
+        email: "test@example.com",
+        name: "Test User",
+        characterId: 1,
+        totalXp: 50,
+      });
     });
   });
 });

@@ -6,7 +6,7 @@ import { DB } from "../../../database/database.module.js";
 import { User } from "../domain/entities/user.entity.js";
 import { UserRepository } from "../domain/ports/user.repository.js";
 import { ClerkAuthenticatedUser } from "../domain/ports/clerk-auth.port.js";
-import { UserNotFoundError } from "../domain/errors.js";
+import { InvalidUserEmailError, UserNotFoundError } from "../domain/errors.js";
 
 type UserRow = typeof users.$inferSelect;
 
@@ -20,7 +20,17 @@ export class DrizzleUserRepository implements UserRepository {
 
   async upsert(identity: ClerkAuthenticatedUser): Promise<User> {
     const now = new Date();
-    const email = identity.email ?? `${identity.id}@users.local`;
+    let email = identity.email?.trim() || null;
+
+    if (!email) {
+      const existing = await this.findById(identity.id);
+      if (existing) {
+        email = existing.email;
+      } else {
+        throw new InvalidUserEmailError(identity.id);
+      }
+    }
+
     const rows = await this.database
       .insert(users)
       .values({ id: identity.id, email, name: identity.name })
@@ -35,6 +45,13 @@ export class DrizzleUserRepository implements UserRepository {
   async findById(id: string): Promise<User | null> {
     const row = await this.database.query.users.findFirst({
       where: eq(users.id, id),
+    });
+    return row ? toDomain(row) : null;
+  }
+
+  async findByEmail(email: string): Promise<User | null> {
+    const row = await this.database.query.users.findFirst({
+      where: eq(users.email, email),
     });
     return row ? toDomain(row) : null;
   }

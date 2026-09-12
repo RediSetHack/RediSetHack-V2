@@ -21,13 +21,22 @@ export const metadata: Metadata = {
     "Programming learning platform with lessons, quizzes, code practice, and progression rewards.",
 };
 
+const authLocalization = {
+  unstable__errors: {
+    form_identifier_not_found:
+      "No account associated with this email, please sign up",
+    external_account_not_found:
+      "No account associated with this email, please sign up",
+  },
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider localization={authLocalization}>
       <html
         lang="en"
         className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
