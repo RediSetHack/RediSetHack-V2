@@ -99,4 +99,28 @@ describe("GetTodayEventUseCase", () => {
     expect(second).toBe(existing);
     expect(repo.create).not.toHaveBeenCalled();
   });
+
+  it("rolls a bonus event with the documented 25% probability", async () => {
+    const samples = 2000;
+    let bonusCount = 0;
+
+    for (let i = 0; i < samples; i++) {
+      const repo = makeRepo({
+        findByDate: vi.fn().mockResolvedValue(null),
+        create: vi.fn((_date, eventType, xpMultiplier) =>
+          Promise.resolve(new DailyEvent(i, "2026-09-10", eventType, xpMultiplier)),
+        ),
+      });
+      vi.setSystemTime(new Date("2026-09-10T10:00:00+08:00"));
+
+      const useCase = new GetTodayEventUseCase(repo);
+      const result = await useCase.execute();
+      if (result.eventType === "bonus") bonusCount++;
+    }
+
+    // Statistical check, not exact: with 2000 samples at p=0.25 the bonus
+    // rate should land close to 25%; a wide tolerance avoids flakiness.
+    expect(bonusCount / samples).toBeGreaterThan(0.15);
+    expect(bonusCount / samples).toBeLessThan(0.35);
+  });
 });
