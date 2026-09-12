@@ -3,8 +3,9 @@
 import { Module } from "@nestjs/common";
 
 import { AuthModule } from "./auth/auth.module.js";
-import { DailyEventModule } from "./daily-event/daily-event.module.js";
 import { ContentModule } from "./content/content.module.js";
+import { DailyEventModule } from "./daily-event/daily-event.module.js";
+import { ProgressModule } from "./progress/progress.module.js";
 
-@Module({ imports: [AuthModule, ContentModule, DailyEventModule] })
+@Module({ imports: [AuthModule, ContentModule, DailyEventModule, ProgressModule] })
 export class FeaturesModule {}

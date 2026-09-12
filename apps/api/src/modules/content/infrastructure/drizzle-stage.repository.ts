@@ -24,6 +24,13 @@ function toDomain(row: StageRow): Stage {
 export class DrizzleStageRepository implements StageRepository {
   constructor(@Inject(DB) private readonly database: Database) {}
 
+  async findById(stageId: number): Promise<Stage | null> {
+    const row = await this.database.query.stages.findFirst({
+      where: eq(stages.id, stageId),
+    });
+    return row ? toDomain(row) : null;
+  }
+
   async findByZoneId(zoneId: number): Promise<Stage[]> {
     const rows = await this.database
       .select()

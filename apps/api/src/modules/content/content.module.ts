@@ -23,5 +23,6 @@ import { ListStagesController } from "./presentation/controllers/list-stages.con
     ListZonesUseCase,
     ListStagesUseCase,
   ],
+  exports: [StageRepository],
 })
 export class ContentModule {}
