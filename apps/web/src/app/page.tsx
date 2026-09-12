@@ -1,13 +1,18 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { CharacterSelector } from "@/components/character-selector";
+import { UnregisteredUserCard } from "@/components/unregistered-user-card";
 import { Button } from "@/components/ui/button";
-import { DEFAULT_CHARACTERS } from "@/lib/api-client";
+import { DEFAULT_CHARACTERS, getCurrentUser } from "@/lib/api-client";
 
 export default async function Home() {
-  const { userId } = await auth();
+  const { userId, getToken } = await auth();
   const user = userId ? await currentUser() : null;
   const isAdmin = user?.publicMetadata?.role === "admin";
+  const userEmail =
+    user?.primaryEmailAddress?.emailAddress ??
+    user?.emailAddresses?.[0]?.emailAddress ??
+    "";
 
   if (!userId) {
     return (
@@ -70,6 +75,30 @@ export default async function Home() {
     );
   }
 
+  const token = await getToken();
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+  let dbUser = null;
+  let isNewUserWithoutAccount = false;
+
+  if (token) {
+    try {
+      dbUser = await getCurrentUser(apiUrl, token);
+      if (!dbUser) {
+        isNewUserWithoutAccount = true;
+      }
+    } catch (error) {
+      console.error("Failed to load user profile:", error);
+    }
+  }
+
+  if (isNewUserWithoutAccount) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-10 max-w-6xl mx-auto w-full">
+        <UnregisteredUserCard email={userEmail} apiUrl={apiUrl} />
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 flex flex-col items-center justify-start p-6 sm:p-10 max-w-6xl mx-auto w-full">
       <div className="w-full space-y-8 py-6">
@@ -91,7 +120,7 @@ export default async function Home() {
               )}
             </div>
             <p className="text-sm text-muted-foreground">
-              {user?.primaryEmailAddress?.emailAddress ?? user?.emailAddresses?.[0]?.emailAddress ?? ""} • Identity synced with Clerk
+              {userEmail} • Identity synced with Clerk {dbUser ? `• ${dbUser.totalXp} XP` : ""}
             </p>
           </div>
 
@@ -107,7 +136,7 @@ export default async function Home() {
 
         {/* Character Selection Section */}
         <section className="p-6 rounded-2xl border border-border bg-card shadow-sm">
-          <CharacterSelector />
+          <CharacterSelector initialCharacterId={dbUser?.characterId} apiUrl={apiUrl} />
         </section>
 
         {/* Progression Overview */}

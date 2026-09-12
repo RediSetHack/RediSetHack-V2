@@ -14,6 +14,7 @@ describe("SelectCharacterUseCase", () => {
     const users: UserRepository = {
       upsert: vi.fn(),
       findById: vi.fn(),
+      findByEmail: vi.fn(),
       updateCharacter: vi.fn().mockResolvedValue(
         new User(learner.id, learner.email, learner.name, 1, learner.totalXp),
       ),
@@ -34,6 +35,7 @@ describe("SelectCharacterUseCase", () => {
     const users: UserRepository = {
       upsert: vi.fn(),
       findById: vi.fn(),
+      findByEmail: vi.fn(),
       updateCharacter: vi.fn(),
     };
     const characters: CharacterRepository = {
@@ -51,6 +53,7 @@ describe("SelectCharacterUseCase", () => {
     const users: UserRepository = {
       upsert: vi.fn(),
       findById: vi.fn(),
+      findByEmail: vi.fn(),
       updateCharacter: vi.fn().mockRejectedValue(new UserNotFoundError("missing")),
     };
     const characters: CharacterRepository = {

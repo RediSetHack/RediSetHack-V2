@@ -65,6 +65,45 @@ describe("ClerkAuthService", () => {
     expect(result?.role).toBe("user");
   });
 
+  it("reads email and name from alternative claim formats (e.g. primary_email_address, full_name)", async () => {
+    const authenticateRequest = vi.fn().mockResolvedValue(
+      signedInState({
+        primary_email_address: "custom@example.com",
+        full_name: "Custom User",
+      }),
+    );
+    const service = new ClerkAuthService({ authenticateRequest } as unknown as ClerkRequestClient);
+
+    const result = await service.authenticate(makeRequest());
+
+    expect(result).toEqual({
+      id: "user_123",
+      email: "custom@example.com",
+      name: "Custom User",
+      role: "user",
+    });
+  });
+
+  it("reads email and name from firstName, lastName, and email_address claims", async () => {
+    const authenticateRequest = vi.fn().mockResolvedValue(
+      signedInState({
+        email_address: "firstlast@example.com",
+        firstName: "Grace",
+        lastName: "Hopper",
+      }),
+    );
+    const service = new ClerkAuthService({ authenticateRequest } as unknown as ClerkRequestClient);
+
+    const result = await service.authenticate(makeRequest());
+
+    expect(result).toEqual({
+      id: "user_123",
+      email: "firstlast@example.com",
+      name: "Grace Hopper",
+      role: "user",
+    });
+  });
+
   it("returns null for signed-out request states", async () => {
     const authenticateRequest = vi.fn().mockResolvedValue(signedOutState());
     const service = new ClerkAuthService({ authenticateRequest } as unknown as ClerkRequestClient);
