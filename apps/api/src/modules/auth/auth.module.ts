@@ -50,6 +50,7 @@ import { ClerkWebhookController, CLERK_WEBHOOK_SECRET } from "./presentation/con
     ClerkAuthGuard,
     AdminGuard,
     UserRepository,
+    CharacterRepository,
     EnsureUserUseCase,
     GetUserUseCase,
     SelectCharacterUseCase,

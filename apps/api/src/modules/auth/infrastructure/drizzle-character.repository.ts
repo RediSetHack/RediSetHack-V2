@@ -1,10 +1,10 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { eq } from "drizzle-orm";
-import { characters, DEFAULT_CHARACTERS, type Database } from "@repo/db";
+import { Inject, Injectable } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
+import { characters, DEFAULT_CHARACTERS, type Database } from '@repo/db';
 
-import { DB } from "../../../database/database.module.js";
-import { Character } from "../domain/entities/character.entity.js";
-import { CharacterRepository } from "../domain/ports/character.repository.js";
+import { DB } from '../../../database/database.module.js';
+import { Character } from '../domain/entities/character.entity.js';
+import { CharacterRepository } from '../domain/ports/character.repository.js';
 
 @Injectable()
 export class DrizzleCharacterRepository implements CharacterRepository {
@@ -30,7 +30,13 @@ export class DrizzleCharacterRepository implements CharacterRepository {
     }
 
     if (!row) return null;
-    return new Character(row.id, row.name, row.slug, row.description, row.imageUrl);
+    return new Character(
+      row.id,
+      row.name,
+      row.slug,
+      row.description,
+      row.imageUrl,
+    );
   }
 
   private async seedDefaults(): Promise<void> {
@@ -45,5 +51,53 @@ export class DrizzleCharacterRepository implements CharacterRepository {
         })
         .onConflictDoNothing();
     }
+  }
+
+  async create(input: {
+    name: string;
+    slug: string;
+    description: string | null;
+    imageUrl: string | null;
+  }): Promise<Character> {
+    const rows = await this.database
+      .insert(characters)
+      .values(input)
+      .returning();
+    const row = rows[0]!;
+    return new Character(
+      row.id,
+      row.name,
+      row.slug,
+      row.description,
+      row.imageUrl,
+    );
+  }
+
+  async update(
+    id: number,
+    input: Partial<{
+      name: string;
+      slug: string;
+      description: string | null;
+      imageUrl: string | null;
+    }>,
+  ): Promise<Character | null> {
+    const rows = await this.database
+      .update(characters)
+      .set(input)
+      .where(eq(characters.id, id))
+      .returning();
+    const row = rows[0];
+    return row
+      ? new Character(row.id, row.name, row.slug, row.description, row.imageUrl)
+      : null;
+  }
+
+  async delete(id: number): Promise<boolean> {
+    const rows = await this.database
+      .delete(characters)
+      .where(eq(characters.id, id))
+      .returning({ id: characters.id });
+    return rows.length > 0;
   }
 }

@@ -77,6 +77,15 @@ describe("auth integration", () => {
     async findById(id) {
       return id === character.id ? character : null;
     },
+    async create() {
+      throw new Error("not used in this test");
+    },
+    async update() {
+      throw new Error("not used in this test");
+    },
+    async delete() {
+      throw new Error("not used in this test");
+    },
   };
 
   beforeEach(async () => {

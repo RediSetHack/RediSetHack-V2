@@ -21,6 +21,9 @@ describe("SelectCharacterUseCase", () => {
     };
     const characters: CharacterRepository = {
       findById: vi.fn().mockResolvedValue(new Character(1, "Knight", "knight", null, null)),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
     };
     const useCase = new SelectCharacterUseCase(users, characters);
 
@@ -40,6 +43,9 @@ describe("SelectCharacterUseCase", () => {
     };
     const characters: CharacterRepository = {
       findById: vi.fn().mockResolvedValue(null),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
     };
     const useCase = new SelectCharacterUseCase(users, characters);
 
@@ -58,6 +64,9 @@ describe("SelectCharacterUseCase", () => {
     };
     const characters: CharacterRepository = {
       findById: vi.fn().mockResolvedValue(new Character(1, "Knight", "knight", null, null)),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
     };
     const useCase = new SelectCharacterUseCase(users, characters);
 
