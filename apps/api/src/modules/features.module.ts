@@ -3,6 +3,7 @@
 import { Module } from "@nestjs/common";
 
 import { AuthModule } from "./auth/auth.module.js";
+import { CodelabModule } from "./codelab/codelab.module.js";
 
-@Module({ imports: [AuthModule] })
+@Module({ imports: [AuthModule, CodelabModule] })
 export class FeaturesModule {}
