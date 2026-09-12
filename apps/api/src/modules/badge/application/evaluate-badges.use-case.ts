@@ -1,7 +1,7 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable } from '@nestjs/common';
 
-import { BadgeDefinition } from "../domain/entities/badge.entity.js";
-import { BadgeRepository } from "../domain/ports/badge.repository.js";
+import { BadgeDefinition } from '../domain/entities/badge.entity.js';
+import { BadgeRepository } from '../domain/ports/badge.repository.js';
 
 export type BadgeAwardResult = {
   badge: BadgeDefinition;
@@ -23,6 +23,12 @@ export class EvaluateBadgesUseCase {
 
     for (const badge of definitions) {
       const earnedCount = await this.currentEarnedCount(userId, badge);
+      // ponytail: read-then-write, not locked — two evaluate() calls for the
+      // same user racing (e.g. a stage completion and a quest pass landing
+      // together) can both read the same alreadyAwarded count and both
+      // award, over-counting by one. Upgrade to a per-user advisory lock (or
+      // a unique (userId, badgeDefinitionId, sequence) constraint) if that
+      // ever matters in practice.
       const alreadyAwarded = await this.badges.countAwards(userId, badge.id);
       const newAwards = earnedCount - alreadyAwarded;
       if (newAwards <= 0) continue;
@@ -34,18 +40,24 @@ export class EvaluateBadgesUseCase {
     return results;
   }
 
-  private async currentEarnedCount(userId: string, badge: BadgeDefinition): Promise<number> {
+  private async currentEarnedCount(
+    userId: string,
+    badge: BadgeDefinition,
+  ): Promise<number> {
     switch (badge.criteria.trigger) {
-      case "cumulative": {
+      case 'cumulative': {
         const completed = await this.badges.countCompletedStages(userId);
         return Math.floor(completed / badge.criteria.threshold);
       }
-      case "activity": {
+      case 'activity': {
         const passed = await this.badges.countPassedQuests(userId);
         return Math.floor(passed / badge.criteria.threshold);
       }
-      case "category": {
-        const completed = await this.badges.isZoneCompleted(userId, badge.criteria.zoneId);
+      case 'category': {
+        const completed = await this.badges.isZoneCompleted(
+          userId,
+          badge.criteria.zoneId,
+        );
         return completed ? 1 : 0;
       }
     }

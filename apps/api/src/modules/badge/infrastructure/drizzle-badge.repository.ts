@@ -1,5 +1,5 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { and, asc, count, countDistinct, desc, eq, sql } from "drizzle-orm";
+import { Inject, Injectable } from '@nestjs/common';
+import { and, asc, count, desc, eq, sql } from 'drizzle-orm';
 import {
   badgeAwards,
   badgeDefinitions,
@@ -7,11 +7,15 @@ import {
   stages,
   userProgress,
   type Database,
-} from "@repo/db";
+} from '@repo/db';
 
-import { DB } from "../../../database/database.module.js";
-import { BadgeCriteria, BadgeDefinition, EarnedBadge } from "../domain/entities/badge.entity.js";
-import { BadgeRepository } from "../domain/ports/badge.repository.js";
+import { DB } from '../../../database/database.module.js';
+import {
+  BadgeCriteria,
+  BadgeDefinition,
+  EarnedBadge,
+} from '../domain/entities/badge.entity.js';
+import { BadgeRepository } from '../domain/ports/badge.repository.js';
 
 type BadgeDefinitionRow = typeof badgeDefinitions.$inferSelect;
 
@@ -37,28 +41,43 @@ export class DrizzleBadgeRepository implements BadgeRepository {
     return rows.map(toDomain);
   }
 
-  async countAwards(userId: string, badgeDefinitionId: number): Promise<number> {
+  async countAwards(
+    userId: string,
+    badgeDefinitionId: number,
+  ): Promise<number> {
     const [row] = await this.database
       .select({ value: count() })
       .from(badgeAwards)
       .where(
-        and(eq(badgeAwards.userId, userId), eq(badgeAwards.badgeDefinitionId, badgeDefinitionId)),
+        and(
+          eq(badgeAwards.userId, userId),
+          eq(badgeAwards.badgeDefinitionId, badgeDefinitionId),
+        ),
       );
     return row?.value ?? 0;
   }
 
-  async awardMany(userId: string, badgeDefinitionId: number, times: number): Promise<void> {
+  async awardMany(
+    userId: string,
+    badgeDefinitionId: number,
+    times: number,
+  ): Promise<void> {
     if (times <= 0) return;
     await this.database
       .insert(badgeAwards)
-      .values(Array.from({ length: times }, () => ({ userId, badgeDefinitionId })));
+      .values(
+        Array.from({ length: times }, () => ({ userId, badgeDefinitionId })),
+      );
   }
 
   async findEarnedByUser(userId: string): Promise<EarnedBadge[]> {
     const rows = await this.database
       .select({ badge: badgeDefinitions, awardedAt: badgeAwards.awardedAt })
       .from(badgeAwards)
-      .innerJoin(badgeDefinitions, eq(badgeAwards.badgeDefinitionId, badgeDefinitions.id))
+      .innerJoin(
+        badgeDefinitions,
+        eq(badgeAwards.badgeDefinitionId, badgeDefinitions.id),
+      )
       .where(eq(badgeAwards.userId, userId))
       .orderBy(desc(badgeAwards.awardedAt));
 
@@ -83,13 +102,19 @@ export class DrizzleBadgeRepository implements BadgeRepository {
     const [row] = await this.database
       .select({ value: count() })
       .from(userProgress)
-      .where(and(eq(userProgress.userId, userId), eq(userProgress.completed, true)));
+      .where(
+        and(eq(userProgress.userId, userId), eq(userProgress.completed, true)),
+      );
     return row?.value ?? 0;
   }
 
   async countPassedQuests(userId: string): Promise<number> {
+    // Counts every passing submission, not distinct quests: retaking and
+    // re-passing a quest keeps building toward "activity" badges, matching
+    // the repeatable-award intent in ADR 0003 (a distinct count would freeze
+    // this trigger the moment every quest had been passed once).
     const [row] = await this.database
-      .select({ value: countDistinct(results.questId) })
+      .select({ value: count() })
       .from(results)
       .where(and(eq(results.userId, userId), eq(results.passed, true)));
     return row?.value ?? 0;
@@ -99,12 +124,18 @@ export class DrizzleBadgeRepository implements BadgeRepository {
     const [row] = await this.database
       .select({
         total: count(),
-        completed: sql<number>`count(*) filter (where ${userProgress.completed} = true and ${userProgress.userId} = ${userId})`,
+        // The join's ON clause already scopes userProgress rows to userId,
+        // so an unmatched stage's completed comes back NULL here, not another
+        // user's row.
+        completed: sql<number>`count(*) filter (where ${userProgress.completed} = true)`,
       })
       .from(stages)
       .leftJoin(
         userProgress,
-        and(eq(userProgress.stageId, stages.id), eq(userProgress.userId, userId)),
+        and(
+          eq(userProgress.stageId, stages.id),
+          eq(userProgress.userId, userId),
+        ),
       )
       .where(eq(stages.zoneId, zoneId));
 

@@ -1,12 +1,12 @@
-import { Module } from "@nestjs/common";
+import { Module } from '@nestjs/common';
 
-import { BadgeRepository } from "./domain/ports/badge.repository.js";
-import { DrizzleBadgeRepository } from "./infrastructure/drizzle-badge.repository.js";
-import { EvaluateBadgesUseCase } from "./application/evaluate-badges.use-case.js";
-import { ListBadgesUseCase } from "./application/list-badges.use-case.js";
-import { ListEarnedBadgesUseCase } from "./application/list-earned-badges.use-case.js";
-import { ListBadgesController } from "./presentation/controllers/list-badges.controller.js";
-import { ListEarnedBadgesController } from "./presentation/controllers/list-earned-badges.controller.js";
+import { BadgeRepository } from './domain/ports/badge.repository.js';
+import { DrizzleBadgeRepository } from './infrastructure/drizzle-badge.repository.js';
+import { EvaluateBadgesUseCase } from './application/evaluate-badges.use-case.js';
+import { ListBadgesUseCase } from './application/list-badges.use-case.js';
+import { ListEarnedBadgesUseCase } from './application/list-earned-badges.use-case.js';
+import { ListBadgesController } from './presentation/controllers/list-badges.controller.js';
+import { ListEarnedBadgesController } from './presentation/controllers/list-earned-badges.controller.js';
 
 @Module({
   controllers: [ListBadgesController, ListEarnedBadgesController],

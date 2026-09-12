@@ -1,7 +1,7 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable } from '@nestjs/common';
 
-import { EarnedBadge } from "../domain/entities/badge.entity.js";
-import { BadgeRepository } from "../domain/ports/badge.repository.js";
+import { EarnedBadge } from '../domain/entities/badge.entity.js';
+import { BadgeRepository } from '../domain/ports/badge.repository.js';
 
 @Injectable()
 export class ListEarnedBadgesUseCase {

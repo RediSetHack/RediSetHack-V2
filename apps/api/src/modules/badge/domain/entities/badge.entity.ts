@@ -3,9 +3,9 @@
 // (e.g. "×3"); category badges award once when the target zone is fully
 // completed.
 export type BadgeCriteria =
-  | { trigger: "cumulative"; target: "stage_completions"; threshold: number }
-  | { trigger: "activity"; target: "quest_passes"; threshold: number }
-  | { trigger: "category"; target: "zone_completion"; zoneId: number };
+  | { trigger: 'cumulative'; target: 'stage_completions'; threshold: number }
+  | { trigger: 'activity'; target: 'quest_passes'; threshold: number }
+  | { trigger: 'category'; target: 'zone_completion'; zoneId: number };
 
 export class BadgeDefinition {
   constructor(

@@ -1,4 +1,7 @@
-import { BadgeDefinition, EarnedBadge } from "../../domain/entities/badge.entity.js";
+import {
+  BadgeDefinition,
+  EarnedBadge,
+} from '../../domain/entities/badge.entity.js';
 
 export class BadgePresenter {
   static toResponse(badge: BadgeDefinition) {
