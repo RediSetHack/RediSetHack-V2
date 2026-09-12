@@ -1,12 +1,12 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable } from '@nestjs/common';
 
 import {
   CodeExecutionPort,
   ExecutionResult,
   SUPPORTED_LANGUAGES,
   SupportedLanguage,
-} from "../domain/ports/code-execution.port.js";
-import { UnsupportedLanguageError } from "../domain/errors.js";
+} from '../domain/ports/code-execution.port.js';
+import { UnsupportedLanguageError } from '../domain/errors.js';
 
 export type ExecuteCodeInput = {
   language: string;
@@ -29,7 +29,7 @@ export class ExecuteCodeUseCase {
     return this.codeExecution.execute({
       language: input.language,
       code: input.code,
-      stdin: input.stdin ?? "",
+      stdin: input.stdin ?? '',
     });
   }
 }

@@ -1,6 +1,6 @@
-import { IsIn, IsOptional, IsString, MaxLength } from "class-validator";
+import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
 
-import { SUPPORTED_LANGUAGES } from "../../domain/ports/code-execution.port.js";
+import { SUPPORTED_LANGUAGES } from '../../domain/ports/code-execution.port.js';
 
 const MAX_CODE_LENGTH = 20_000;
 const MAX_STDIN_LENGTH = 10_000;

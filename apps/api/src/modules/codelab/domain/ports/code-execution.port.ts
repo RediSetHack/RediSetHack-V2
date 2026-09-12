@@ -1,4 +1,10 @@
-export const SUPPORTED_LANGUAGES = ["cpp", "c", "python", "javascript", "java"] as const;
+export const SUPPORTED_LANGUAGES = [
+  'cpp',
+  'c',
+  'python',
+  'javascript',
+  'java',
+] as const;
 
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 
