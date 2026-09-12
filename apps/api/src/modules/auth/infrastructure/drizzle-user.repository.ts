@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { users, type Database } from "@repo/db";
 
 import { DB } from "../../../database/database.module.js";
@@ -60,6 +60,19 @@ export class DrizzleUserRepository implements UserRepository {
     const rows = await this.database
       .update(users)
       .set({ characterId, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    const row = rows[0];
+    if (!row) {
+      throw new UserNotFoundError(userId);
+    }
+    return toDomain(row);
+  }
+
+  async awardXp(userId: string, amount: number): Promise<User> {
+    const rows = await this.database
+      .update(users)
+      .set({ totalXp: sql`${users.totalXp} + ${amount}`, updatedAt: new Date() })
       .where(eq(users.id, userId))
       .returning();
     const row = rows[0];

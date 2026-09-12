@@ -14,6 +14,7 @@ describe("GetUserUseCase", () => {
       findById: vi.fn().mockResolvedValue(learner),
       findByEmail: vi.fn(),
       updateCharacter: vi.fn(),
+      awardXp: vi.fn(),
     };
     const useCase = new GetUserUseCase(users);
 
@@ -29,6 +30,7 @@ describe("GetUserUseCase", () => {
       findById: vi.fn().mockResolvedValue(null),
       findByEmail: vi.fn(),
       updateCharacter: vi.fn(),
+      awardXp: vi.fn(),
     };
     const useCase = new GetUserUseCase(users);
 

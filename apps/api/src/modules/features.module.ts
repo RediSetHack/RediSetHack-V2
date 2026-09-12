@@ -6,6 +6,7 @@ import { AuthModule } from "./auth/auth.module.js";
 import { ContentModule } from "./content/content.module.js";
 import { DailyEventModule } from "./daily-event/daily-event.module.js";
 import { ProgressModule } from "./progress/progress.module.js";
+import { QuestModule } from "./quest/quest.module.js";
 
-@Module({ imports: [AuthModule, ContentModule, DailyEventModule, ProgressModule] })
+@Module({ imports: [AuthModule, ContentModule, DailyEventModule, ProgressModule, QuestModule] })
 export class FeaturesModule {}
