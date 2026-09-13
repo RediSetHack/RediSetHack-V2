@@ -18,9 +18,13 @@ describe("SelectCharacterUseCase", () => {
       updateCharacter: vi.fn().mockResolvedValue(
         new User(learner.id, learner.email, learner.name, 1, learner.totalXp),
       ),
+      awardXp: vi.fn(),
     };
     const characters: CharacterRepository = {
       findById: vi.fn().mockResolvedValue(new Character(1, "Knight", "knight", null, null)),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
     };
     const useCase = new SelectCharacterUseCase(users, characters);
 
@@ -37,9 +41,13 @@ describe("SelectCharacterUseCase", () => {
       findById: vi.fn(),
       findByEmail: vi.fn(),
       updateCharacter: vi.fn(),
+      awardXp: vi.fn(),
     };
     const characters: CharacterRepository = {
       findById: vi.fn().mockResolvedValue(null),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
     };
     const useCase = new SelectCharacterUseCase(users, characters);
 
@@ -55,9 +63,13 @@ describe("SelectCharacterUseCase", () => {
       findById: vi.fn(),
       findByEmail: vi.fn(),
       updateCharacter: vi.fn().mockRejectedValue(new UserNotFoundError("missing")),
+      awardXp: vi.fn(),
     };
     const characters: CharacterRepository = {
       findById: vi.fn().mockResolvedValue(new Character(1, "Knight", "knight", null, null)),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
     };
     const useCase = new SelectCharacterUseCase(users, characters);
 
