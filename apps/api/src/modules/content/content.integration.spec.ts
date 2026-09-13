@@ -4,7 +4,10 @@ import type { IncomingMessage } from 'node:http';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-const ADMIN_ROUTES: Array<{ method: 'post' | 'get' | 'patch' | 'delete'; path: string }> = [
+const ADMIN_ROUTES: Array<{
+  method: 'post' | 'get' | 'patch' | 'delete';
+  path: string;
+}> = [
   { method: 'post', path: '/v1/api/admin/regions' },
   { method: 'get', path: '/v1/api/admin/regions/1' },
   { method: 'patch', path: '/v1/api/admin/regions/1' },
@@ -570,10 +573,16 @@ describe('content admin CRUD', () => {
     expect(res.status).toBe(401);
   });
 
-  it.each(ADMIN_ROUTES)('rejects non-admin users with 403 on $method $path', async ({ method, path }) => {
-    const res = await request(app.getHttpServer())[method](path).set(learner()).send({});
-    expect(res.status).toBe(403);
-  });
+  it.each(ADMIN_ROUTES)(
+    'rejects non-admin users with 403 on $method $path',
+    async ({ method, path }) => {
+      const res = await request(app.getHttpServer())
+        [method](path)
+        .set(learner())
+        .send({});
+      expect(res.status).toBe(403);
+    },
+  );
 
   it('runs the full CRUD lifecycle for regions', async () => {
     const create = await request(app.getHttpServer())
