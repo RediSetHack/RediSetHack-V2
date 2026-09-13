@@ -1,7 +1,7 @@
 import { registerDecorator, ValidationOptions } from 'class-validator';
 
-const LESSON_BLOCK_TYPES = ['text', 'code', 'image'];
-const BADGE_TRIGGERS = ['cumulative', 'category', 'activity'];
+const LESSON_BLOCK_TYPES = new Set(['text', 'code', 'image']);
+const BADGE_TRIGGERS = new Set(['cumulative', 'category', 'activity']);
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -10,7 +10,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 function isLessonBlock(block: unknown): boolean {
   if (
     !isPlainObject(block) ||
-    !LESSON_BLOCK_TYPES.includes(block.type as string)
+    !LESSON_BLOCK_TYPES.has(block.type as string)
   )
     return false;
   switch (block.type) {
@@ -106,7 +106,7 @@ export function IsBadgeCriteria(validationOptions?: ValidationOptions) {
         validate(value: unknown) {
           if (!isPlainObject(value)) return false;
           return (
-            BADGE_TRIGGERS.includes(value.trigger as string) &&
+            BADGE_TRIGGERS.has(value.trigger as string) &&
             typeof value.target === 'string' &&
             value.target.length > 0 &&
             typeof value.threshold === 'number' &&
