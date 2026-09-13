@@ -1,15 +1,22 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { asc, eq } from "drizzle-orm";
-import { zones, type Database } from "@repo/db";
+import { Inject, Injectable } from '@nestjs/common';
+import { asc, eq } from 'drizzle-orm';
+import { zones, type Database } from '@repo/db';
 
-import { DB } from "../../../database/database.module.js";
-import { Zone } from "../domain/entities/zone.entity.js";
-import { ZoneRepository } from "../domain/ports/zone.repository.js";
+import { DB } from '../../../database/database.module.js';
+import { Zone } from '../domain/entities/zone.entity.js';
+import { ZoneRepository } from '../domain/ports/zone.repository.js';
 
 type ZoneRow = typeof zones.$inferSelect;
 
 function toDomain(row: ZoneRow): Zone {
-  return new Zone(row.id, row.regionId, row.name, row.slug, row.description, row.sortOrder);
+  return new Zone(
+    row.id,
+    row.regionId,
+    row.name,
+    row.slug,
+    row.description,
+    row.sortOrder,
+  );
 }
 
 @Injectable()

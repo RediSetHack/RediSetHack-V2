@@ -1,4 +1,4 @@
-export type StageStatus = "locked" | "available" | "completed";
+export type StageStatus = 'locked' | 'available' | 'completed';
 
 export class Stage {
   constructor(
@@ -6,7 +6,8 @@ export class Stage {
     public readonly zoneId: number,
     public readonly title: string,
     public readonly slug: string,
-    public readonly lessonContent: string | null,
+    // jsonb column: already-parsed lesson blocks, not a JSON string.
+    public readonly lessonContent: unknown,
     public readonly xpReward: number,
     public readonly sortOrder: number,
   ) {}

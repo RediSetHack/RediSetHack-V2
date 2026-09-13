@@ -18,7 +18,7 @@ import { CodelabModule } from './codelab/codelab.module.js';
     DailyEventModule,
     ProgressModule,
     QuestModule,
-    CodelabModule
+    CodelabModule,
   ],
 })
 export class FeaturesModule {}

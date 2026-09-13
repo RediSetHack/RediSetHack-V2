@@ -88,7 +88,8 @@ export const stages = pgTable(
       .references(() => zones.id, { onDelete: "cascade" }),
     title: text("title").notNull(),
     slug: text("slug").notNull(),
-    lessonContent: text("lesson_content"),
+    // Structured lesson blocks, e.g. [{ type: "text", content: "..." }, { type: "code", ... }]
+    lessonContent: jsonb("lesson_content"),
     xpReward: integer("xp_reward").notNull().default(0),
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -111,6 +112,8 @@ export const quests = pgTable(
     timeLimitSeconds: integer("time_limit_seconds").notNull().default(60),
     passingScore: integer("passing_score").notNull().default(70),
     xpReward: integer("xp_reward").notNull().default(0),
+    // Structured questions, e.g. [{ id, prompt, options: [{ id, text }], correctOptionId }]
+    questionsJson: jsonb("questions_json").notNull().default([]),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index("quests_stage_id_index").on(table.stageId)],

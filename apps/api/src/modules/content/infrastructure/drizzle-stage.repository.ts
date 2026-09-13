@@ -1,10 +1,10 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { and, asc, eq } from "drizzle-orm";
-import { stages, userProgress, type Database } from "@repo/db";
+import { Inject, Injectable } from '@nestjs/common';
+import { and, asc, eq } from 'drizzle-orm';
+import { stages, userProgress, type Database } from '@repo/db';
 
-import { DB } from "../../../database/database.module.js";
-import { Stage } from "../domain/entities/stage.entity.js";
-import { StageRepository } from "../domain/ports/stage.repository.js";
+import { DB } from '../../../database/database.module.js';
+import { Stage } from '../domain/entities/stage.entity.js';
+import { StageRepository } from '../domain/ports/stage.repository.js';
 
 type StageRow = typeof stages.$inferSelect;
 
@@ -40,7 +40,10 @@ export class DrizzleStageRepository implements StageRepository {
     return rows.map(toDomain);
   }
 
-  async findCompletedStageIds(userId: string, zoneId: number): Promise<number[]> {
+  async findCompletedStageIds(
+    userId: string,
+    zoneId: number,
+  ): Promise<number[]> {
     const rows = await this.database
       .select({ stageId: userProgress.stageId })
       .from(userProgress)

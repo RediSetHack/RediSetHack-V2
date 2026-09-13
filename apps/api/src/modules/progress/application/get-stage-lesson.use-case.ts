@@ -1,9 +1,9 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable } from '@nestjs/common';
 
-import { StageRepository } from "../../content/domain/ports/stage.repository.js";
-import { StageLockedError, StageNotFoundError } from "../domain/errors.js";
-import type { LessonBlock } from "../domain/entities/lesson.entity.js";
-import { getStageAccess, isUnlocked } from "./stage-access.js";
+import { StageRepository } from '../../content/domain/ports/stage.repository.js';
+import { StageLockedError, StageNotFoundError } from '../domain/errors.js';
+import type { LessonBlock } from '../domain/entities/lesson.entity.js';
+import { getStageAccess, isUnlocked } from './stage-access.js';
 
 export type StageLesson = {
   id: number;
@@ -12,14 +12,12 @@ export type StageLesson = {
   slug: string;
   xpReward: number;
   sortOrder: number;
-  status: "available" | "completed";
+  status: 'available' | 'completed';
   blocks: LessonBlock[];
 };
 
-function parseLessonBlocks(raw: string | null): LessonBlock[] {
-  if (!raw) return [];
-  const parsed: unknown = JSON.parse(raw);
-  return Array.isArray(parsed) ? (parsed as LessonBlock[]) : [];
+function parseLessonBlocks(raw: unknown): LessonBlock[] {
+  return Array.isArray(raw) ? (raw as LessonBlock[]) : [];
 }
 
 @Injectable()
@@ -40,7 +38,7 @@ export class GetStageLessonUseCase {
       slug: stage.slug,
       xpReward: stage.xpReward,
       sortOrder: stage.sortOrder,
-      status: access.completedIds.has(stage.id) ? "completed" : "available",
+      status: access.completedIds.has(stage.id) ? 'completed' : 'available',
       blocks: parseLessonBlocks(stage.lessonContent),
     };
   }

@@ -1,4 +1,4 @@
-import { Region } from "../../domain/entities/region.entity.js";
+import { Region } from '../../domain/entities/region.entity.js';
 
 export class RegionPresenter {
   static toResponse(region: Region) {
