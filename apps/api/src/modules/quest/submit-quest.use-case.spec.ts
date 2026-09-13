@@ -2,8 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { UserRepository } from '../auth/domain/ports/user.repository.js';
 import { User } from '../auth/domain/entities/user.entity.js';
-import { EvaluateBadgesUseCase } from '../badge/application/evaluate-badges.use-case.js';
-import { BadgeRepository } from '../badge/domain/ports/badge.repository.js';
+import { makeEvaluateBadges } from '../badge/evaluate-badges.fixture.js';
 import { DailyEvent } from '../daily-event/domain/entities/daily-event.entity.js';
 import { GetTodayEventUseCase } from '../daily-event/application/get-today-event.use-case.js';
 import { DailyEventRepository } from '../daily-event/domain/ports/daily-event.repository.js';
@@ -96,19 +95,6 @@ function makeGetTodayEvent(multiplier = 1): GetTodayEventUseCase {
     create: vi.fn(),
   };
   return new GetTodayEventUseCase(repo);
-}
-
-function makeEvaluateBadges(): EvaluateBadgesUseCase {
-  const repo: BadgeRepository = {
-    findAll: vi.fn().mockResolvedValue([]),
-    countAwards: vi.fn(),
-    awardMany: vi.fn(),
-    findEarnedByUser: vi.fn(),
-    countCompletedStages: vi.fn(),
-    countPassedQuests: vi.fn(),
-    isZoneCompleted: vi.fn(),
-  };
-  return new EvaluateBadgesUseCase(repo);
 }
 
 describe('SubmitQuestUseCase', () => {

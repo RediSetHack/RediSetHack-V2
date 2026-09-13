@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { EvaluateBadgesUseCase } from '../badge/application/evaluate-badges.use-case.js';
-import type { BadgeRepository } from '../badge/domain/ports/badge.repository.js';
+import { makeEvaluateBadges } from '../badge/evaluate-badges.fixture.js';
 import { Stage } from '../content/domain/entities/stage.entity.js';
 import type { StageRepository } from '../content/domain/ports/stage.repository.js';
 import { DailyEvent } from '../daily-event/domain/entities/daily-event.entity.js';
@@ -48,19 +47,6 @@ function makeEvent(
 
 function makeProgress(awarded = true): ProgressRepository {
   return { markCompleted: vi.fn().mockResolvedValue(awarded) };
-}
-
-function makeEvaluateBadges(): EvaluateBadgesUseCase {
-  const repo: BadgeRepository = {
-    findAll: vi.fn().mockResolvedValue([]),
-    countAwards: vi.fn(),
-    awardMany: vi.fn(),
-    findEarnedByUser: vi.fn(),
-    countCompletedStages: vi.fn(),
-    countPassedQuests: vi.fn(),
-    isZoneCompleted: vi.fn(),
-  };
-  return new EvaluateBadgesUseCase(repo);
 }
 
 describe('MarkStageCompleteUseCase', () => {
