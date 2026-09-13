@@ -16,32 +16,30 @@ import {
   DrizzleStageRepository,
   DrizzleZoneRepository,
 } from './infrastructure/drizzle-repositories.js';
-import {
-  CreateBadgeDefinitionUseCase,
-  CreateCharacterUseCase,
-  CreateQuestUseCase,
-  CreateRegionUseCase,
-  CreateStageUseCase,
-  CreateZoneUseCase,
-  DeleteBadgeDefinitionUseCase,
-  DeleteCharacterUseCase,
-  DeleteQuestUseCase,
-  DeleteRegionUseCase,
-  DeleteStageUseCase,
-  DeleteZoneUseCase,
-  GetBadgeDefinitionUseCase,
-  GetCharacterUseCase,
-  GetQuestUseCase,
-  GetRegionUseCase,
-  GetStageUseCase,
-  GetZoneUseCase,
-  UpdateBadgeDefinitionUseCase,
-  UpdateCharacterUseCase,
-  UpdateQuestUseCase,
-  UpdateRegionUseCase,
-  UpdateStageUseCase,
-  UpdateZoneUseCase,
-} from './application/use-cases.js';
+import { CreateBadgeDefinitionUseCase } from './application/create-badge-definition.use-case.js';
+import { CreateCharacterUseCase } from './application/create-character.use-case.js';
+import { CreateQuestUseCase } from './application/create-quest.use-case.js';
+import { CreateRegionUseCase } from './application/create-region.use-case.js';
+import { CreateStageUseCase } from './application/create-stage.use-case.js';
+import { CreateZoneUseCase } from './application/create-zone.use-case.js';
+import { DeleteBadgeDefinitionUseCase } from './application/delete-badge-definition.use-case.js';
+import { DeleteCharacterUseCase } from './application/delete-character.use-case.js';
+import { DeleteQuestUseCase } from './application/delete-quest.use-case.js';
+import { DeleteRegionUseCase } from './application/delete-region.use-case.js';
+import { DeleteStageUseCase } from './application/delete-stage.use-case.js';
+import { DeleteZoneUseCase } from './application/delete-zone.use-case.js';
+import { GetBadgeDefinitionUseCase } from './application/get-badge-definition.use-case.js';
+import { GetCharacterUseCase } from './application/get-character.use-case.js';
+import { GetQuestUseCase } from './application/get-quest.use-case.js';
+import { GetRegionUseCase } from './application/get-region.use-case.js';
+import { GetStageUseCase } from './application/get-stage.use-case.js';
+import { GetZoneUseCase } from './application/get-zone.use-case.js';
+import { UpdateBadgeDefinitionUseCase } from './application/update-badge-definition.use-case.js';
+import { UpdateCharacterUseCase } from './application/update-character.use-case.js';
+import { UpdateQuestUseCase } from './application/update-quest.use-case.js';
+import { UpdateRegionUseCase } from './application/update-region.use-case.js';
+import { UpdateStageUseCase } from './application/update-stage.use-case.js';
+import { UpdateZoneUseCase } from './application/update-zone.use-case.js';
 import {
   CreateBadgeDefinitionController,
   CreateCharacterController,

@@ -1,7 +1,7 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable } from '@nestjs/common';
 
-import { StageRepository } from "../domain/ports/stage.repository.js";
-import { Stage, StageStatus } from "../domain/entities/stage.entity.js";
+import { StageRepository } from '../domain/ports/stage.repository.js';
+import { Stage, StageStatus } from '../domain/entities/stage.entity.js';
 
 export type StageWithStatus = Stage & { status: StageStatus };
 
@@ -23,12 +23,12 @@ export class ListStagesUseCase {
       let status: StageStatus;
 
       if (completedSet.has(stage.id)) {
-        status = "completed";
+        status = 'completed';
       } else if (index === 0) {
-        status = "available";
+        status = 'available';
       } else {
         const prevStage = sorted[index - 1]!;
-        status = completedSet.has(prevStage.id) ? "available" : "locked";
+        status = completedSet.has(prevStage.id) ? 'available' : 'locked';
       }
 
       return { ...stage, status };

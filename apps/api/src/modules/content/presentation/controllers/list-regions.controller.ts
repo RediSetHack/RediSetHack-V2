@@ -1,9 +1,9 @@
-import { Controller, Get } from "@nestjs/common";
+import { Controller, Get } from '@nestjs/common';
 
-import { ListRegionsUseCase } from "../../application/list-regions.use-case.js";
-import { RegionPresenter } from "../presenters/region.presenter.js";
+import { ListRegionsUseCase } from '../../application/list-regions.use-case.js';
+import { RegionPresenter } from '../presenters/region.presenter.js';
 
-@Controller("v1/api/regions")
+@Controller('v1/api/regions')
 export class ListRegionsController {
   constructor(private readonly listRegions: ListRegionsUseCase) {}
 

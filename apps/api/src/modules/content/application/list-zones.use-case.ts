@@ -1,7 +1,7 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable } from '@nestjs/common';
 
-import { ZoneRepository } from "../domain/ports/zone.repository.js";
-import { Zone } from "../domain/entities/zone.entity.js";
+import { ZoneRepository } from '../domain/ports/zone.repository.js';
+import { Zone } from '../domain/entities/zone.entity.js';
 
 @Injectable()
 export class ListZonesUseCase {

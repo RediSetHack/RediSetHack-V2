@@ -1,4 +1,4 @@
-import { StageWithStatus } from "../../application/list-stages.use-case.js";
+import { StageWithStatus } from '../../application/list-stages.use-case.js';
 
 export class StagePresenter {
   static toResponse(stage: StageWithStatus) {

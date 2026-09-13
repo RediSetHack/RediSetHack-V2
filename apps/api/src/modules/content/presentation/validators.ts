@@ -8,10 +8,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 function isLessonBlock(block: unknown): boolean {
-  if (
-    !isPlainObject(block) ||
-    !LESSON_BLOCK_TYPES.has(block.type as string)
-  )
+  if (!isPlainObject(block) || !LESSON_BLOCK_TYPES.has(block.type as string))
     return false;
   switch (block.type) {
     case 'text':

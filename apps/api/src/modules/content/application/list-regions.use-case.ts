@@ -1,7 +1,7 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable } from '@nestjs/common';
 
-import { RegionRepository } from "../domain/ports/region.repository.js";
-import { Region } from "../domain/entities/region.entity.js";
+import { RegionRepository } from '../domain/ports/region.repository.js';
+import { Region } from '../domain/entities/region.entity.js';
 
 @Injectable()
 export class ListRegionsUseCase {
