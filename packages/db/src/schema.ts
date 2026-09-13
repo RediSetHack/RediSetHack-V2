@@ -116,6 +116,37 @@ export const quests = pgTable(
   (table) => [index("quests_stage_id_index").on(table.stageId)],
 );
 
+// A multiple-choice question belonging to a Quest.
+export const questQuestions = pgTable(
+  "quest_questions",
+  {
+    id: serial("id").primaryKey(),
+    questId: integer("quest_id")
+      .notNull()
+      .references(() => quests.id, { onDelete: "cascade" }),
+    prompt: text("prompt").notNull(),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("quest_questions_quest_id_index").on(table.questId)],
+);
+
+// A selectable answer for a quest question; `isCorrect` is withheld from
+// clients during an active session and revealed only in Result review.
+export const questOptions = pgTable(
+  "quest_options",
+  {
+    id: serial("id").primaryKey(),
+    questionId: integer("question_id")
+      .notNull()
+      .references(() => questQuestions.id, { onDelete: "cascade" }),
+    text: text("text").notNull(),
+    isCorrect: boolean("is_correct").notNull().default(false),
+    sortOrder: integer("sort_order").notNull().default(0),
+  },
+  (table) => [index("quest_options_question_id_index").on(table.questionId)],
+);
+
 // Results record the responses, score, and pass outcome of a quest submission.
 export const results = pgTable(
   "results",
@@ -136,6 +167,24 @@ export const results = pgTable(
     index("results_user_id_index").on(table.userId),
     index("results_quest_id_index").on(table.questId),
   ],
+);
+
+// One row per (user, quest) that has ever earned XP. The unique index is the
+// enforcement point for "first pass only": awarding XP is a conditional
+// insert into this table, so concurrent passing submissions can't both win.
+export const questXpAwards = pgTable(
+  "quest_xp_awards",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    questId: integer("quest_id")
+      .notNull()
+      .references(() => quests.id, { onDelete: "cascade" }),
+    awardedAt: timestamp("awarded_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("quest_xp_awards_user_quest_unique").on(table.userId, table.questId)],
 );
 
 // ---------------------------------------------------------------------------

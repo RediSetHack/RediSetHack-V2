@@ -3,7 +3,22 @@
 import { Module } from '@nestjs/common';
 
 import { AuthModule } from './auth/auth.module.js';
+import { BadgeModule } from './badge/badge.module.js';
+import { ContentModule } from './content/content.module.js';
+import { DailyEventModule } from './daily-event/daily-event.module.js';
+import { ProgressModule } from './progress/progress.module.js';
+import { QuestModule } from './quest/quest.module.js';
 import { CodelabModule } from './codelab/codelab.module.js';
 
-@Module({ imports: [AuthModule, CodelabModule] })
+@Module({
+  imports: [
+    AuthModule,
+    BadgeModule,
+    ContentModule,
+    DailyEventModule,
+    ProgressModule,
+    QuestModule,
+    CodelabModule
+  ],
+})
 export class FeaturesModule {}
