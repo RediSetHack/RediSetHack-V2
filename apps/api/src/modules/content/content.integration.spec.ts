@@ -398,6 +398,9 @@ describe('content admin CRUD', () => {
     async updateCharacter() {
       throw new Error('not used in this test');
     },
+    async awardXp() {
+      throw new Error('not used in this test');
+    },
   };
 
   beforeEach(async () => {

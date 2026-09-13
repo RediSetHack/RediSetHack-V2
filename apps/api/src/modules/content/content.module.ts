@@ -69,6 +69,21 @@ import {
   UpdateZoneController,
 } from './presentation/controllers.js';
 
+// Public content-browsing feature (issue #7): read-only, aliased to avoid
+// colliding with the admin CRUD tokens above.
+import { RegionRepository as ListRegionRepository } from './domain/ports/region.repository.js';
+import { ZoneRepository as ListZoneRepository } from './domain/ports/zone.repository.js';
+import { StageRepository as ListStageRepository } from './domain/ports/stage.repository.js';
+import { DrizzleRegionRepository as ListDrizzleRegionRepository } from './infrastructure/drizzle-region.repository.js';
+import { DrizzleZoneRepository as ListDrizzleZoneRepository } from './infrastructure/drizzle-zone.repository.js';
+import { DrizzleStageRepository as ListDrizzleStageRepository } from './infrastructure/drizzle-stage.repository.js';
+import { ListRegionsUseCase } from './application/list-regions.use-case.js';
+import { ListZonesUseCase } from './application/list-zones.use-case.js';
+import { ListStagesUseCase } from './application/list-stages.use-case.js';
+import { ListRegionsController } from './presentation/controllers/list-regions.controller.js';
+import { ListZonesController } from './presentation/controllers/list-zones.controller.js';
+import { ListStagesController } from './presentation/controllers/list-stages.controller.js';
+
 @Module({
   imports: [AuthModule],
   controllers: [
@@ -96,6 +111,9 @@ import {
     GetCharacterController,
     UpdateCharacterController,
     DeleteCharacterController,
+    ListRegionsController,
+    ListZonesController,
+    ListStagesController,
   ],
   providers: [
     { provide: RegionRepository, useClass: DrizzleRegionRepository },
@@ -236,6 +254,13 @@ import {
         new DeleteCharacterUseCase(repo),
       inject: [CharacterRepository],
     },
+    { provide: ListRegionRepository, useClass: ListDrizzleRegionRepository },
+    { provide: ListZoneRepository, useClass: ListDrizzleZoneRepository },
+    { provide: ListStageRepository, useClass: ListDrizzleStageRepository },
+    ListRegionsUseCase,
+    ListZonesUseCase,
+    ListStagesUseCase,
   ],
+  exports: [ListStageRepository],
 })
 export class ContentModule {}
