@@ -22,7 +22,7 @@ export class ViewQuestResultUseCase {
     const result = await this.quests.findResultById(resultId);
     // Not found and not-owned are indistinguishable to the requester,
     // avoiding an ID-enumeration oracle for other users' results.
-    if (!result || result.userId !== userId) {
+    if (result?.userId !== userId) {
       throw new QuestResultNotFoundError(resultId);
     }
 

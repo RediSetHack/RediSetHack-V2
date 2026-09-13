@@ -1,5 +1,8 @@
-import { Quest, QuestQuestion } from "../entities/quest.entity.js";
-import { QuestResult, type QuestResponse } from "../entities/quest-result.entity.js";
+import { Quest, QuestQuestion } from '../entities/quest.entity.js';
+import {
+  QuestResult,
+  type QuestResponse,
+} from '../entities/quest-result.entity.js';
 
 export type CreateResultInput = {
   userId: string;

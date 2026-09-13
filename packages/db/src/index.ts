@@ -14,3 +14,4 @@ export const db: Database | null = process.env.DATABASE_URL
   : null;
 
 export * from "./schema.js";
+export { DEFAULT_CHARACTERS, seed } from "./seed.js";

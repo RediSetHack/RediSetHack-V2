@@ -69,6 +69,7 @@ function makeUserRepo(overrides: Partial<UserRepository> = {}): UserRepository {
   return {
     upsert: vi.fn(),
     findById: vi.fn(),
+    findByEmail: vi.fn(),
     updateCharacter: vi.fn(),
     awardXp: vi
       .fn()
