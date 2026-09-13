@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { sql } from "drizzle-orm";
-import { characters } from "./schema.js";
+import { characters } from "./schema/index.js";
 import { createDb } from "./index.js";
 
 for (const rel of ["../../.env", "../../../.env", "./.env"]) {
