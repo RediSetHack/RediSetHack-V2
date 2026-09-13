@@ -40,32 +40,30 @@ import { UpdateQuestUseCase } from './application/update-quest.use-case.js';
 import { UpdateRegionUseCase } from './application/update-region.use-case.js';
 import { UpdateStageUseCase } from './application/update-stage.use-case.js';
 import { UpdateZoneUseCase } from './application/update-zone.use-case.js';
-import {
-  CreateBadgeDefinitionController,
-  CreateCharacterController,
-  CreateQuestController,
-  CreateRegionController,
-  CreateStageController,
-  CreateZoneController,
-  DeleteBadgeDefinitionController,
-  DeleteCharacterController,
-  DeleteQuestController,
-  DeleteRegionController,
-  DeleteStageController,
-  DeleteZoneController,
-  GetBadgeDefinitionController,
-  GetCharacterController,
-  GetQuestController,
-  GetRegionController,
-  GetStageController,
-  GetZoneController,
-  UpdateBadgeDefinitionController,
-  UpdateCharacterController,
-  UpdateQuestController,
-  UpdateRegionController,
-  UpdateStageController,
-  UpdateZoneController,
-} from './presentation/controllers.js';
+import { CreateBadgeDefinitionController } from './presentation/controllers/create-badge-definition.controller.js';
+import { CreateCharacterController } from './presentation/controllers/create-character.controller.js';
+import { CreateQuestController } from './presentation/controllers/create-quest.controller.js';
+import { CreateRegionController } from './presentation/controllers/create-region.controller.js';
+import { CreateStageController } from './presentation/controllers/create-stage.controller.js';
+import { CreateZoneController } from './presentation/controllers/create-zone.controller.js';
+import { DeleteBadgeDefinitionController } from './presentation/controllers/delete-badge-definition.controller.js';
+import { DeleteCharacterController } from './presentation/controllers/delete-character.controller.js';
+import { DeleteQuestController } from './presentation/controllers/delete-quest.controller.js';
+import { DeleteRegionController } from './presentation/controllers/delete-region.controller.js';
+import { DeleteStageController } from './presentation/controllers/delete-stage.controller.js';
+import { DeleteZoneController } from './presentation/controllers/delete-zone.controller.js';
+import { GetBadgeDefinitionController } from './presentation/controllers/get-badge-definition.controller.js';
+import { GetCharacterController } from './presentation/controllers/get-character.controller.js';
+import { GetQuestController } from './presentation/controllers/get-quest.controller.js';
+import { GetRegionController } from './presentation/controllers/get-region.controller.js';
+import { GetStageController } from './presentation/controllers/get-stage.controller.js';
+import { GetZoneController } from './presentation/controllers/get-zone.controller.js';
+import { UpdateBadgeDefinitionController } from './presentation/controllers/update-badge-definition.controller.js';
+import { UpdateCharacterController } from './presentation/controllers/update-character.controller.js';
+import { UpdateQuestController } from './presentation/controllers/update-quest.controller.js';
+import { UpdateRegionController } from './presentation/controllers/update-region.controller.js';
+import { UpdateStageController } from './presentation/controllers/update-stage.controller.js';
+import { UpdateZoneController } from './presentation/controllers/update-zone.controller.js';
 
 // Public content-browsing feature (issue #7): read-only, aliased to avoid
 // colliding with the admin CRUD tokens above.
