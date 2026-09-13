@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import { UserRepository } from '../../auth/domain/ports/user.repository.js';
+import { EvaluateBadgesUseCase } from '../../badge/application/evaluate-badges.use-case.js';
 import { GetTodayEventUseCase } from '../../daily-event/application/get-today-event.use-case.js';
 import { QuestQuestion } from '../domain/entities/quest.entity.js';
 import {
@@ -41,10 +42,13 @@ function scorePercent(
 
 @Injectable()
 export class SubmitQuestUseCase {
+  private readonly logger = new Logger(SubmitQuestUseCase.name);
+
   constructor(
     private readonly quests: QuestRepository,
     private readonly users: UserRepository,
     private readonly getTodayEvent: GetTodayEventUseCase,
+    private readonly evaluateBadges: EvaluateBadgesUseCase,
   ) {}
 
   async execute(input: SubmitQuestInput): Promise<SubmitQuestOutput> {
@@ -78,6 +82,20 @@ export class SubmitQuestUseCase {
         const event = await this.getTodayEvent.execute();
         xpAwarded = quest.xpReward * event.xpMultiplier;
         await this.users.awardXp(input.userId, xpAwarded);
+      }
+    }
+
+    // Badge evaluation is a side effect of a submission that already
+    // committed: a failure here shouldn't turn a scored submission into an
+    // error response for the client.
+    if (passed) {
+      try {
+        await this.evaluateBadges.execute(input.userId);
+      } catch (error) {
+        this.logger.error(
+          `Badge evaluation failed for user ${input.userId}`,
+          error as Error,
+        );
       }
     }
 
