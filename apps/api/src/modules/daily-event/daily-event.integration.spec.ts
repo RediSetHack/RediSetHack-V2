@@ -2,6 +2,7 @@ import { INestApplication, ValidationPipe } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import request from "supertest";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { DailyEventResponseSchema } from "@repo/contracts";
 
 import { DailyEvent } from "./domain/entities/daily-event.entity.js";
 import { DailyEventRepository } from "./domain/ports/daily-event.repository.js";
@@ -48,6 +49,7 @@ describe("daily-event integration", () => {
     const res = await request(app.getHttpServer()).get("/v1/api/events/today");
 
     expect(res.status).toBe(200);
+    DailyEventResponseSchema.parse(res.body);
     expect(res.body).toMatchObject({
       id: expect.any(Number),
       eventDate: expect.any(String),

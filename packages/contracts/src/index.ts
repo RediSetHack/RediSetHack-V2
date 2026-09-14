@@ -6,3 +6,5 @@
 // its own re-export line here as it lands; none are added speculatively.
 export * from "./constants/index.js";
 export * from "./content/index.js";
+export * from "./daily-event/index.js";
+export * from "./profile/index.js";
