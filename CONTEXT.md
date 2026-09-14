@@ -14,6 +14,10 @@ A subdivision of a Region containing Stages.
 A numbered learning unit within a Zone, with lesson content and an XP reward for completion.
 _Avoid_: Level when referring to a learning unit.
 
+**Stage Completion**:
+The record that a user has finished a Stage, which awards XP once and unlocks the successor Stage.
+_Avoid_: Progress when referring to a single Stage.
+
 **Lesson**:
 The learning content presented for a Stage.
 
@@ -21,12 +25,20 @@ The learning content presented for a Stage.
 A multiple-choice quiz with a time allowance, passing score, and XP reward.
 _Avoid_: Stage when referring to an assessment.
 
+**Quest Session**:
+A started, unsubmitted attempt at a Quest, carrying the questions with correct answers withheld and a server-side deadline.
+_Avoid_: Attempt, run, active quest.
+
 **Result**:
 The recorded responses, score, and pass outcome of a user's Quest submission.
 
 **XP**:
 A user's accumulated experience points from learning activities, which determine their Level.
 _Avoid_: Score when referring to progression rewards.
+
+**XP Award**:
+The per-user, per-Quest marker that XP has already been granted for passing, which makes retakes reward-free.
+_Avoid_: Reward, score.
 
 **Level**:
 A user's progression rank determined by accumulated XP.

@@ -7,7 +7,7 @@ import { CurrentUser } from "../../../auth/presentation/decorators/current-user.
 import type { ClerkAuthenticatedUser } from "../../../auth/domain/ports/clerk-auth.port.js";
 import { ProfilePresenter } from "../presenters/profile.presenter.js";
 
-@Controller("api/v1/users")
+@Controller("v1/api/users")
 export class GetProfileController {
   constructor(private readonly getProfile: GetProfileUseCase) {}
 

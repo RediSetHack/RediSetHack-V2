@@ -26,6 +26,22 @@ import { SelectCharacterController } from './presentation/controllers/select-cha
 import { GetUserMeController } from './presentation/controllers/get-user-me.controller.js';
 import { SyncUserController } from './presentation/controllers/sync-user.controller.js';
 import { GetUserUseCase } from './application/get-user.use-case.js';
+import { ProfileRepository } from '../profile/domain/ports/profile.repository.js';
+import { GetProfileUseCase } from '../profile/application/get-profile.use-case.js';
+import { GetLeaderboardUseCase } from '../profile/application/get-leaderboard.use-case.js';
+import { GetProfileController } from '../profile/presentation/controllers/get-profile.controller.js';
+import { GetLeaderboardController } from '../profile/presentation/controllers/get-leaderboard.controller.js';
+
+// Routes normalised onto the v1/api/* prefix (T12). The old api/v1/* spellings
+// must no longer resolve.
+const NORMALISED_ROUTES: Array<{ method: 'get'; path: string }> = [
+  { method: 'get', path: '/v1/api/users/profile' },
+  { method: 'get', path: '/v1/api/leaderboard' },
+];
+const OLD_ROUTES: Array<{ method: 'get'; path: string }> = [
+  { method: 'get', path: '/api/v1/users/profile' },
+  { method: 'get', path: '/api/v1/leaderboard' },
+];
 
 @Controller('v1/api/test')
 class AdminProbeController {
@@ -124,6 +140,15 @@ describe('auth integration', () => {
     },
   };
 
+  const fakeProfiles: ProfileRepository = {
+    async findProfileByUserId(userId) {
+      return { userId, totalXp: 0, character: null, badges: [] };
+    },
+    async findLeaderboardPage() {
+      return { rows: [], total: 0 };
+    },
+  };
+
   beforeEach(async () => {
     userStore.clear();
     const moduleRef = await Test.createTestingModule({
@@ -132,11 +157,16 @@ describe('auth integration', () => {
         GetUserMeController,
         SyncUserController,
         AdminProbeController,
+        GetProfileController,
+        GetLeaderboardController,
       ],
       providers: [
         { provide: ClerkAuthPort, useValue: fakeClerk },
         { provide: UserRepository, useValue: fakeUsers },
         { provide: CharacterRepository, useValue: fakeCharacters },
+        { provide: ProfileRepository, useValue: fakeProfiles },
+        GetProfileUseCase,
+        GetLeaderboardUseCase,
         ClerkAuthGuard,
         AdminGuard,
         EnsureUserUseCase,
@@ -258,4 +288,26 @@ describe('auth integration', () => {
       email: 'learner@example.com',
     });
   });
+
+  it.each(NORMALISED_ROUTES)(
+    'resolves the normalised route $method $path',
+    async ({ method, path }) => {
+      const res = await request(app.getHttpServer())
+        [method](path)
+        .set('authorization', 'Bearer valid-token');
+
+      expect(res.status).not.toBe(404);
+    },
+  );
+
+  it.each(OLD_ROUTES)(
+    'no longer resolves the old route $method $path',
+    async ({ method, path }) => {
+      const res = await request(app.getHttpServer())
+        [method](path)
+        .set('authorization', 'Bearer valid-token');
+
+      expect(res.status).toBe(404);
+    },
+  );
 });
