@@ -5,7 +5,7 @@ import { ClerkAuthGuard } from "../../../auth/presentation/guards/clerk-auth.gua
 import { LeaderboardQueryDto } from "../dto/leaderboard-query.dto.js";
 import { LeaderboardPresenter } from "../presenters/leaderboard.presenter.js";
 
-@Controller("api/v1/leaderboard")
+@Controller("v1/api/leaderboard")
 export class GetLeaderboardController {
   constructor(private readonly getLeaderboard: GetLeaderboardUseCase) {}
 
