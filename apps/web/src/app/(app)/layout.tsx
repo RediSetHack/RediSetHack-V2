@@ -16,26 +16,22 @@ export default async function AppLayout({
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
   const token = await getToken();
 
-  let profile: Profile | null = null;
-  let profileError = false;
-  try {
-    profile = token ? await getProfile(apiUrl, token) : null;
-  } catch {
-    profileError = true;
-  }
+  const [profileResult, eventResult] = await Promise.allSettled([
+    token ? getProfile(apiUrl, token) : Promise.resolve(null),
+    getTodayEvent(apiUrl),
+  ]);
+
+  const profile: Profile | null =
+    profileResult.status === "fulfilled" ? profileResult.value : null;
+  const profileError = profileResult.status === "rejected";
+  const event: DailyEvent | null =
+    eventResult.status === "fulfilled" ? eventResult.value : null;
+  const eventError = eventResult.status === "rejected";
 
   // Onboarding isn't finished until a Character is chosen — send the
   // learner back to the picker before they reach the platform.
   if (profile && !profile.character) {
     redirect("/");
-  }
-
-  let event: DailyEvent | null = null;
-  let eventError = false;
-  try {
-    event = await getTodayEvent(apiUrl);
-  } catch {
-    eventError = true;
   }
 
   return (

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { DailyEvent } from "@/lib/api-client";
 
-function Glance({ event }: { event: DailyEvent }) {
+function EventBadge({ event }: { event: DailyEvent }) {
   const isBonus = event.eventType === "bonus";
   return (
     <span
@@ -41,7 +41,7 @@ export function EventBanner({
 
   return (
     <div className="flex items-center gap-2">
-      <Glance event={event} />
+      <EventBadge event={event} />
       {!dismissed && (
         <div
           role="status"

@@ -22,6 +22,16 @@ export class ApiError extends Error {
   }
 }
 
+/** Throws an `ApiError` carrying the response's `message` body field, if present. */
+async function throwOnError(response: Response): Promise<never> {
+  const errorBody = await response.json().catch(() => ({}));
+  const message =
+    typeof errorBody === "object" && errorBody && "message" in errorBody
+      ? String(errorBody.message)
+      : `Request failed with status ${response.status}`;
+  throw new ApiError(response.status, message);
+}
+
 export async function getCharacters(
   apiBaseUrl: string,
   fetchFn: typeof fetch = fetch,
@@ -60,12 +70,7 @@ export async function selectUserCharacter(
   });
 
   if (!response.ok) {
-    const errorBody = await response.json().catch(() => ({}));
-    const message =
-      typeof errorBody === "object" && errorBody && "message" in errorBody
-        ? String(errorBody.message)
-        : `Request failed with status ${response.status}`;
-    throw new ApiError(response.status, message);
+    await throwOnError(response);
   }
 
   return (await response.json()) as UpdatedUserResponse;
@@ -92,12 +97,7 @@ export async function syncUser(
   });
 
   if (!response.ok) {
-    const errorBody = await response.json().catch(() => ({}));
-    const message =
-      typeof errorBody === "object" && errorBody && "message" in errorBody
-        ? String(errorBody.message)
-        : `Request failed with status ${response.status}`;
-    throw new ApiError(response.status, message);
+    await throwOnError(response);
   }
 
   return (await response.json()) as UpdatedUserResponse;
@@ -120,12 +120,7 @@ export async function getProfile(
   });
 
   if (!response.ok) {
-    const errorBody = await response.json().catch(() => ({}));
-    const message =
-      typeof errorBody === "object" && errorBody && "message" in errorBody
-        ? String(errorBody.message)
-        : `Request failed with status ${response.status}`;
-    throw new ApiError(response.status, message);
+    await throwOnError(response);
   }
 
   return (await response.json()) as Profile;
@@ -170,12 +165,7 @@ export async function getCurrentUser(
   }
 
   if (!response.ok) {
-    const errorBody = await response.json().catch(() => ({}));
-    const message =
-      typeof errorBody === "object" && errorBody && "message" in errorBody
-        ? String(errorBody.message)
-        : `Request failed with status ${response.status}`;
-    throw new ApiError(response.status, message);
+    await throwOnError(response);
   }
 
   return (await response.json()) as UpdatedUserResponse;
