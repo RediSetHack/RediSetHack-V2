@@ -5,9 +5,9 @@ import { getProfile, getTodayEvent, type Profile, type DailyEvent } from "@/lib/
 
 export default async function AppLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   const { userId, getToken } = await auth();
   if (!userId) {
     redirect("/sign-in");

@@ -10,7 +10,7 @@ const NAV_LINKS = [
   { href: "/profile", label: "Profile" },
 ];
 
-function NavLinks({ className }: { className: string }) {
+function NavLinks({ className }: Readonly<{ className: string }>) {
   return (
     <nav aria-label="Main" className={className}>
       {NAV_LINKS.map((link) => (
@@ -29,10 +29,10 @@ function NavLinks({ className }: { className: string }) {
 function ProfileSummary({
   profile,
   error,
-}: {
+}: Readonly<{
   profile: Profile | null;
   error: boolean;
-}) {
+}>) {
   if (error) {
     return (
       <p role="alert" className="text-xs text-destructive">
@@ -59,13 +59,13 @@ export function AppShell({
   event,
   eventError,
   children,
-}: {
+}: Readonly<{
   profile: Profile | null;
   profileError: boolean;
   event: DailyEvent | null;
   eventError: boolean;
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <div className="flex-1 flex flex-col">
       <div className="border-b border-border/60 bg-background">

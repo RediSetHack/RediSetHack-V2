@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { DailyEvent } from "@/lib/api-client";
 
-function EventBadge({ event }: { event: DailyEvent }) {
+function EventBadge({ event }: Readonly<{ event: DailyEvent }>) {
   const isBonus = event.eventType === "bonus";
   return (
     <span
@@ -21,10 +21,10 @@ function EventBadge({ event }: { event: DailyEvent }) {
 export function EventBanner({
   event,
   error,
-}: {
+}: Readonly<{
   event: DailyEvent | null;
   error: boolean;
-}) {
+}>) {
   const [dismissed, setDismissed] = useState(false);
 
   if (error) {
