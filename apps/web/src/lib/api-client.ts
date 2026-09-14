@@ -1,10 +1,6 @@
-export interface CharacterOption {
-  id: number;
-  name: string;
-  slug: string;
-  description: string;
-  avatarIcon: string;
-}
+import type { Character } from "@repo/contracts";
+
+export type CharacterOption = Character;
 
 export interface UpdatedUserResponse {
   id: string;
@@ -14,44 +10,6 @@ export interface UpdatedUserResponse {
   totalXp: number;
 }
 
-export const DEFAULT_CHARACTERS: readonly CharacterOption[] = [
-  {
-    id: 1,
-    name: "Binary Knight",
-    slug: "binary-knight",
-    description: "Resilient defender of algorithms and clean code.",
-    avatarIcon: "🛡️",
-  },
-  {
-    id: 2,
-    name: "Code Wizard",
-    slug: "code-wizard",
-    description: "Master of abstractions, functional spells, and recursion.",
-    avatarIcon: "🧙",
-  },
-  {
-    id: 3,
-    name: "Cyber Rogue",
-    slug: "cyber-rogue",
-    description: "Stealthy bug hunter and security operative.",
-    avatarIcon: "🗡️",
-  },
-  {
-    id: 4,
-    name: "DevOps Alchemist",
-    slug: "devops-alchemist",
-    description: "Transmuter of code into scalable cloud infrastructure.",
-    avatarIcon: "⚡",
-  },
-  {
-    id: 5,
-    name: "Script Samurai",
-    slug: "script-samurai",
-    description: "Swift executor of clean syntax and precision tests.",
-    avatarIcon: "⚔️",
-  },
-];
-
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
@@ -60,6 +18,23 @@ export class ApiError extends Error {
     super(message);
     this.name = "ApiError";
   }
+}
+
+export async function getCharacters(
+  apiBaseUrl: string,
+  fetchFn: typeof fetch = fetch,
+): Promise<CharacterOption[]> {
+  const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/characters`;
+  const response = await fetchFn(endpoint);
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      `Failed to load character catalog (status ${response.status})`,
+    );
+  }
+
+  return (await response.json()) as CharacterOption[];
 }
 
 export async function selectUserCharacter(

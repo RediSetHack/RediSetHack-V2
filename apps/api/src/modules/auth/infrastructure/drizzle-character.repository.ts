@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 import { characters, DEFAULT_CHARACTERS, type Database } from '@repo/db';
 
 import { DB } from '../../../database/database.module.js';
@@ -9,6 +9,17 @@ import { CharacterRepository } from '../domain/ports/character.repository.js';
 @Injectable()
 export class DrizzleCharacterRepository implements CharacterRepository {
   constructor(@Inject(DB) private readonly database: Database) {}
+
+  async findAll(): Promise<Character[]> {
+    const rows = await this.database
+      .select()
+      .from(characters)
+      .orderBy(asc(characters.id));
+    return rows.map(
+      (row) =>
+        new Character(row.id, row.name, row.slug, row.description, row.imageUrl),
+    );
+  }
 
   async findById(id: number): Promise<Character | null> {
     let row = await this.database.query.characters.findFirst({

@@ -1,6 +1,7 @@
 import { Character } from '../entities/character.entity.js';
 
 export abstract class CharacterRepository {
+  abstract findAll(): Promise<Character[]>;
   abstract findById(id: number): Promise<Character | null>;
   abstract create(input: {
     name: string;
