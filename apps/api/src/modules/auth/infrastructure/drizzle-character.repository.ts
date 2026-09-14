@@ -17,7 +17,13 @@ export class DrizzleCharacterRepository implements CharacterRepository {
       .orderBy(asc(characters.id));
     return rows.map(
       (row) =>
-        new Character(row.id, row.name, row.slug, row.description, row.imageUrl),
+        new Character(
+          row.id,
+          row.name,
+          row.slug,
+          row.description,
+          row.imageUrl,
+        ),
     );
   }
 
