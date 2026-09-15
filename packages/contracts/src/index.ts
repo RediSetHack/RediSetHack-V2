@@ -7,4 +7,5 @@
 export * from "./constants/index.js";
 export * from "./content/index.js";
 export * from "./daily-event/index.js";
+export * from "./leaderboard/index.js";
 export * from "./profile/index.js";

@@ -31,7 +31,10 @@ import { GetProfileUseCase } from '../profile/application/get-profile.use-case.j
 import { GetLeaderboardUseCase } from '../profile/application/get-leaderboard.use-case.js';
 import { GetProfileController } from '../profile/presentation/controllers/get-profile.controller.js';
 import { GetLeaderboardController } from '../profile/presentation/controllers/get-leaderboard.controller.js';
-import { ProfileResponseSchema } from '@repo/contracts';
+import {
+  ProfileResponseSchema,
+  LeaderboardResponseSchema,
+} from '@repo/contracts';
 
 // Routes normalised onto the v1/api/* prefix (T12). The old api/v1/* spellings
 // must no longer resolve.
@@ -144,12 +147,21 @@ describe('auth integration', () => {
     },
   };
 
+  const leaderboardRows = [
+    { userId: 'user_learner', name: 'Learner', totalXp: 900 },
+    { userId: 'user_admin', name: 'Admin', totalXp: 400 },
+  ];
+
   const fakeProfiles: ProfileRepository = {
     async findProfileByUserId(userId) {
       return { userId, totalXp: 0, character: null, badges: [] };
     },
-    async findLeaderboardPage() {
-      return { rows: [], total: 0 };
+    async findLeaderboardPage(page, limit) {
+      const offset = (page - 1) * limit;
+      return {
+        rows: leaderboardRows.slice(offset, offset + limit),
+        total: leaderboardRows.length,
+      };
     },
   };
 
@@ -307,6 +319,66 @@ describe('auth integration', () => {
       level: 1,
       badges: [],
     });
+  });
+
+  it('returns ranked leaderboard entries, validated against the contract', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/v1/api/leaderboard')
+      .set('authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(200);
+    const parsed = LeaderboardResponseSchema.parse(res.body);
+    expect(parsed).toEqual({
+      page: 1,
+      limit: 20,
+      total: 2,
+      entries: [
+        {
+          rank: 1,
+          userId: 'user_learner',
+          name: 'Learner',
+          totalXp: 900,
+          level: 4,
+        },
+        {
+          rank: 2,
+          userId: 'user_admin',
+          name: 'Admin',
+          totalXp: 400,
+          level: 3,
+        },
+      ],
+    });
+  });
+
+  it('pages the leaderboard using page and limit query params', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/v1/api/leaderboard')
+      .query({ page: 2, limit: 1 })
+      .set('authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(200);
+    const parsed = LeaderboardResponseSchema.parse(res.body);
+    expect(parsed).toEqual({
+      page: 2,
+      limit: 1,
+      total: 2,
+      entries: [
+        {
+          rank: 2,
+          userId: 'user_admin',
+          name: 'Admin',
+          totalXp: 400,
+          level: 3,
+        },
+      ],
+    });
+  });
+
+  it('rejects unauthenticated leaderboard requests with 401', async () => {
+    const res = await request(app.getHttpServer()).get('/v1/api/leaderboard');
+
+    expect(res.status).toBe(401);
   });
 
   it.each(NORMALISED_ROUTES)(

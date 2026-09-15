@@ -1,8 +1,16 @@
-import type { Character, DailyEventResponse, ProfileResponse } from "@repo/contracts";
+import type {
+  Character,
+  DailyEventResponse,
+  LeaderboardEntry,
+  LeaderboardResponse,
+  ProfileResponse,
+} from "@repo/contracts";
 
 export type CharacterOption = Character;
 export type Profile = ProfileResponse;
 export type DailyEvent = DailyEventResponse;
+export type Leaderboard = LeaderboardResponse;
+export type { LeaderboardEntry };
 
 export interface UpdatedUserResponse {
   id: string;
@@ -141,6 +149,31 @@ export async function getTodayEvent(
   }
 
   return (await response.json()) as DailyEvent;
+}
+
+export async function getLeaderboard(
+  apiBaseUrl: string,
+  token: string,
+  page: number,
+  limit: number,
+  fetchFn: typeof fetch = fetch,
+): Promise<Leaderboard> {
+  if (!token) {
+    throw new ApiError(401, "Authentication token is required");
+  }
+
+  const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/leaderboard?page=${page}&limit=${limit}`;
+  const response = await fetchFn(endpoint, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    await throwOnError(response);
+  }
+
+  return (await response.json()) as Leaderboard;
 }
 
 export async function getCurrentUser(
