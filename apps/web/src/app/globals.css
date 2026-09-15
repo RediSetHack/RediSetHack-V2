@@ -128,3 +128,11 @@
     @apply font-sans;
   }
 }
+/* Shiki dual-theme code blocks (see components/lesson-blocks.tsx): the
+   highlighter emits both palettes as CSS variables per token, and this
+   flips which one wins under the app's existing .dark convention. */
+.dark .shiki,
+.dark .shiki span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+}
