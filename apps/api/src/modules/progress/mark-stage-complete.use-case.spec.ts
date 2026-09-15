@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { makeEvaluateBadges } from '../badge/evaluate-badges.fixture.js';
+import { BadgeDefinition } from '../badge/domain/entities/badge.entity.js';
+import { EvaluateBadgesUseCase } from '../badge/application/evaluate-badges.use-case.js';
 import { Stage } from '../content/domain/entities/stage.entity.js';
 import type { StageRepository } from '../content/domain/ports/stage.repository.js';
 import { DailyEvent } from '../daily-event/domain/entities/daily-event.entity.js';
@@ -45,8 +47,12 @@ function makeEvent(
   return new GetTodayEventUseCase(repo);
 }
 
-function makeProgress(awarded = true): ProgressRepository {
-  return { markCompleted: vi.fn().mockResolvedValue(awarded) };
+function makeProgress(previousXp: number | null = 0): ProgressRepository {
+  return {
+    markCompleted: vi
+      .fn()
+      .mockResolvedValue(previousXp === null ? null : { previousXp }),
+  };
 }
 
 describe('MarkStageCompleteUseCase', () => {
@@ -70,6 +76,10 @@ describe('MarkStageCompleteUseCase', () => {
       xpEarned: 20,
       eventMultiplier: 1,
       eventType: 'normal',
+      level: 1,
+      leveledUp: false,
+      badgesEarned: [],
+      nextStageId: null,
     });
     expect(progress.markCompleted).toHaveBeenCalledWith('user_1', 2, 20);
   });
@@ -155,7 +165,7 @@ describe('MarkStageCompleteUseCase', () => {
       findById: vi.fn().mockResolvedValue(stages[1]),
       findCompletedStageIds: vi.fn().mockResolvedValue([1]),
     });
-    const progress = makeProgress(false);
+    const progress = makeProgress(null);
     const useCase = new MarkStageCompleteUseCase(
       repo,
       progress,
@@ -182,5 +192,89 @@ describe('MarkStageCompleteUseCase', () => {
       StageNotFoundError,
     );
     expect(progress.markCompleted).not.toHaveBeenCalled();
+  });
+
+  it('points to the next Stage in the Zone, or null when it was the last one', async () => {
+    const repo = makeStageRepo({
+      findById: vi.fn().mockResolvedValue(stages[0]),
+    });
+    const useCase = new MarkStageCompleteUseCase(
+      repo,
+      makeProgress(),
+      makeEvent('normal', 1),
+      makeEvaluateBadges(),
+    );
+
+    expect((await useCase.execute('user_1', 1)).nextStageId).toBe(2);
+
+    const lastRepo = makeStageRepo({
+      findById: vi.fn().mockResolvedValue(stages[1]),
+      findCompletedStageIds: vi.fn().mockResolvedValue([1]),
+    });
+    const lastUseCase = new MarkStageCompleteUseCase(
+      lastRepo,
+      makeProgress(),
+      makeEvent('normal', 1),
+      makeEvaluateBadges(),
+    );
+
+    expect((await lastUseCase.execute('user_1', 2)).nextStageId).toBeNull();
+  });
+
+  it('announces a level-up when the award crosses a level threshold', async () => {
+    const repo = makeStageRepo({
+      findById: vi.fn().mockResolvedValue(stages[1]),
+      findCompletedStageIds: vi.fn().mockResolvedValue([1]),
+    });
+    // level-calculator: level(xp) = floor(sqrt(xp / 100)) + 1, so 100 total
+    // xp crosses into level 2.
+    const progress = makeProgress(90);
+    const useCase = new MarkStageCompleteUseCase(
+      repo,
+      progress,
+      makeEvent('normal', 1),
+      makeEvaluateBadges(),
+    );
+
+    const completion = await useCase.execute('user_1', 2);
+
+    expect(completion.level).toBe(2);
+    expect(completion.leveledUp).toBe(true);
+  });
+
+  it('surfaces badges earned as a side effect of the completion', async () => {
+    const repo = makeStageRepo({
+      findById: vi.fn().mockResolvedValue(stages[1]),
+      findCompletedStageIds: vi.fn().mockResolvedValue([1]),
+    });
+    const badge = new BadgeDefinition(
+      1,
+      'Consistent Learner',
+      'consistent-learner',
+      null,
+      { trigger: 'cumulative', target: 'stage_completions', threshold: 1 },
+      null,
+    );
+    const evaluateBadges = new EvaluateBadgesUseCase({
+      findAll: vi.fn().mockResolvedValue([badge]),
+      countAwards: vi.fn().mockResolvedValue(0),
+      awardMany: vi.fn(),
+      findEarnedByUser: vi.fn(),
+      countCompletedStages: vi.fn().mockResolvedValue(2),
+      countPassedQuests: vi.fn(),
+      isZoneCompleted: vi.fn(),
+    });
+    const useCase = new MarkStageCompleteUseCase(
+      repo,
+      makeProgress(),
+      makeEvent('normal', 1),
+      evaluateBadges,
+    );
+
+    const completion = await useCase.execute('user_1', 2);
+
+    expect(completion.badgesEarned).toEqual([
+      { badge, awardCount: 2, newAwards: 2 },
+    ]);
   });
 });

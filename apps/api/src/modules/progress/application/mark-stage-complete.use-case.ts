@@ -1,7 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import { EvaluateBadgesUseCase } from '../../badge/application/evaluate-badges.use-case.js';
+import {
+  BadgeAwardResult,
+  EvaluateBadgesUseCase,
+} from '../../badge/application/evaluate-badges.use-case.js';
 import { StageRepository } from '../../content/domain/ports/stage.repository.js';
+import { calculateLevel } from '../../profile/domain/level-calculator.js';
 import { ProgressRepository } from '../domain/ports/progress.repository.js';
 import {
   StageAlreadyCompletedError,
@@ -16,6 +20,10 @@ export type StageCompletion = {
   xpEarned: number;
   eventMultiplier: number;
   eventType: 'normal' | 'bonus';
+  level: number;
+  leveledUp: boolean;
+  badgesEarned: BadgeAwardResult[];
+  nextStageId: number | null;
 };
 
 @Injectable()
@@ -41,18 +49,22 @@ export class MarkStageCompleteUseCase {
     const event = await this.getTodayEvent.execute();
     const xpEarned = stage.xpReward * event.xpMultiplier;
 
-    const awarded = await this.progress.markCompleted(
+    const result = await this.progress.markCompleted(
       userId,
       stage.id,
       xpEarned,
     );
-    if (!awarded) throw new StageAlreadyCompletedError(stageId);
+    if (!result) throw new StageAlreadyCompletedError(stageId);
+
+    const previousLevel = calculateLevel(result.previousXp);
+    const level = calculateLevel(result.previousXp + xpEarned);
 
     // Badge evaluation is a side effect of a completion that already
     // committed: a failure here shouldn't turn a successful completion into
     // an error response for the client.
+    let badgesEarned: BadgeAwardResult[] = [];
     try {
-      await this.evaluateBadges.execute(userId);
+      badgesEarned = await this.evaluateBadges.execute(userId);
     } catch (error) {
       this.logger.error(
         `Badge evaluation failed for user ${userId}`,
@@ -65,6 +77,10 @@ export class MarkStageCompleteUseCase {
       xpEarned,
       eventMultiplier: event.xpMultiplier,
       eventType: event.eventType,
+      level,
+      leveledUp: level > previousLevel,
+      badgesEarned,
+      nextStageId: access.sorted[access.index + 1]?.id ?? null,
     };
   }
 }

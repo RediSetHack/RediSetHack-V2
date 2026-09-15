@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { notFound } from "next/navigation";
 import { LessonBlockView } from "@/components/lesson-blocks";
+import { StageCompletionPanel } from "@/components/stage-completion";
 import { ApiError, getLesson, type Lesson } from "@/lib/api-client";
 import { normalizeLessonBlocks } from "@/lib/lesson-blocks";
 
@@ -9,7 +10,7 @@ export default async function StagePage({
 }: Readonly<{
   params: Promise<{ regionId: string; zoneId: string; stageId: string }>;
 }>) {
-  const { stageId } = await params;
+  const { regionId, stageId } = await params;
   const stageIdNumber = Number(stageId);
   if (!Number.isInteger(stageIdNumber)) {
     notFound();
@@ -52,6 +53,19 @@ export default async function StagePage({
           // Stage's fixed content array, so it doubles as the React key.
           <LessonBlockView key={`${block.kind}:${JSON.stringify(block)}`} block={block} />
         ))}
+      </div>
+      <div className="mt-8 border-t border-border pt-6">
+        {lesson.status === "completed" ? (
+          <p className="text-sm font-medium text-muted-foreground">
+            ✓ You&apos;ve already completed this Stage — revisiting it awards no further XP.
+          </p>
+        ) : (
+          <StageCompletionPanel
+            stageId={lesson.id}
+            regionId={regionId}
+            zoneId={lesson.zoneId}
+          />
+        )}
       </div>
     </div>
   );

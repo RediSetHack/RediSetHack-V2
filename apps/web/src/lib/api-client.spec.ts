@@ -12,6 +12,7 @@ import {
   getLesson,
   getQuests,
   getLeaderboard,
+  completeStage,
   ApiError,
 } from "./api-client.js";
 
@@ -440,6 +441,77 @@ describe("api-client", () => {
 
       await expect(
         getLesson("http://localhost:3001", "test-token", 1, mockFetch as unknown as typeof fetch),
+      ).rejects.toMatchObject({ status: 403 });
+    });
+  });
+
+  describe("completeStage", () => {
+    it("throws ApiError 401 when token is missing", async () => {
+      await expect(completeStage("http://localhost:3001", "", 1)).rejects.toThrowError(ApiError);
+    });
+
+    it("sends a POST with Bearer authorization and returns the completion result", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          stageId: 1,
+          xpEarned: 50,
+          eventMultiplier: 2,
+          eventType: "bonus",
+          level: 2,
+          leveledUp: true,
+          badgesEarned: [
+            {
+              badgeDefinitionId: 1,
+              name: "Consistent Learner",
+              slug: "consistent-learner",
+              imageUrl: null,
+              awardCount: 1,
+            },
+          ],
+          nextStageId: 2,
+        }),
+      });
+
+      const result = await completeStage(
+        "http://localhost:3001/",
+        "test-token",
+        1,
+        mockFetch as unknown as typeof fetch,
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/stages/1/complete", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer test-token",
+        },
+      });
+      expect(result.leveledUp).toBe(true);
+      expect(result.badgesEarned).toHaveLength(1);
+      expect(result.nextStageId).toBe(2);
+    });
+
+    it("throws ApiError on a rejected duplicate completion's 400 response", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: async () => ({ message: "Stage with id 1 is already completed" }),
+      });
+
+      await expect(
+        completeStage("http://localhost:3001", "test-token", 1, mockFetch as unknown as typeof fetch),
+      ).rejects.toMatchObject({ status: 400 });
+    });
+
+    it("throws ApiError on a locked Stage's 403 response", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 403,
+        json: async () => ({ message: "Stage with id 1 is locked until its predecessor is completed" }),
+      });
+
+      await expect(
+        completeStage("http://localhost:3001", "test-token", 1, mockFetch as unknown as typeof fetch),
       ).rejects.toMatchObject({ status: 403 });
     });
   });

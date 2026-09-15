@@ -7,15 +7,17 @@ import type {
   Quest,
   Region,
   Stage,
+  StageCompletionResponse,
   Zone,
 } from "@repo/contracts";
-export type { LeaderboardEntry, LessonBlock } from "@repo/contracts";
+export type { LeaderboardEntry, LessonBlock, StageCompletionBadge } from "@repo/contracts";
 
 export type CharacterOption = Character;
 export type Profile = ProfileResponse;
 export type DailyEvent = DailyEventResponse;
 export type Leaderboard = LeaderboardResponse;
 export type Lesson = LessonResponse;
+export type StageCompletion = StageCompletionResponse;
 export type { Region, Stage, Zone, Quest };
 
 export interface UpdatedUserResponse {
@@ -69,13 +71,15 @@ async function fetchAuthedJson<T>(
   endpoint: string,
   token: string,
   fetchFn: typeof fetch,
+  init?: RequestInit,
 ): Promise<T> {
   if (!token) {
     throw new ApiError(401, "Authentication token is required");
   }
 
   const response = await fetchFn(endpoint, {
-    headers: { Authorization: `Bearer ${token}` },
+    ...init,
+    headers: { ...init?.headers, Authorization: `Bearer ${token}` },
   });
 
   if (!response.ok) {
@@ -247,4 +251,14 @@ export async function getQuests(
 ): Promise<Quest[]> {
   const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/quests`;
   return fetchAuthedJson<Quest[]>(endpoint, token, fetchFn);
+}
+
+export async function completeStage(
+  apiBaseUrl: string,
+  token: string,
+  stageId: number,
+  fetchFn: typeof fetch = fetch,
+): Promise<StageCompletion> {
+  const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/stages/${stageId}/complete`;
+  return fetchAuthedJson<StageCompletion>(endpoint, token, fetchFn, { method: "POST" });
 }
