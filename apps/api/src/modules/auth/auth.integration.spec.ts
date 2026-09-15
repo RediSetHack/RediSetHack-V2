@@ -31,6 +31,7 @@ import { GetProfileUseCase } from '../profile/application/get-profile.use-case.j
 import { GetLeaderboardUseCase } from '../profile/application/get-leaderboard.use-case.js';
 import { GetProfileController } from '../profile/presentation/controllers/get-profile.controller.js';
 import { GetLeaderboardController } from '../profile/presentation/controllers/get-leaderboard.controller.js';
+import { ProfileResponseSchema } from '@repo/contracts';
 
 // Routes normalised onto the v1/api/* prefix (T12). The old api/v1/* spellings
 // must no longer resolve.
@@ -289,6 +290,22 @@ describe('auth integration', () => {
     expect(meRes.body).toMatchObject({
       id: 'user_learner',
       email: 'learner@example.com',
+    });
+  });
+
+  it('returns the profile shape the app shell renders, validated against the contract', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/v1/api/users/profile')
+      .set('authorization', 'Bearer valid-token');
+
+    expect(res.status).toBe(200);
+    const parsed = ProfileResponseSchema.parse(res.body);
+    expect(parsed).toEqual({
+      userId: 'user_learner',
+      totalXp: 0,
+      character: null,
+      level: 1,
+      badges: [],
     });
   });
 

@@ -17,6 +17,14 @@
     "./content": {
       "types": "./dist/content/index.d.ts",
       "import": "./dist/content/index.js"
+    },
+    "./daily-event": {
+      "types": "./dist/daily-event/index.d.ts",
+      "import": "./dist/daily-event/index.js"
+    },
+    "./profile": {
+      "types": "./dist/profile/index.d.ts",
+      "import": "./dist/profile/index.js"
     }
   },
   "scripts": {

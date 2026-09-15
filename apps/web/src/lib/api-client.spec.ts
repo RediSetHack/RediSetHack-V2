@@ -4,6 +4,8 @@ import {
   selectUserCharacter,
   syncUser,
   getCurrentUser,
+  getProfile,
+  getTodayEvent,
   ApiError,
 } from "./api-client.js";
 
@@ -205,6 +207,81 @@ describe("api-client", () => {
         characterId: 1,
         totalXp: 50,
       });
+    });
+  });
+
+  describe("getProfile", () => {
+    it("throws ApiError 401 when token is missing", async () => {
+      await expect(getProfile("http://localhost:3001", "")).rejects.toThrowError(ApiError);
+    });
+
+    it("sends Bearer authorization token and returns the profile", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          userId: "user_123",
+          character: { id: 1, name: "Binary Knight", slug: "binary-knight", imageUrl: null },
+          totalXp: 450,
+          level: 3,
+          badges: [],
+        }),
+      });
+
+      const result = await getProfile(
+        "http://localhost:3001/",
+        "test-token",
+        mockFetch as unknown as typeof fetch,
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/users/profile", {
+        headers: {
+          Authorization: "Bearer test-token",
+        },
+      });
+      expect(result.level).toBe(3);
+      expect(result.character?.name).toBe("Binary Knight");
+    });
+
+    it("throws ApiError on a non-200 response", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        json: async () => ({ message: "user not found" }),
+      });
+
+      await expect(
+        getProfile("http://localhost:3001", "test-token", mockFetch as unknown as typeof fetch),
+      ).rejects.toMatchObject({ status: 404 });
+    });
+  });
+
+  describe("getTodayEvent", () => {
+    it("fetches today's event with no auth header", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          id: 1,
+          eventDate: "2026-09-14",
+          eventType: "bonus",
+          xpMultiplier: 2,
+        }),
+      });
+
+      const result = await getTodayEvent(
+        "http://localhost:3001/",
+        mockFetch as unknown as typeof fetch,
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/events/today");
+      expect(result.eventType).toBe("bonus");
+    });
+
+    it("throws ApiError when the event cannot be loaded", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 500 });
+
+      await expect(
+        getTodayEvent("http://localhost:3001", mockFetch as unknown as typeof fetch),
+      ).rejects.toMatchObject({ status: 500 });
     });
   });
 });
