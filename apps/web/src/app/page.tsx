@@ -3,7 +3,7 @@ import Link from "next/link";
 import { CharacterSelector } from "@/components/character-selector";
 import { UnregisteredUserCard } from "@/components/unregistered-user-card";
 import { Button } from "@/components/ui/button";
-import { DEFAULT_CHARACTERS, getCurrentUser } from "@/lib/api-client";
+import { getCharacters, getCurrentUser, type CharacterOption } from "@/lib/api-client";
 
 export default async function Home() {
   const { userId, getToken } = await auth();
@@ -13,6 +13,16 @@ export default async function Home() {
     user?.primaryEmailAddress?.emailAddress ??
     user?.emailAddresses?.[0]?.emailAddress ??
     "";
+
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+  let characters: CharacterOption[] = [];
+  let charactersError = false;
+  try {
+    characters = await getCharacters(apiUrl);
+  } catch (error) {
+    console.error("Failed to load character catalog:", error);
+    charactersError = true;
+  }
 
   if (!userId) {
     return (
@@ -56,19 +66,29 @@ export default async function Home() {
             <p className="text-sm text-muted-foreground mb-8">
               Pick your persona when you sign up to track your learning journey:
             </p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-              {DEFAULT_CHARACTERS.map((char) => (
-                <div
-                  key={char.id}
-                  className="flex flex-col items-center p-4 rounded-xl border border-border bg-card/50 text-center"
-                >
-                  <span className="text-3xl mb-2" role="img" aria-label={char.name}>
-                    {char.avatarIcon}
-                  </span>
-                  <span className="text-xs font-semibold">{char.name}</span>
-                </div>
-              ))}
-            </div>
+            {charactersError ? (
+              <p role="alert" className="text-sm text-destructive">
+                The character catalog could not be loaded. Please try again later.
+              </p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                {characters.map((char) => (
+                  <div
+                    key={char.id}
+                    className="flex flex-col items-center p-4 rounded-xl border border-border bg-card/50 text-center"
+                  >
+                    <span
+                      className="flex items-center justify-center w-10 h-10 mb-2 rounded-full bg-muted text-lg font-semibold"
+                      role="img"
+                      aria-label={char.name}
+                    >
+                      {char.name.charAt(0)}
+                    </span>
+                    <span className="text-xs font-semibold">{char.name}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
       </div>
@@ -76,7 +96,6 @@ export default async function Home() {
   }
 
   const token = await getToken();
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
   let dbUser = null;
   let isNewUserWithoutAccount = false;
 
@@ -136,7 +155,17 @@ export default async function Home() {
 
         {/* Character Selection Section */}
         <section className="p-6 rounded-2xl border border-border bg-card shadow-sm">
-          <CharacterSelector initialCharacterId={dbUser?.characterId} apiUrl={apiUrl} />
+          {charactersError ? (
+            <p role="alert" className="text-sm text-destructive">
+              The character catalog could not be loaded. Please try again later.
+            </p>
+          ) : (
+            <CharacterSelector
+              characters={characters}
+              initialCharacterId={dbUser?.characterId}
+              apiUrl={apiUrl}
+            />
+          )}
         </section>
 
         {/* Progression Overview */}

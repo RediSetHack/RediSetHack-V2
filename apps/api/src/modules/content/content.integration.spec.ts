@@ -107,6 +107,9 @@ import { UpdateQuestController } from './presentation/controllers/update-quest.c
 import { UpdateRegionController } from './presentation/controllers/update-region.controller.js';
 import { UpdateStageController } from './presentation/controllers/update-stage.controller.js';
 import { UpdateZoneController } from './presentation/controllers/update-zone.controller.js';
+import { ListCharactersController } from './presentation/controllers/list-characters.controller.js';
+import { ListCharactersUseCase } from './application/list-characters.use-case.js';
+import { CharacterListResponseSchema } from '@repo/contracts';
 
 // --- In-memory fakes ---------------------------------------------------
 
@@ -323,6 +326,9 @@ function makeCharacterRepository(): CharacterRepository {
   const store = new Map<number, Character>();
   let nextId = 1;
   return {
+    async findAll() {
+      return [...store.values()];
+    },
     async findById(id) {
       return store.get(id) ?? null;
     },
@@ -433,6 +439,7 @@ describe('content admin CRUD', () => {
         GetCharacterController,
         UpdateCharacterController,
         DeleteCharacterController,
+        ListCharactersController,
       ],
       providers: [
         { provide: ClerkAuthPort, useValue: fakeClerk },
@@ -541,6 +548,10 @@ describe('content admin CRUD', () => {
         {
           provide: DeleteCharacterUseCase,
           useFactory: () => new DeleteCharacterUseCase(characters),
+        },
+        {
+          provide: ListCharactersUseCase,
+          useFactory: () => new ListCharactersUseCase(characters),
         },
       ],
     }).compile();
@@ -817,5 +828,23 @@ describe('content admin CRUD', () => {
       .get(`/v1/api/admin/characters/${id}`)
       .set(admin());
     expect(getAfterDelete.status).toBe(404);
+  });
+
+  it('lists the public character catalog without authentication', async () => {
+    const create = await request(app.getHttpServer())
+      .post('/v1/api/admin/characters')
+      .set(admin())
+      .send({ name: 'Binary Knight', slug: 'binary-knight' });
+    expect(create.status).toBe(201);
+
+    const response = await request(app.getHttpServer()).get(
+      '/v1/api/characters',
+    );
+
+    expect(response.status).toBe(200);
+    const parsed = CharacterListResponseSchema.parse(response.body);
+    expect(parsed).toEqual([
+      expect.objectContaining({ name: 'Binary Knight', slug: 'binary-knight' }),
+    ]);
   });
 });

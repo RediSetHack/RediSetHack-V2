@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
-  DEFAULT_CHARACTERS,
+  getCharacters,
   selectUserCharacter,
   syncUser,
   getCurrentUser,
@@ -8,17 +8,35 @@ import {
 } from "./api-client.js";
 
 describe("api-client", () => {
-  it("exposes default avatar characters", () => {
-    expect(DEFAULT_CHARACTERS.length).toBeGreaterThanOrEqual(5);
-    expect(DEFAULT_CHARACTERS.map((c) => c.slug)).toEqual(
-      expect.arrayContaining([
-        "binary-knight",
-        "code-wizard",
-        "cyber-rogue",
-        "devops-alchemist",
-        "script-samurai",
-      ]),
-    );
+  describe("getCharacters", () => {
+    it("fetches the public character catalog with no auth header", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [
+          { id: 1, name: "Binary Knight", slug: "binary-knight", description: null, imageUrl: null },
+        ],
+      });
+
+      const result = await getCharacters(
+        "http://localhost:3001/",
+        mockFetch as unknown as typeof fetch,
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        "http://localhost:3001/v1/api/characters",
+      );
+      expect(result).toEqual([
+        { id: 1, name: "Binary Knight", slug: "binary-knight", description: null, imageUrl: null },
+      ]);
+    });
+
+    it("throws ApiError when the catalog cannot be loaded", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 500 });
+
+      await expect(
+        getCharacters("http://localhost:3001", mockFetch as unknown as typeof fetch),
+      ).rejects.toMatchObject({ status: 500 });
+    });
   });
 
   it("throws ApiError 401 when token is missing", async () => {

@@ -126,6 +126,9 @@ describe('auth integration', () => {
   };
 
   const fakeCharacters: CharacterRepository = {
+    async findAll() {
+      return [character];
+    },
     async findById(id) {
       return id === character.id ? character : null;
     },

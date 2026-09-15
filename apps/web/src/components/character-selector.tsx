@@ -2,13 +2,10 @@
 
 import { useState } from "react";
 import { useAuth } from "@clerk/nextjs";
-import {
-  DEFAULT_CHARACTERS,
-  selectUserCharacter,
-  type CharacterOption,
-} from "@/lib/api-client";
+import { selectUserCharacter, type CharacterOption } from "@/lib/api-client";
 
 interface CharacterSelectorProps {
+  readonly characters: readonly CharacterOption[];
   readonly initialCharacterId?: number | null;
   readonly apiUrl?: string;
 }
@@ -28,6 +25,7 @@ function getButtonLabel(
 }
 
 export function CharacterSelector({
+  characters,
   initialCharacterId = null,
   apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001",
 }: CharacterSelectorProps) {
@@ -95,7 +93,7 @@ export function CharacterSelector({
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {DEFAULT_CHARACTERS.map((char) => {
+        {characters.map((char) => {
           const isCurrentActive = activeCharacterId === char.id;
           const isSelected = selectedId === char.id;
           const buttonLabel = getButtonLabel(isLoading, isSelected, isCurrentActive);
@@ -113,9 +111,22 @@ export function CharacterSelector({
               } ${isLoading && isSelected ? "opacity-70 pointer-events-none" : ""}`}
             >
               <div className="flex items-center justify-between gap-2 mb-3 w-full">
-                <span className="text-3xl" role="img" aria-label={char.name}>
-                  {char.avatarIcon}
-                </span>
+                {char.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- avatar source is admin-controlled, arbitrary host
+                  <img
+                    src={char.imageUrl}
+                    alt={char.name}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <span
+                    className="flex items-center justify-center w-10 h-10 rounded-full bg-muted text-lg font-semibold"
+                    role="img"
+                    aria-label={char.name}
+                  >
+                    {char.name.charAt(0)}
+                  </span>
+                )}
                 {isCurrentActive && (
                   <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary text-primary-foreground">
                     Active

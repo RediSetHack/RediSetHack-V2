@@ -76,9 +76,11 @@ import { DrizzleStageRepository as ListDrizzleStageRepository } from './infrastr
 import { ListRegionsUseCase } from './application/list-regions.use-case.js';
 import { ListZonesUseCase } from './application/list-zones.use-case.js';
 import { ListStagesUseCase } from './application/list-stages.use-case.js';
+import { ListCharactersUseCase } from './application/list-characters.use-case.js';
 import { ListRegionsController } from './presentation/controllers/list-regions.controller.js';
 import { ListZonesController } from './presentation/controllers/list-zones.controller.js';
 import { ListStagesController } from './presentation/controllers/list-stages.controller.js';
+import { ListCharactersController } from './presentation/controllers/list-characters.controller.js';
 
 @Module({
   imports: [AuthModule],
@@ -110,6 +112,7 @@ import { ListStagesController } from './presentation/controllers/list-stages.con
     ListRegionsController,
     ListZonesController,
     ListStagesController,
+    ListCharactersController,
   ],
   providers: [
     { provide: RegionRepository, useClass: DrizzleRegionRepository },
@@ -256,6 +259,7 @@ import { ListStagesController } from './presentation/controllers/list-stages.con
     ListRegionsUseCase,
     ListZonesUseCase,
     ListStagesUseCase,
+    ListCharactersUseCase,
   ],
   exports: [ListStageRepository],
 })

@@ -21,6 +21,7 @@ describe("SelectCharacterUseCase", () => {
       awardXp: vi.fn(),
     };
     const characters: CharacterRepository = {
+      findAll: vi.fn(),
       findById: vi.fn().mockResolvedValue(new Character(1, "Knight", "knight", null, null)),
       create: vi.fn(),
       update: vi.fn(),
@@ -44,6 +45,7 @@ describe("SelectCharacterUseCase", () => {
       awardXp: vi.fn(),
     };
     const characters: CharacterRepository = {
+      findAll: vi.fn(),
       findById: vi.fn().mockResolvedValue(null),
       create: vi.fn(),
       update: vi.fn(),
@@ -66,6 +68,7 @@ describe("SelectCharacterUseCase", () => {
       awardXp: vi.fn(),
     };
     const characters: CharacterRepository = {
+      findAll: vi.fn(),
       findById: vi.fn().mockResolvedValue(new Character(1, "Knight", "knight", null, null)),
       create: vi.fn(),
       update: vi.fn(),
