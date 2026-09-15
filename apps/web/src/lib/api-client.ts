@@ -1,6 +1,8 @@
 import type {
   Character,
   DailyEventResponse,
+  LeaderboardEntry,
+  LeaderboardResponse,
   ProfileResponse,
   Region,
   Stage,
@@ -10,7 +12,8 @@ import type {
 export type CharacterOption = Character;
 export type Profile = ProfileResponse;
 export type DailyEvent = DailyEventResponse;
-export type { Region, Zone, Stage };
+export type Leaderboard = LeaderboardResponse;
+export type { LeaderboardEntry, Region, Zone, Stage };
 
 export interface UpdatedUserResponse {
   id: string;
@@ -156,6 +159,17 @@ export async function getTodayEvent(
 ): Promise<DailyEvent> {
   const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/events/today`;
   return fetchPublicJson<DailyEvent>(endpoint, "today's event", fetchFn);
+}
+
+export async function getLeaderboard(
+  apiBaseUrl: string,
+  token: string,
+  page: number,
+  limit: number,
+  fetchFn: typeof fetch = fetch,
+): Promise<Leaderboard> {
+  const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/leaderboard?page=${page}&limit=${limit}`;
+  return fetchAuthedJson<Leaderboard>(endpoint, token, fetchFn);
 }
 
 export async function getCurrentUser(

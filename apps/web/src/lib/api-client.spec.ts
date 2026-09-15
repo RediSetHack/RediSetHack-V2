@@ -9,6 +9,7 @@ import {
   getRegions,
   getZones,
   getStages,
+  getLeaderboard,
   ApiError,
 } from "./api-client.js";
 
@@ -390,6 +391,53 @@ describe("api-client", () => {
       await expect(
         getStages("http://localhost:3001", "test-token", 1, mockFetch as unknown as typeof fetch),
       ).rejects.toMatchObject({ status: 403 });
+    });
+  });
+
+  describe("getLeaderboard", () => {
+    it("throws ApiError 401 when token is missing", async () => {
+      await expect(getLeaderboard("http://localhost:3001", "", 1, 20)).rejects.toThrowError(
+        ApiError,
+      );
+    });
+
+    it("sends Bearer authorization token with page and limit query params", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          page: 2,
+          limit: 10,
+          total: 25,
+          entries: [{ rank: 11, userId: "user_1", name: "Ada", totalXp: 900, level: 4 }],
+        }),
+      });
+
+      const result = await getLeaderboard(
+        "http://localhost:3001/",
+        "test-token",
+        2,
+        10,
+        mockFetch as unknown as typeof fetch,
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        "http://localhost:3001/v1/api/leaderboard?page=2&limit=10",
+        { headers: { Authorization: "Bearer test-token" } },
+      );
+      expect(result.page).toBe(2);
+      expect(result.entries[0]?.userId).toBe("user_1");
+    });
+
+    it("throws ApiError on a non-200 response", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        json: async () => ({ message: "boom" }),
+      });
+
+      await expect(
+        getLeaderboard("http://localhost:3001", "test-token", 1, 20, mockFetch as unknown as typeof fetch),
+      ).rejects.toMatchObject({ status: 500 });
     });
   });
 });
