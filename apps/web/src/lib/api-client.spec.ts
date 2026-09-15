@@ -10,6 +10,9 @@ import {
   getZones,
   getStages,
   getQuests,
+  startQuestSession,
+  submitQuest,
+  getQuestResult,
   getLeaderboard,
   ApiError,
 } from "./api-client.js";
@@ -441,6 +444,165 @@ describe("api-client", () => {
       await expect(
         getQuests("http://localhost:3001", "test-token", mockFetch as unknown as typeof fetch),
       ).rejects.toMatchObject({ status: 500 });
+    });
+  });
+
+  describe("startQuestSession", () => {
+    it("throws ApiError 401 when token is missing", async () => {
+      await expect(startQuestSession("http://localhost:3001", "", 1)).rejects.toThrowError(
+        ApiError,
+      );
+    });
+
+    it("POSTs with Bearer authorization and returns the session, answers withheld", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          id: 1,
+          title: "Loop fundamentals",
+          description: null,
+          timeLimitSeconds: 300,
+          expiresAt: "2026-09-15T12:05:00.000Z",
+          questions: [{ id: 1, prompt: "?", options: [{ id: 1, text: "A" }] }],
+        }),
+      });
+
+      const result = await startQuestSession(
+        "http://localhost:3001/",
+        "test-token",
+        1,
+        mockFetch as unknown as typeof fetch,
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/quests/1/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer test-token" },
+        body: JSON.stringify({}),
+      });
+      expect(result.expiresAt).toBe("2026-09-15T12:05:00.000Z");
+    });
+
+    it("throws ApiError on a non-2xx response", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        json: async () => ({ message: "Quest not found" }),
+      });
+
+      await expect(
+        startQuestSession(
+          "http://localhost:3001",
+          "test-token",
+          999,
+          mockFetch as unknown as typeof fetch,
+        ),
+      ).rejects.toMatchObject({ status: 404 });
+    });
+  });
+
+  describe("submitQuest", () => {
+    it("throws ApiError 401 when token is missing", async () => {
+      await expect(submitQuest("http://localhost:3001", "", 1, [])).rejects.toThrowError(
+        ApiError,
+      );
+    });
+
+    it("POSTs the responses payload and returns the score, pass outcome, and XP", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          resultId: 5,
+          score: 100,
+          passed: true,
+          xpAwarded: 50,
+          badgesEarned: [],
+        }),
+      });
+
+      const responses = [{ questionId: 1, optionId: 1 }];
+      const result = await submitQuest(
+        "http://localhost:3001/",
+        "test-token",
+        1,
+        responses,
+        mockFetch as unknown as typeof fetch,
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/quests/1/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer test-token" },
+        body: JSON.stringify({ responses }),
+      });
+      expect(result.xpAwarded).toBe(50);
+    });
+
+    it("throws ApiError on a non-2xx response", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: async () => ({ message: "Invalid responses" }),
+      });
+
+      await expect(
+        submitQuest(
+          "http://localhost:3001",
+          "test-token",
+          1,
+          [],
+          mockFetch as unknown as typeof fetch,
+        ),
+      ).rejects.toMatchObject({ status: 400 });
+    });
+  });
+
+  describe("getQuestResult", () => {
+    it("throws ApiError 401 when token is missing", async () => {
+      await expect(getQuestResult("http://localhost:3001", "", 5)).rejects.toThrowError(
+        ApiError,
+      );
+    });
+
+    it("sends Bearer authorization token and returns the reviewed Result", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          resultId: 5,
+          questId: 1,
+          score: 100,
+          passed: true,
+          submittedAt: "2026-09-15T12:04:00.000Z",
+          breakdown: [],
+        }),
+      });
+
+      const result = await getQuestResult(
+        "http://localhost:3001/",
+        "test-token",
+        5,
+        mockFetch as unknown as typeof fetch,
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/quests/results/5", {
+        headers: { Authorization: "Bearer test-token" },
+      });
+      expect(result.passed).toBe(true);
+    });
+
+    it("throws ApiError on a non-200 response", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        json: async () => ({ message: "Result not found" }),
+      });
+
+      await expect(
+        getQuestResult(
+          "http://localhost:3001",
+          "test-token",
+          999,
+          mockFetch as unknown as typeof fetch,
+        ),
+      ).rejects.toMatchObject({ status: 404 });
     });
   });
 

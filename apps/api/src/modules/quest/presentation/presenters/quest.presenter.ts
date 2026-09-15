@@ -16,12 +16,13 @@ export class QuestPresenter {
   }
 
   // Correct-answer keys are intentionally withheld while a session is active.
-  static toSession({ quest, questions }: QuestSession) {
+  static toSession({ quest, questions, expiresAt }: QuestSession) {
     return {
       id: quest.id,
       title: quest.title,
       description: quest.description,
       timeLimitSeconds: quest.timeLimitSeconds,
+      expiresAt: expiresAt.toISOString(),
       questions: questions.map((question) => ({
         id: question.id,
         prompt: question.prompt,

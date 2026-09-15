@@ -1,7 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 import { UserRepository } from '../../auth/domain/ports/user.repository.js';
-import { EvaluateBadgesUseCase } from '../../badge/application/evaluate-badges.use-case.js';
+import {
+  EvaluateBadgesUseCase,
+  type BadgeAwardResult,
+} from '../../badge/application/evaluate-badges.use-case.js';
 import { GetTodayEventUseCase } from '../../daily-event/application/get-today-event.use-case.js';
 import { QuestQuestion } from '../domain/entities/quest.entity.js';
 import {
@@ -20,6 +23,7 @@ export type SubmitQuestInput = {
 export type SubmitQuestOutput = {
   result: QuestResult;
   xpAwarded: number;
+  badgesEarned: BadgeAwardResult[];
 };
 
 function scorePercent(
@@ -88,9 +92,10 @@ export class SubmitQuestUseCase {
     // Badge evaluation is a side effect of a submission that already
     // committed: a failure here shouldn't turn a scored submission into an
     // error response for the client.
+    let badgesEarned: BadgeAwardResult[] = [];
     if (passed) {
       try {
-        await this.evaluateBadges.execute(input.userId);
+        badgesEarned = await this.evaluateBadges.execute(input.userId);
       } catch (error) {
         this.logger.error(
           `Badge evaluation failed for user ${input.userId}`,
@@ -99,6 +104,6 @@ export class SubmitQuestUseCase {
       }
     }
 
-    return { result, xpAwarded };
+    return { result, xpAwarded, badgesEarned };
   }
 }
