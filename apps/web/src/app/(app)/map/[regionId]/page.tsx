@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CatalogList } from "@/components/catalog-list";
 import { getZones } from "@/lib/api-client";
 
 export default async function RegionZonesPage({
@@ -35,23 +35,10 @@ export default async function RegionZonesPage({
   return (
     <div className="mx-auto w-full max-w-3xl p-6">
       <h1 className="text-2xl font-bold tracking-tight">Zones</h1>
-      <ul className="mt-4 flex flex-col gap-2">
-        {zones.map((zone) => (
-          <li key={zone.id}>
-            <Link
-              href={`/map/${regionIdNumber}/${zone.id}`}
-              className="block rounded-md border border-border/60 p-4 hover:bg-muted"
-            >
-              <h2 className="font-medium">{zone.name}</h2>
-              {zone.description && (
-                <p className="text-sm text-muted-foreground">
-                  {zone.description}
-                </p>
-              )}
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <CatalogList
+        items={zones}
+        hrefFor={(zone) => `/map/${regionIdNumber}/${zone.id}`}
+      />
     </div>
   );
 }

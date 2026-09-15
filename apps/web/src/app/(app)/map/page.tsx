@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { CatalogList } from "@/components/catalog-list";
 import { getRegions } from "@/lib/api-client";
 
 export default async function MapPage() {
@@ -26,23 +26,7 @@ export default async function MapPage() {
   return (
     <div className="mx-auto w-full max-w-3xl p-6">
       <h1 className="text-2xl font-bold tracking-tight">Regions</h1>
-      <ul className="mt-4 flex flex-col gap-2">
-        {regions.map((region) => (
-          <li key={region.id}>
-            <Link
-              href={`/map/${region.id}`}
-              className="block rounded-md border border-border/60 p-4 hover:bg-muted"
-            >
-              <h2 className="font-medium">{region.name}</h2>
-              {region.description && (
-                <p className="text-sm text-muted-foreground">
-                  {region.description}
-                </p>
-              )}
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <CatalogList items={regions} hrefFor={(region) => `/map/${region.id}`} />
     </div>
   );
 }
