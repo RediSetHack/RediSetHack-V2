@@ -4,6 +4,7 @@ import type {
   LeaderboardResponse,
   LessonResponse,
   ProfileResponse,
+  Quest,
   Region,
   Stage,
   Zone,
@@ -15,7 +16,7 @@ export type Profile = ProfileResponse;
 export type DailyEvent = DailyEventResponse;
 export type Leaderboard = LeaderboardResponse;
 export type Lesson = LessonResponse;
-export type { Region, Stage, Zone };
+export type { Region, Stage, Zone, Quest };
 
 export interface UpdatedUserResponse {
   id: string;
@@ -237,4 +238,13 @@ export async function getLesson(
 ): Promise<Lesson> {
   const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/stages/${stageId}/lesson`;
   return fetchAuthedJson<Lesson>(endpoint, token, fetchFn);
+}
+
+export async function getQuests(
+  apiBaseUrl: string,
+  token: string,
+  fetchFn: typeof fetch = fetch,
+): Promise<Quest[]> {
+  const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/quests`;
+  return fetchAuthedJson<Quest[]>(endpoint, token, fetchFn);
 }
