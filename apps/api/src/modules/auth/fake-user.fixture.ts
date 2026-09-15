@@ -8,7 +8,13 @@ import { UserRepository } from './domain/ports/user.repository.js';
 export function makeFakeUserRepository(): UserRepository {
   return {
     async upsert(identity) {
-      return new User(identity.id, identity.email ?? '', identity.name, null, 0);
+      return new User(
+        identity.id,
+        identity.email ?? '',
+        identity.name,
+        null,
+        0,
+      );
     },
     async findById() {
       return null;
