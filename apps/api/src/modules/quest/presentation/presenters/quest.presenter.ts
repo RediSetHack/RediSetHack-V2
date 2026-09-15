@@ -1,5 +1,5 @@
-import { QuestWithStatus } from "../../application/list-quests.use-case.js";
-import { QuestSession } from "../../application/start-quest.use-case.js";
+import { QuestWithStatus } from '../../application/list-quests.use-case.js';
+import { QuestSession } from '../../application/start-quest.use-case.js';
 
 export class QuestPresenter {
   static toListItem({ quest, completed }: QuestWithStatus) {
@@ -26,7 +26,10 @@ export class QuestPresenter {
       questions: questions.map((question) => ({
         id: question.id,
         prompt: question.prompt,
-        options: question.options.map((option) => ({ id: option.id, text: option.text })),
+        options: question.options.map((option) => ({
+          id: option.id,
+          text: option.text,
+        })),
       })),
     };
   }

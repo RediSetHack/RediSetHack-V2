@@ -23,7 +23,11 @@ import { EvaluateBadgesUseCase } from '../badge/application/evaluate-badges.use-
 import { DailyEvent } from '../daily-event/domain/entities/daily-event.entity.js';
 import { DailyEventRepository } from '../daily-event/domain/ports/daily-event.repository.js';
 import { GetTodayEventUseCase } from '../daily-event/application/get-today-event.use-case.js';
-import { Quest, QuestOption, QuestQuestion } from './domain/entities/quest.entity.js';
+import {
+  Quest,
+  QuestOption,
+  QuestQuestion,
+} from './domain/entities/quest.entity.js';
 import { QuestResult } from './domain/entities/quest-result.entity.js';
 import { QuestRepository } from './domain/ports/quest.repository.js';
 import { StartQuestUseCase } from './application/start-quest.use-case.js';
@@ -36,7 +40,15 @@ import { ViewQuestResultController } from './presentation/controllers/view-quest
 describe('Quest Session integration (start, submit, review)', () => {
   let app: INestApplication;
 
-  const quest = new Quest(1, 10, 'Loop fundamentals', 'Covers loops.', 300, 70, 100);
+  const quest = new Quest(
+    1,
+    10,
+    'Loop fundamentals',
+    'Covers loops.',
+    300,
+    70,
+    100,
+  );
   const questions = [
     new QuestQuestion(1, 'What prints first?', [
       new QuestOption(1, 'A', true),
@@ -86,7 +98,13 @@ describe('Quest Session integration (start, submit, review)', () => {
 
   const fakeUsers: UserRepository = {
     async upsert(identity) {
-      return new User(identity.id, identity.email ?? '', identity.name, null, 0);
+      return new User(
+        identity.id,
+        identity.email ?? '',
+        identity.name,
+        null,
+        0,
+      );
     },
     async findById() {
       return null;
@@ -148,7 +166,11 @@ describe('Quest Session integration (start, submit, review)', () => {
     xpAwardsClaimed = new Set();
 
     const moduleRef = await Test.createTestingModule({
-      controllers: [StartQuestController, SubmitQuestController, ViewQuestResultController],
+      controllers: [
+        StartQuestController,
+        SubmitQuestController,
+        ViewQuestResultController,
+      ],
       providers: [
         { provide: QuestRepository, useValue: fakeQuests },
         { provide: UserRepository, useValue: fakeUsers },
@@ -166,7 +188,9 @@ describe('Quest Session integration (start, submit, review)', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ transform: true, whitelist: true }),
+    );
     await app.init();
   });
 
@@ -178,7 +202,9 @@ describe('Quest Session integration (start, submit, review)', () => {
 
   describe('POST /v1/api/quests/:questId/start', () => {
     it('rejects an unauthenticated request with 401', async () => {
-      const res = await request(app.getHttpServer()).post('/v1/api/quests/1/start');
+      const res = await request(app.getHttpServer()).post(
+        '/v1/api/quests/1/start',
+      );
       expect(res.status).toBe(401);
     });
 

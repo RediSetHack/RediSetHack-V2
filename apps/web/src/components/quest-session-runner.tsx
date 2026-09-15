@@ -105,6 +105,10 @@ export function QuestSessionRunner({
   }, [answers]);
 
   const submittedRef = useRef(false);
+  // Expiry should trigger exactly one automatic submit attempt, not one
+  // every tick while a failed attempt's error is on screen — the visible
+  // "Submit Quest" button is the retry path after that.
+  const autoSubmitTriggeredRef = useRef(false);
 
   const doSubmit = useCallback(async () => {
     if (submittedRef.current) return;
@@ -149,7 +153,8 @@ export function QuestSessionRunner({
       if (secs === 60 || secs === 30 || (secs <= 10 && secs > 0)) {
         setAnnouncedSeconds(secs);
       }
-      if (isExpired(session.expiresAt, Date.now())) {
+      if (isExpired(session.expiresAt, Date.now()) && !autoSubmitTriggeredRef.current) {
+        autoSubmitTriggeredRef.current = true;
         void doSubmit();
       }
     };

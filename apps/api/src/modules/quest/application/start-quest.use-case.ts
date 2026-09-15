@@ -1,10 +1,14 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable } from '@nestjs/common';
 
-import { Quest, QuestQuestion } from "../domain/entities/quest.entity.js";
-import { QuestNotFoundError } from "../domain/errors.js";
-import { QuestRepository } from "../domain/ports/quest.repository.js";
+import { Quest, QuestQuestion } from '../domain/entities/quest.entity.js';
+import { QuestNotFoundError } from '../domain/errors.js';
+import { QuestRepository } from '../domain/ports/quest.repository.js';
 
-export type QuestSession = { quest: Quest; questions: QuestQuestion[]; expiresAt: Date };
+export type QuestSession = {
+  quest: Quest;
+  questions: QuestQuestion[];
+  expiresAt: Date;
+};
 
 @Injectable()
 export class StartQuestUseCase {

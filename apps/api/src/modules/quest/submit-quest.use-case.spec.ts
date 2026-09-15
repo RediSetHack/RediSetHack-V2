@@ -163,7 +163,11 @@ describe('SubmitQuestUseCase', () => {
       responses: [{ questionId: 1, optionId: 1 }],
     });
     expect(output).not.toHaveProperty('questions');
-    expect(Object.keys(output)).toEqual(['result', 'xpAwarded', 'badgesEarned']);
+    expect(Object.keys(output)).toEqual([
+      'result',
+      'xpAwarded',
+      'badgesEarned',
+    ]);
   });
 
   it('awards XP on first pass', async () => {
@@ -318,9 +322,7 @@ describe('SubmitQuestUseCase', () => {
       ],
     });
 
-    expect(badgesEarned).toEqual([
-      { badge, awardCount: 1, newAwards: 1 },
-    ]);
+    expect(badgesEarned).toEqual([{ badge, awardCount: 1, newAwards: 1 }]);
   });
 
   it('reports no badges earned on a failing submission', async () => {

@@ -1,8 +1,12 @@
-import { SubmitQuestOutput } from "../../application/submit-quest.use-case.js";
-import { QuestResultReview } from "../../application/view-quest-result.use-case.js";
+import { SubmitQuestOutput } from '../../application/submit-quest.use-case.js';
+import { QuestResultReview } from '../../application/view-quest-result.use-case.js';
 
 export class QuestResultPresenter {
-  static toSubmitResponse({ result, xpAwarded, badgesEarned }: SubmitQuestOutput) {
+  static toSubmitResponse({
+    result,
+    xpAwarded,
+    badgesEarned,
+  }: SubmitQuestOutput) {
     return {
       resultId: result.id,
       score: result.score,

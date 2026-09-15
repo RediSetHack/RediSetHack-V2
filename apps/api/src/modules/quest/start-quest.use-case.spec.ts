@@ -81,7 +81,11 @@ describe('QuestPresenter.toSession (answer concealment)', () => {
     const quest = new Quest(1, 10, 'Loops 101', null, 60, 70, 50);
     const expiresAt = new Date('2026-09-15T12:01:00.000Z');
 
-    const response = QuestPresenter.toSession({ quest, questions: [], expiresAt });
+    const response = QuestPresenter.toSession({
+      quest,
+      questions: [],
+      expiresAt,
+    });
 
     expect(response.expiresAt).toBe('2026-09-15T12:01:00.000Z');
   });
