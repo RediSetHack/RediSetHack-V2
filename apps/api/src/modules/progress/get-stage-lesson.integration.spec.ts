@@ -15,6 +15,7 @@ import { makeFakeUserRepository } from '../auth/fake-user.fixture.js';
 import { ClerkAuthGuard } from '../auth/presentation/guards/clerk-auth.guard.js';
 import { Stage } from '../content/domain/entities/stage.entity.js';
 import { StageRepository } from '../content/domain/ports/stage.repository.js';
+import { makeFakeStageRepository } from '../content/fake-stage.fixture.js';
 import { GetStageLessonUseCase } from './application/get-stage-lesson.use-case.js';
 import { GetStageLessonController } from './presentation/controllers/get-stage-lesson.controller.js';
 
@@ -24,22 +25,7 @@ describe('GET /v1/api/stages/:stageId/lesson integration', () => {
   const stagesByZone = new Map<number, Stage[]>();
   const completedStageIds = new Set<number>();
 
-  const fakeStages: StageRepository = {
-    async findById(stageId) {
-      for (const stages of stagesByZone.values()) {
-        const found = stages.find((s) => s.id === stageId);
-        if (found) return found;
-      }
-      return null;
-    },
-    async findByZoneId(zoneId) {
-      return stagesByZone.get(zoneId) ?? [];
-    },
-    async findCompletedStageIds(_userId, zoneId) {
-      const stages = stagesByZone.get(zoneId) ?? [];
-      return stages.filter((s) => completedStageIds.has(s.id)).map((s) => s.id);
-    },
-  };
+  const fakeStages = makeFakeStageRepository(stagesByZone, completedStageIds);
 
   const fakeUsers = makeFakeUserRepository();
 
@@ -100,16 +86,28 @@ describe('GET /v1/api/stages/:stageId/lesson integration', () => {
 
   it('returns the Lesson for the first (always-open) Stage in a Zone', async () => {
     stagesByZone.set(1, [
-      new Stage(1, 1, 'For loops', 'for-loops', [
-        { type: 'text', content: 'Loops repeat code.' },
-        { type: 'code', language: 'javascript', content: 'for (let i = 0; i < 3; i++) {}' },
-        {
-          type: 'exercise',
-          prompt: 'Write a loop that prints 1 to 3.',
-          language: 'javascript',
-          starterCode: '// your code here',
-        },
-      ], 50, 1),
+      new Stage(
+        1,
+        1,
+        'For loops',
+        'for-loops',
+        [
+          { type: 'text', content: 'Loops repeat code.' },
+          {
+            type: 'code',
+            language: 'javascript',
+            content: 'for (let i = 0; i < 3; i++) {}',
+          },
+          {
+            type: 'exercise',
+            prompt: 'Write a loop that prints 1 to 3.',
+            language: 'javascript',
+            starterCode: '// your code here',
+          },
+        ],
+        50,
+        1,
+      ),
     ]);
 
     const res = await request(app.getHttpServer())
@@ -128,7 +126,11 @@ describe('GET /v1/api/stages/:stageId/lesson integration', () => {
       status: 'available',
       blocks: [
         { type: 'text', content: 'Loops repeat code.' },
-        { type: 'code', language: 'javascript', content: 'for (let i = 0; i < 3; i++) {}' },
+        {
+          type: 'code',
+          language: 'javascript',
+          content: 'for (let i = 0; i < 3; i++) {}',
+        },
         {
           type: 'exercise',
           prompt: 'Write a loop that prints 1 to 3.',

@@ -21,14 +21,12 @@ async function CodeBlockView({
 }: Readonly<{ language: string; content: string }>) {
   const html = await highlight(content, language);
   return (
-    <div
-      aria-label={`Code block, ${language}`}
-      role="group"
-      className="[&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:border [&_pre]:border-border/60 [&_pre]:p-4 [&_pre]:text-sm"
-      // Shiki's own output is the highlighted markup; there is no learner
-      // input in this path — content comes from the admin-authored Lesson.
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
+    <figure className="[&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:border [&_pre]:border-border/60 [&_pre]:p-4 [&_pre]:text-sm">
+      <figcaption className="sr-only">Code block, {language}</figcaption>
+      {/* Shiki's own output is the highlighted markup; there is no learner
+        input in this path — content comes from the admin-authored Lesson. */}
+      <div dangerouslySetInnerHTML={{ __html: html }} />
+    </figure>
   );
 }
 

@@ -1,22 +1,21 @@
 import type {
   Character,
   DailyEventResponse,
-  LeaderboardEntry,
   LeaderboardResponse,
-  LessonBlock,
   LessonResponse,
   ProfileResponse,
   Region,
   Stage,
   Zone,
 } from "@repo/contracts";
+export type { LeaderboardEntry, LessonBlock } from "@repo/contracts";
 
 export type CharacterOption = Character;
 export type Profile = ProfileResponse;
 export type DailyEvent = DailyEventResponse;
 export type Leaderboard = LeaderboardResponse;
 export type Lesson = LessonResponse;
-export type { LeaderboardEntry, LessonBlock, Region, Zone, Stage };
+export type { Region, Stage, Zone };
 
 export interface UpdatedUserResponse {
   id: string;

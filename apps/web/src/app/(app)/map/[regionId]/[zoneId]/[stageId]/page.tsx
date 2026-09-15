@@ -28,9 +28,9 @@ export default async function StagePage({
     }
     if (error instanceof ApiError && error.status === 403) {
       return (
-        <p role="status" className="p-6 text-muted-foreground">
+        <output className="block p-6 text-muted-foreground">
           This Stage is locked — finish the Stage before it to unlock the Lesson.
-        </p>
+        </output>
       );
     }
     return (
@@ -47,10 +47,10 @@ export default async function StagePage({
       <h1 className="text-2xl font-bold tracking-tight">{lesson.title}</h1>
       <p className="text-sm text-muted-foreground">{lesson.xpReward} XP</p>
       <div className="mt-6 flex flex-col gap-6">
-        {blocks.map((block, index) => (
-          // Blocks carry no id of their own; position is stable within a
-          // Stage's fixed content array.
-          <LessonBlockView key={index} block={block} />
+        {blocks.map((block) => (
+          // Blocks carry no id of their own; content is stable within a
+          // Stage's fixed content array, so it doubles as the React key.
+          <LessonBlockView key={`${block.kind}:${JSON.stringify(block)}`} block={block} />
         ))}
       </div>
     </div>
