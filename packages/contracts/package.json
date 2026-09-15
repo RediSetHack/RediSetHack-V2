@@ -22,6 +22,10 @@
       "types": "./dist/daily-event/index.d.ts",
       "import": "./dist/daily-event/index.js"
     },
+    "./leaderboard": {
+      "types": "./dist/leaderboard/index.d.ts",
+      "import": "./dist/leaderboard/index.js"
+    },
     "./profile": {
       "types": "./dist/profile/index.d.ts",
       "import": "./dist/profile/index.js"
