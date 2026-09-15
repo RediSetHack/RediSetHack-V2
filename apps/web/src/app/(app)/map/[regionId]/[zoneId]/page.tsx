@@ -32,7 +32,7 @@ function StageCard({
   const body = (
     <>
       <div className="flex items-center justify-between gap-2">
-        <p className="font-medium">{stage.title}</p>
+        <h2 className="font-medium">{stage.title}</h2>
         <StatusBadge status={stage.status} />
       </div>
       <p className="text-sm text-muted-foreground">{stage.xpReward} XP</p>

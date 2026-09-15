@@ -42,7 +42,7 @@ export default async function RegionZonesPage({
               href={`/map/${regionIdNumber}/${zone.id}`}
               className="block rounded-md border border-border/60 p-4 hover:bg-muted"
             >
-              <p className="font-medium">{zone.name}</p>
+              <h2 className="font-medium">{zone.name}</h2>
               {zone.description && (
                 <p className="text-sm text-muted-foreground">
                   {zone.description}

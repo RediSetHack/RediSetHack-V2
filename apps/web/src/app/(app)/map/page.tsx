@@ -33,7 +33,7 @@ export default async function MapPage() {
               href={`/map/${region.id}`}
               className="block rounded-md border border-border/60 p-4 hover:bg-muted"
             >
-              <p className="font-medium">{region.name}</p>
+              <h2 className="font-medium">{region.name}</h2>
               {region.description && (
                 <p className="text-sm text-muted-foreground">
                   {region.description}
