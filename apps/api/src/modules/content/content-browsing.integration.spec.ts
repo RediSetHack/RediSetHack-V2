@@ -23,6 +23,7 @@ import { Stage } from './domain/entities/stage.entity.js';
 import { RegionRepository } from './domain/ports/region.repository.js';
 import { ZoneRepository } from './domain/ports/zone.repository.js';
 import { StageRepository } from './domain/ports/stage.repository.js';
+import { makeFakeStageRepository } from './fake-stage.fixture.js';
 import { ListRegionsUseCase } from './application/list-regions.use-case.js';
 import { ListZonesUseCase } from './application/list-zones.use-case.js';
 import { ListStagesUseCase } from './application/list-stages.use-case.js';
@@ -50,22 +51,7 @@ describe('content browsing integration (Region → Zone → Stage)', () => {
     },
   };
 
-  const fakeStages: StageRepository = {
-    async findById(stageId) {
-      for (const stages of stagesByZone.values()) {
-        const found = stages.find((s) => s.id === stageId);
-        if (found) return found;
-      }
-      return null;
-    },
-    async findByZoneId(zoneId) {
-      return stagesByZone.get(zoneId) ?? [];
-    },
-    async findCompletedStageIds(_userId, zoneId) {
-      const stages = stagesByZone.get(zoneId) ?? [];
-      return stages.filter((s) => completedStageIds.has(s.id)).map((s) => s.id);
-    },
-  };
+  const fakeStages = makeFakeStageRepository(stagesByZone, completedStageIds);
 
   const fakeClerk: ClerkAuthPort = {
     async authenticate(req: IncomingMessage) {
