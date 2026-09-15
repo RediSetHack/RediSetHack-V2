@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { selectUserCharacter, type CharacterOption } from "@/lib/api-client";
 
@@ -30,6 +31,7 @@ export function CharacterSelector({
   apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001",
 }: CharacterSelectorProps) {
   const { getToken } = useAuth();
+  const router = useRouter();
   const [selectedId, setSelectedId] = useState<number | null>(initialCharacterId);
   const [activeCharacterId, setActiveCharacterId] = useState<number | null>(
     initialCharacterId,
@@ -57,6 +59,9 @@ export function CharacterSelector({
         type: "success",
         text: `Avatar successfully updated to ${character.name}!`,
       });
+      // Re-run server components (e.g. the app shell's profile summary) so
+      // the new Character shows up without requiring a fresh sign-in.
+      router.refresh();
     } catch (err: unknown) {
       const errorMsg =
         err instanceof Error ? err.message : "Failed to select character";
