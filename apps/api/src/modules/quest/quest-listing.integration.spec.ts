@@ -79,7 +79,9 @@ describe('Quest listing integration (GET /v1/api/quests)', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ transform: true, whitelist: true }),
+    );
     await app.init();
   });
 
@@ -104,7 +106,10 @@ describe('Quest listing integration (GET /v1/api/quests)', () => {
   });
 
   it("lists Quests with the learner's completion status", async () => {
-    quests.set(1, new Quest(1, 10, 'Loop fundamentals', 'Covers loops.', 300, 70, 100));
+    quests.set(
+      1,
+      new Quest(1, 10, 'Loop fundamentals', 'Covers loops.', 300, 70, 100),
+    );
     quests.set(2, new Quest(2, 10, 'Conditionals', null, 180, 60, 50));
     passedQuestIds.add(1);
 

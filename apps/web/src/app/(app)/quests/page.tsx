@@ -12,8 +12,7 @@ export default async function QuestsPage() {
   let quests: Quest[] | null = null;
   let error = false;
   try {
-    quests = token ? await getQuests(apiUrl, token) : null;
-    if (!token) error = true;
+    quests = await getQuests(apiUrl, token ?? "");
   } catch {
     error = true;
   }
