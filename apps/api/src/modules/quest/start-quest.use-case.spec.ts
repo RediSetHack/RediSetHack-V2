@@ -64,12 +64,29 @@ describe('QuestPresenter.toSession (answer concealment)', () => {
       ]),
     ];
 
-    const response = QuestPresenter.toSession({ quest, questions });
+    const response = QuestPresenter.toSession({
+      quest,
+      questions,
+      expiresAt: new Date('2026-09-15T12:01:00.000Z'),
+    });
 
     for (const question of response.questions) {
       for (const option of question.options) {
         expect(option).not.toHaveProperty('isCorrect');
       }
     }
+  });
+
+  it('exposes the deadline as an ISO timestamp', () => {
+    const quest = new Quest(1, 10, 'Loops 101', null, 60, 70, 50);
+    const expiresAt = new Date('2026-09-15T12:01:00.000Z');
+
+    const response = QuestPresenter.toSession({
+      quest,
+      questions: [],
+      expiresAt,
+    });
+
+    expect(response.expiresAt).toBe('2026-09-15T12:01:00.000Z');
   });
 });

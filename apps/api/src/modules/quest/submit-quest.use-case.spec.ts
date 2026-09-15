@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { UserRepository } from '../auth/domain/ports/user.repository.js';
 import { User } from '../auth/domain/entities/user.entity.js';
+import { BadgeDefinition } from '../badge/domain/entities/badge.entity.js';
 import { makeEvaluateBadges } from '../badge/evaluate-badges.fixture.js';
 import { DailyEvent } from '../daily-event/domain/entities/daily-event.entity.js';
 import { GetTodayEventUseCase } from '../daily-event/application/get-today-event.use-case.js';
@@ -162,7 +163,11 @@ describe('SubmitQuestUseCase', () => {
       responses: [{ questionId: 1, optionId: 1 }],
     });
     expect(output).not.toHaveProperty('questions');
-    expect(Object.keys(output)).toEqual(['result', 'xpAwarded']);
+    expect(Object.keys(output)).toEqual([
+      'result',
+      'xpAwarded',
+      'badgesEarned',
+    ]);
   });
 
   it('awards XP on first pass', async () => {
@@ -284,5 +289,58 @@ describe('SubmitQuestUseCase', () => {
 
     expect(xpAwarded).toBe(0);
     expect(users.awardXp).not.toHaveBeenCalled();
+  });
+
+  it('surfaces badges newly awarded by a passing submission', async () => {
+    const quests = makeQuestRepo();
+    const users = makeUserRepo();
+    const badge = new BadgeDefinition(
+      1,
+      'Quest Novice',
+      'quest-novice',
+      null,
+      { trigger: 'activity', target: 'quest_passes', threshold: 1 },
+      null,
+    );
+    const useCase = new SubmitQuestUseCase(
+      quests,
+      users,
+      makeGetTodayEvent(),
+      makeEvaluateBadges({
+        findAll: vi.fn().mockResolvedValue([badge]),
+        countAwards: vi.fn().mockResolvedValue(0),
+        countPassedQuests: vi.fn().mockResolvedValue(1),
+      }),
+    );
+
+    const { badgesEarned } = await useCase.execute({
+      userId: 'user_1',
+      questId: quest.id,
+      responses: [
+        { questionId: 1, optionId: 1 },
+        { questionId: 2, optionId: 4 },
+      ],
+    });
+
+    expect(badgesEarned).toEqual([{ badge, awardCount: 1, newAwards: 1 }]);
+  });
+
+  it('reports no badges earned on a failing submission', async () => {
+    const quests = makeQuestRepo();
+    const users = makeUserRepo();
+    const useCase = new SubmitQuestUseCase(
+      quests,
+      users,
+      makeGetTodayEvent(),
+      makeEvaluateBadges(),
+    );
+
+    const { badgesEarned } = await useCase.execute({
+      userId: 'user_1',
+      questId: quest.id,
+      responses: [{ questionId: 1, optionId: 1 }],
+    });
+
+    expect(badgesEarned).toEqual([]);
   });
 });

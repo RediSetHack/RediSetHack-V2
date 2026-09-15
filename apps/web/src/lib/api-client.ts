@@ -5,8 +5,12 @@ import type {
   LessonResponse,
   ProfileResponse,
   Quest,
+  QuestResponse,
+  QuestResultReviewResponse,
+  QuestSessionResponse,
   Region,
   Stage,
+  SubmitQuestResponse,
   Zone,
 } from "@repo/contracts";
 export type { LeaderboardEntry, LessonBlock } from "@repo/contracts";
@@ -16,6 +20,10 @@ export type Profile = ProfileResponse;
 export type DailyEvent = DailyEventResponse;
 export type Leaderboard = LeaderboardResponse;
 export type Lesson = LessonResponse;
+export type QuestSession = QuestSessionResponse;
+export type QuestSubmission = QuestResponse;
+export type QuestSubmitResult = SubmitQuestResponse;
+export type QuestResultReview = QuestResultReviewResponse;
 export type { Region, Stage, Zone, Quest };
 
 export interface UpdatedUserResponse {
@@ -247,4 +255,65 @@ export async function getQuests(
 ): Promise<Quest[]> {
   const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/quests`;
   return fetchAuthedJson<Quest[]>(endpoint, token, fetchFn);
+}
+
+/** Fetches an authed JSON resource with a POST body, throwing on a missing token or failed response. */
+async function postAuthedJson<T>(
+  endpoint: string,
+  token: string,
+  body: unknown,
+  fetchFn: typeof fetch,
+): Promise<T> {
+  if (!token) {
+    throw new ApiError(401, "Authentication token is required");
+  }
+
+  const response = await fetchFn(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    await throwOnError(response);
+  }
+
+  return (await response.json()) as T;
+}
+
+/** Starts a Quest Session: the questions and options, correct answers withheld, plus the deadline. */
+export async function startQuestSession(
+  apiBaseUrl: string,
+  token: string,
+  questId: number,
+  fetchFn: typeof fetch = fetch,
+): Promise<QuestSession> {
+  const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/quests/${questId}/start`;
+  return postAuthedJson<QuestSession>(endpoint, token, {}, fetchFn);
+}
+
+/** Submits a Quest Session's answers for server-side scoring. */
+export async function submitQuest(
+  apiBaseUrl: string,
+  token: string,
+  questId: number,
+  responses: QuestSubmission[],
+  fetchFn: typeof fetch = fetch,
+): Promise<QuestSubmitResult> {
+  const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/quests/${questId}/submit`;
+  return postAuthedJson<QuestSubmitResult>(endpoint, token, { responses }, fetchFn);
+}
+
+/** Reviews a submitted Result against the correct answers. */
+export async function getQuestResult(
+  apiBaseUrl: string,
+  token: string,
+  resultId: number,
+  fetchFn: typeof fetch = fetch,
+): Promise<QuestResultReview> {
+  const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/quests/results/${resultId}`;
+  return fetchAuthedJson<QuestResultReview>(endpoint, token, fetchFn);
 }
