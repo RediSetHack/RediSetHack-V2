@@ -6,6 +6,18 @@ import type { Leaderboard, LeaderboardEntry } from "@/lib/api-client";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
 
+function EntryName({
+  entry,
+  isCurrentUser,
+}: Readonly<{ entry: LeaderboardEntry; isCurrentUser: boolean }>) {
+  return (
+    <>
+      {entry.name ?? "Anonymous"}
+      {isCurrentUser && <span className="text-muted-foreground"> (you)</span>}
+    </>
+  );
+}
+
 function TopRankCard({
   entry,
   isCurrentUser,
@@ -21,8 +33,7 @@ function TopRankCard({
         {MEDALS[entry.rank - 1]}
       </span>
       <span className="font-semibold">
-        {entry.name ?? "Anonymous"}
-        {isCurrentUser && <span className="text-muted-foreground"> (you)</span>}
+        <EntryName entry={entry} isCurrentUser={isCurrentUser} />
       </span>
       <span className="text-sm text-muted-foreground">
         Level {entry.level} • {entry.totalXp} XP
@@ -42,8 +53,7 @@ function LeaderboardRow({
     >
       <td className="px-3 py-2">{entry.rank}</td>
       <td className="px-3 py-2">
-        {entry.name ?? "Anonymous"}
-        {isCurrentUser && <span className="text-muted-foreground"> (you)</span>}
+        <EntryName entry={entry} isCurrentUser={isCurrentUser} />
       </td>
       <td className="px-3 py-2">{entry.level}</td>
       <td className="px-3 py-2 text-right">{entry.totalXp}</td>
