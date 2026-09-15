@@ -1,8 +1,8 @@
 import type {
   Character,
   DailyEventResponse,
-  LeaderboardEntry,
   LeaderboardResponse,
+  LessonResponse,
   ProfileResponse,
   Quest,
   QuestResponse,
@@ -13,16 +13,18 @@ import type {
   SubmitQuestResponse,
   Zone,
 } from "@repo/contracts";
+export type { LeaderboardEntry, LessonBlock } from "@repo/contracts";
 
 export type CharacterOption = Character;
 export type Profile = ProfileResponse;
 export type DailyEvent = DailyEventResponse;
 export type Leaderboard = LeaderboardResponse;
+export type Lesson = LessonResponse;
 export type QuestSession = QuestSessionResponse;
 export type QuestSubmission = QuestResponse;
 export type QuestSubmitResult = SubmitQuestResponse;
 export type QuestResultReview = QuestResultReviewResponse;
-export type { LeaderboardEntry, Region, Zone, Stage, Quest };
+export type { Region, Stage, Zone, Quest };
 
 export interface UpdatedUserResponse {
   id: string;
@@ -234,6 +236,16 @@ export async function getStages(
 ): Promise<Stage[]> {
   const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/zones/${zoneId}/stages`;
   return fetchAuthedJson<Stage[]>(endpoint, token, fetchFn);
+}
+
+export async function getLesson(
+  apiBaseUrl: string,
+  token: string,
+  stageId: number,
+  fetchFn: typeof fetch = fetch,
+): Promise<Lesson> {
+  const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/stages/${stageId}/lesson`;
+  return fetchAuthedJson<Lesson>(endpoint, token, fetchFn);
 }
 
 export async function getQuests(

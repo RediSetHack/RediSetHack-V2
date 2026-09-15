@@ -9,4 +9,5 @@ export * from "./content/index.js";
 export * from "./daily-event/index.js";
 export * from "./leaderboard/index.js";
 export * from "./profile/index.js";
+export * from "./progress/index.js";
 export * from "./quest/index.js";

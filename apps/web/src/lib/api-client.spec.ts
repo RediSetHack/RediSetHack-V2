@@ -9,6 +9,7 @@ import {
   getRegions,
   getZones,
   getStages,
+  getLesson,
   getQuests,
   startQuestSession,
   submitQuest,
@@ -394,6 +395,54 @@ describe("api-client", () => {
 
       await expect(
         getStages("http://localhost:3001", "test-token", 1, mockFetch as unknown as typeof fetch),
+      ).rejects.toMatchObject({ status: 403 });
+    });
+  });
+
+  describe("getLesson", () => {
+    it("throws ApiError 401 when token is missing", async () => {
+      await expect(getLesson("http://localhost:3001", "", 1)).rejects.toThrowError(ApiError);
+    });
+
+    it("sends Bearer authorization token and returns the Stage's Lesson", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          id: 1,
+          zoneId: 1,
+          title: "For loops",
+          slug: "for-loops",
+          xpReward: 50,
+          sortOrder: 1,
+          status: "available",
+          blocks: [{ type: "text", content: "Loops repeat code." }],
+        }),
+      });
+
+      const result = await getLesson(
+        "http://localhost:3001/",
+        "test-token",
+        1,
+        mockFetch as unknown as typeof fetch,
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/stages/1/lesson", {
+        headers: {
+          Authorization: "Bearer test-token",
+        },
+      });
+      expect(result.blocks).toEqual([{ type: "text", content: "Loops repeat code." }]);
+    });
+
+    it("throws ApiError on a locked Stage's 403 response", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 403,
+        json: async () => ({ message: "Stage with id 1 is locked until its predecessor is completed" }),
+      });
+
+      await expect(
+        getLesson("http://localhost:3001", "test-token", 1, mockFetch as unknown as typeof fetch),
       ).rejects.toMatchObject({ status: 403 });
     });
   });
