@@ -1,8 +1,16 @@
-import type { Character, DailyEventResponse, ProfileResponse } from "@repo/contracts";
+import type {
+  Character,
+  DailyEventResponse,
+  ProfileResponse,
+  Region,
+  Stage,
+  Zone,
+} from "@repo/contracts";
 
 export type CharacterOption = Character;
 export type Profile = ProfileResponse;
 export type DailyEvent = DailyEventResponse;
+export type { Region, Zone, Stage };
 
 export interface UpdatedUserResponse {
   id: string;
@@ -169,4 +177,63 @@ export async function getCurrentUser(
   }
 
   return (await response.json()) as UpdatedUserResponse;
+}
+
+export async function getRegions(
+  apiBaseUrl: string,
+  fetchFn: typeof fetch = fetch,
+): Promise<Region[]> {
+  const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/regions`;
+  const response = await fetchFn(endpoint);
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      `Failed to load Regions (status ${response.status})`,
+    );
+  }
+
+  return (await response.json()) as Region[];
+}
+
+export async function getZones(
+  apiBaseUrl: string,
+  regionId: number,
+  fetchFn: typeof fetch = fetch,
+): Promise<Zone[]> {
+  const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/regions/${regionId}/zones`;
+  const response = await fetchFn(endpoint);
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      `Failed to load Zones (status ${response.status})`,
+    );
+  }
+
+  return (await response.json()) as Zone[];
+}
+
+export async function getStages(
+  apiBaseUrl: string,
+  token: string,
+  zoneId: number,
+  fetchFn: typeof fetch = fetch,
+): Promise<Stage[]> {
+  if (!token) {
+    throw new ApiError(401, "Authentication token is required");
+  }
+
+  const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/zones/${zoneId}/stages`;
+  const response = await fetchFn(endpoint, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    await throwOnError(response);
+  }
+
+  return (await response.json()) as Stage[];
 }
