@@ -6,6 +6,9 @@ import {
   getCurrentUser,
   getProfile,
   getTodayEvent,
+  getRegions,
+  getZones,
+  getStages,
   getLeaderboard,
   ApiError,
 } from "./api-client.js";
@@ -283,6 +286,111 @@ describe("api-client", () => {
       await expect(
         getTodayEvent("http://localhost:3001", mockFetch as unknown as typeof fetch),
       ).rejects.toMatchObject({ status: 500 });
+    });
+  });
+
+  describe("getRegions", () => {
+    it("fetches the Region catalog with no auth header", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [
+          { id: 1, name: "Foundations", slug: "foundations", description: null, sortOrder: 1 },
+        ],
+      });
+
+      const result = await getRegions(
+        "http://localhost:3001/",
+        mockFetch as unknown as typeof fetch,
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/regions");
+      expect(result).toHaveLength(1);
+    });
+
+    it("throws ApiError when Regions cannot be loaded", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 500 });
+
+      await expect(
+        getRegions("http://localhost:3001", mockFetch as unknown as typeof fetch),
+      ).rejects.toMatchObject({ status: 500 });
+    });
+  });
+
+  describe("getZones", () => {
+    it("fetches a Region's Zones with no auth header", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [
+          { id: 1, regionId: 1, name: "Loops", slug: "loops", description: null, sortOrder: 1 },
+        ],
+      });
+
+      const result = await getZones(
+        "http://localhost:3001/",
+        1,
+        mockFetch as unknown as typeof fetch,
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/regions/1/zones");
+      expect(result).toHaveLength(1);
+    });
+
+    it("throws ApiError when Zones cannot be loaded", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 500 });
+
+      await expect(
+        getZones("http://localhost:3001", 1, mockFetch as unknown as typeof fetch),
+      ).rejects.toMatchObject({ status: 500 });
+    });
+  });
+
+  describe("getStages", () => {
+    it("throws ApiError 401 when token is missing", async () => {
+      await expect(getStages("http://localhost:3001", "", 1)).rejects.toThrowError(ApiError);
+    });
+
+    it("sends Bearer authorization token and returns a Zone's Stages", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [
+          {
+            id: 1,
+            zoneId: 1,
+            title: "For loops",
+            slug: "for-loops",
+            lessonContent: [],
+            xpReward: 50,
+            sortOrder: 1,
+            status: "available",
+          },
+        ],
+      });
+
+      const result = await getStages(
+        "http://localhost:3001/",
+        "test-token",
+        1,
+        mockFetch as unknown as typeof fetch,
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/zones/1/stages", {
+        headers: {
+          Authorization: "Bearer test-token",
+        },
+      });
+      expect(result[0]?.status).toBe("available");
+    });
+
+    it("throws ApiError on a non-200 response", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 403,
+        json: async () => ({ message: "locked" }),
+      });
+
+      await expect(
+        getStages("http://localhost:3001", "test-token", 1, mockFetch as unknown as typeof fetch),
+      ).rejects.toMatchObject({ status: 403 });
     });
   });
 

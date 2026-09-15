@@ -35,13 +35,13 @@ const ADMIN_ROUTES: Array<{
 ];
 
 import { Character } from '../auth/domain/entities/character.entity.js';
-import { User } from '../auth/domain/entities/user.entity.js';
 import { CharacterRepository } from '../auth/domain/ports/character.repository.js';
 import {
   ClerkAuthPort,
   type ClerkAuthenticatedUser,
 } from '../auth/domain/ports/clerk-auth.port.js';
 import { UserRepository } from '../auth/domain/ports/user.repository.js';
+import { makeFakeUserRepository } from '../auth/fake-user.fixture.js';
 import { EnsureUserUseCase } from '../auth/application/ensure-user.use-case.js';
 import { AdminGuard } from '../auth/presentation/guards/admin.guard.js';
 import { ClerkAuthGuard } from '../auth/presentation/guards/clerk-auth.guard.js';
@@ -381,29 +381,7 @@ describe('content admin CRUD', () => {
     },
   };
 
-  const fakeUsers: UserRepository = {
-    async upsert(identity) {
-      return new User(
-        identity.id,
-        identity.email ?? '',
-        identity.name,
-        null,
-        0,
-      );
-    },
-    async findById() {
-      return null;
-    },
-    async findByEmail() {
-      return null;
-    },
-    async updateCharacter() {
-      throw new Error('not used in this test');
-    },
-    async awardXp() {
-      throw new Error('not used in this test');
-    },
-  };
+  const fakeUsers = makeFakeUserRepository();
 
   beforeEach(async () => {
     const regions = makeRegionRepository();

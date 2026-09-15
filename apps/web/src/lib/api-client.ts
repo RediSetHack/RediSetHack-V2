@@ -4,13 +4,16 @@ import type {
   LeaderboardEntry,
   LeaderboardResponse,
   ProfileResponse,
+  Region,
+  Stage,
+  Zone,
 } from "@repo/contracts";
 
 export type CharacterOption = Character;
 export type Profile = ProfileResponse;
 export type DailyEvent = DailyEventResponse;
 export type Leaderboard = LeaderboardResponse;
-export type { LeaderboardEntry };
+export type { LeaderboardEntry, Region, Zone, Stage };
 
 export interface UpdatedUserResponse {
   id: string;
@@ -40,21 +43,51 @@ async function throwOnError(response: Response): Promise<never> {
   throw new ApiError(response.status, message);
 }
 
-export async function getCharacters(
-  apiBaseUrl: string,
-  fetchFn: typeof fetch = fetch,
-): Promise<CharacterOption[]> {
-  const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/characters`;
+/** Fetches a public (unauthenticated) JSON resource, throwing `ApiError` on a non-2xx response. */
+async function fetchPublicJson<T>(
+  endpoint: string,
+  resourceLabel: string,
+  fetchFn: typeof fetch,
+): Promise<T> {
   const response = await fetchFn(endpoint);
 
   if (!response.ok) {
     throw new ApiError(
       response.status,
-      `Failed to load character catalog (status ${response.status})`,
+      `Failed to load ${resourceLabel} (status ${response.status})`,
     );
   }
 
-  return (await response.json()) as CharacterOption[];
+  return (await response.json()) as T;
+}
+
+/** Fetches a JSON resource with a required Bearer token, throwing on a missing token or failed response. */
+async function fetchAuthedJson<T>(
+  endpoint: string,
+  token: string,
+  fetchFn: typeof fetch,
+): Promise<T> {
+  if (!token) {
+    throw new ApiError(401, "Authentication token is required");
+  }
+
+  const response = await fetchFn(endpoint, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    await throwOnError(response);
+  }
+
+  return (await response.json()) as T;
+}
+
+export async function getCharacters(
+  apiBaseUrl: string,
+  fetchFn: typeof fetch = fetch,
+): Promise<CharacterOption[]> {
+  const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/characters`;
+  return fetchPublicJson<CharacterOption[]>(endpoint, "character catalog", fetchFn);
 }
 
 export async function selectUserCharacter(
@@ -116,22 +149,8 @@ export async function getProfile(
   token: string,
   fetchFn: typeof fetch = fetch,
 ): Promise<Profile> {
-  if (!token) {
-    throw new ApiError(401, "Authentication token is required");
-  }
-
   const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/users/profile`;
-  const response = await fetchFn(endpoint, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    await throwOnError(response);
-  }
-
-  return (await response.json()) as Profile;
+  return fetchAuthedJson<Profile>(endpoint, token, fetchFn);
 }
 
 export async function getTodayEvent(
@@ -139,16 +158,7 @@ export async function getTodayEvent(
   fetchFn: typeof fetch = fetch,
 ): Promise<DailyEvent> {
   const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/events/today`;
-  const response = await fetchFn(endpoint);
-
-  if (!response.ok) {
-    throw new ApiError(
-      response.status,
-      `Failed to load today's event (status ${response.status})`,
-    );
-  }
-
-  return (await response.json()) as DailyEvent;
+  return fetchPublicJson<DailyEvent>(endpoint, "today's event", fetchFn);
 }
 
 export async function getLeaderboard(
@@ -158,22 +168,8 @@ export async function getLeaderboard(
   limit: number,
   fetchFn: typeof fetch = fetch,
 ): Promise<Leaderboard> {
-  if (!token) {
-    throw new ApiError(401, "Authentication token is required");
-  }
-
   const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/leaderboard?page=${page}&limit=${limit}`;
-  const response = await fetchFn(endpoint, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    await throwOnError(response);
-  }
-
-  return (await response.json()) as Leaderboard;
+  return fetchAuthedJson<Leaderboard>(endpoint, token, fetchFn);
 }
 
 export async function getCurrentUser(
@@ -202,4 +198,31 @@ export async function getCurrentUser(
   }
 
   return (await response.json()) as UpdatedUserResponse;
+}
+
+export async function getRegions(
+  apiBaseUrl: string,
+  fetchFn: typeof fetch = fetch,
+): Promise<Region[]> {
+  const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/regions`;
+  return fetchPublicJson<Region[]>(endpoint, "Regions", fetchFn);
+}
+
+export async function getZones(
+  apiBaseUrl: string,
+  regionId: number,
+  fetchFn: typeof fetch = fetch,
+): Promise<Zone[]> {
+  const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/regions/${regionId}/zones`;
+  return fetchPublicJson<Zone[]>(endpoint, "Zones", fetchFn);
+}
+
+export async function getStages(
+  apiBaseUrl: string,
+  token: string,
+  zoneId: number,
+  fetchFn: typeof fetch = fetch,
+): Promise<Stage[]> {
+  const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/zones/${zoneId}/stages`;
+  return fetchAuthedJson<Stage[]>(endpoint, token, fetchFn);
 }
