@@ -9,13 +9,13 @@ import {
   ZoneListResponseSchema,
 } from '@repo/contracts';
 
-import { User } from '../auth/domain/entities/user.entity.js';
 import {
   ClerkAuthPort,
   type ClerkAuthenticatedUser,
 } from '../auth/domain/ports/clerk-auth.port.js';
 import { UserRepository } from '../auth/domain/ports/user.repository.js';
 import { EnsureUserUseCase } from '../auth/application/ensure-user.use-case.js';
+import { makeFakeUserRepository } from '../auth/fake-user.fixture.js';
 import { ClerkAuthGuard } from '../auth/presentation/guards/clerk-auth.guard.js';
 import { Region } from './domain/entities/region.entity.js';
 import { Zone } from './domain/entities/zone.entity.js';
@@ -79,29 +79,7 @@ describe('content browsing integration (Region → Zone → Stage)', () => {
     },
   };
 
-  const fakeUsers: UserRepository = {
-    async upsert(identity) {
-      return new User(
-        identity.id,
-        identity.email ?? '',
-        identity.name,
-        null,
-        0,
-      );
-    },
-    async findById() {
-      return null;
-    },
-    async findByEmail() {
-      return null;
-    },
-    async updateCharacter() {
-      throw new Error('not used in this test');
-    },
-    async awardXp() {
-      throw new Error('not used in this test');
-    },
-  };
+  const fakeUsers = makeFakeUserRepository();
 
   beforeEach(async () => {
     regions.clear();
