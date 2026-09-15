@@ -1,1 +1,1 @@
-export { default } from "../loading.js";
+export { default } from "../loading";
