@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+import { BadgeAwardSchema } from "../badges/badge-award.schema.js";
+
+export type { BadgeAward } from "../badges/badge-award.schema.js";
+
 /**
  * A single Quest as listed by `QuestPresenter.toListItem` in `apps/api`.
  * `completed` is computed server-side from the learner's passed Quest
@@ -52,16 +56,6 @@ export const QuestResponseSchema = z.object({
   optionId: z.number().int().positive(),
 });
 export type QuestResponse = z.infer<typeof QuestResponseSchema>;
-
-/** A Badge newly awarded as a side effect of a submission. */
-export const BadgeAwardSchema = z.object({
-  id: z.number().int().positive(),
-  name: z.string(),
-  description: z.string().nullable(),
-  imageUrl: z.string().nullable(),
-  awardCount: z.number().int().positive(),
-});
-export type BadgeAward = z.infer<typeof BadgeAwardSchema>;
 
 /** The outcome of submitting a Quest, `POST /v1/api/quests/:questId/submit`. */
 export const SubmitQuestResponseSchema = z.object({
