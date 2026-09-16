@@ -15,6 +15,7 @@ import {
   submitQuest,
   getQuestResult,
   getLeaderboard,
+  markStageComplete,
   ApiError,
 } from "./api-client.js";
 
@@ -699,6 +700,64 @@ describe("api-client", () => {
       await expect(
         getLeaderboard("http://localhost:3001", "test-token", 1, 20, mockFetch as unknown as typeof fetch),
       ).rejects.toMatchObject({ status: 500 });
+    });
+  });
+
+  describe("markStageComplete", () => {
+    it("throws ApiError 401 when token is missing", async () => {
+      await expect(markStageComplete("http://localhost:3001", "", 3)).rejects.toThrowError(
+        ApiError,
+      );
+    });
+
+    it("POSTs with Bearer authorization and returns the completion reward", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          stageId: 3,
+          xpEarned: 100,
+          eventMultiplier: 1,
+          eventType: "normal",
+          level: 2,
+          leveledUp: true,
+          badgesEarned: [],
+        }),
+      });
+
+      const result = await markStageComplete(
+        "http://localhost:3001/",
+        "test-token",
+        3,
+        mockFetch as unknown as typeof fetch,
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/stages/3/complete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer test-token",
+        },
+        body: "{}",
+      });
+      expect(result.xpEarned).toBe(100);
+      expect(result.leveledUp).toBe(true);
+    });
+
+    it("maps a rejected duplicate completion to a rule, not a thrown error", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: async () => ({ message: "Stage 3 is already completed" }),
+      });
+
+      await expect(
+        markStageComplete(
+          "http://localhost:3001",
+          "test-token",
+          3,
+          mockFetch as unknown as typeof fetch,
+        ),
+      ).rejects.toMatchObject({ status: 400 });
     });
   });
 });

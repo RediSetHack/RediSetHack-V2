@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { notFound } from "next/navigation";
 import { LessonBlockView } from "@/components/lesson-blocks";
+import { StageCompletion } from "@/components/stage-completion";
 import { ApiError, getLesson, type Lesson } from "@/lib/api-client";
 import { normalizeLessonBlocks } from "@/lib/lesson-blocks";
 
@@ -9,9 +10,10 @@ export default async function StagePage({
 }: Readonly<{
   params: Promise<{ regionId: string; zoneId: string; stageId: string }>;
 }>) {
-  const { stageId } = await params;
+  const { regionId, zoneId, stageId } = await params;
   const stageIdNumber = Number(stageId);
-  if (!Number.isInteger(stageIdNumber)) {
+  const zoneIdNumber = Number(zoneId);
+  if (!Number.isInteger(stageIdNumber) || !Number.isInteger(zoneIdNumber)) {
     notFound();
   }
 
@@ -53,6 +55,12 @@ export default async function StagePage({
           <LessonBlockView key={`${block.kind}:${JSON.stringify(block)}`} block={block} />
         ))}
       </div>
+      <StageCompletion
+        stageId={stageIdNumber}
+        apiUrl={apiUrl}
+        completed={lesson.status === "completed"}
+        zonePath={`/map/${regionId}/${zoneIdNumber}`}
+      />
     </div>
   );
 }

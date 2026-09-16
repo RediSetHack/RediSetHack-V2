@@ -1,0 +1,1 @@
+export * from "./badge-award.schema.js";

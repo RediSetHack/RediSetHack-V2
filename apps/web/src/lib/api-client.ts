@@ -10,6 +10,7 @@ import type {
   QuestSessionResponse,
   Region,
   Stage,
+  StageCompletionResponse,
   SubmitQuestResponse,
   Zone,
 } from "@repo/contracts";
@@ -24,6 +25,7 @@ export type QuestSession = QuestSessionResponse;
 export type QuestSubmission = QuestResponse;
 export type QuestSubmitResult = SubmitQuestResponse;
 export type QuestResultReview = QuestResultReviewResponse;
+export type StageCompletion = StageCompletionResponse;
 export type { Region, Stage, Zone, Quest };
 
 export interface UpdatedUserResponse {
@@ -316,4 +318,15 @@ export async function getQuestResult(
 ): Promise<QuestResultReview> {
   const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/quests/results/${resultId}`;
   return fetchAuthedJson<QuestResultReview>(endpoint, token, fetchFn);
+}
+
+/** Marks a Stage complete, `POST /v1/api/stages/:stageId/complete`. */
+export async function markStageComplete(
+  apiBaseUrl: string,
+  token: string,
+  stageId: number,
+  fetchFn: typeof fetch = fetch,
+): Promise<StageCompletion> {
+  const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/stages/${stageId}/complete`;
+  return postAuthedJson<StageCompletion>(endpoint, token, {}, fetchFn);
 }
