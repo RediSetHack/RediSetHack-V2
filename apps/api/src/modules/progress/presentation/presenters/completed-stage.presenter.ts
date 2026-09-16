@@ -1,4 +1,4 @@
-import { StageCompletion } from "../../application/mark-stage-complete.use-case.js";
+import { StageCompletion } from '../../application/mark-stage-complete.use-case.js';
 
 export class CompletedStagePresenter {
   static toResponse(completion: StageCompletion) {

@@ -37,7 +37,11 @@ describe('POST /v1/api/stages/:stageId/complete integration', () => {
   const fakeUsers = makeFakeUserRepository();
 
   const fakeProgress: ProgressRepository = {
-    async markCompleted(userId, stageId, xpEarned): Promise<MarkCompletedResult | null> {
+    async markCompleted(
+      userId,
+      stageId,
+      xpEarned,
+    ): Promise<MarkCompletedResult | null> {
       const stage = (stagesByZone.get(1) ?? []).find((s) => s.id === stageId);
       if (stage && completedStageIds.has(stage.id)) return null;
       const previousXp = totalXpByUser.get(userId) ?? 0;
@@ -184,7 +188,9 @@ describe('POST /v1/api/stages/:stageId/complete integration', () => {
       .set(asLearner());
 
     expect(res.status).toBe(201);
-    expect(StageCompletionResponseSchema.parse(res.body).nextStageId).toBeNull();
+    expect(
+      StageCompletionResponseSchema.parse(res.body).nextStageId,
+    ).toBeNull();
   });
 
   it('rejects a duplicate completion with 400, as a rule not an error', async () => {

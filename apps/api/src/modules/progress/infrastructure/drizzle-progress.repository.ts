@@ -1,9 +1,12 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { eq, sql } from "drizzle-orm";
-import { type Database, userProgress, users } from "@repo/db";
+import { Inject, Injectable } from '@nestjs/common';
+import { eq, sql } from 'drizzle-orm';
+import { type Database, userProgress, users } from '@repo/db';
 
-import { DB } from "../../../database/database.module.js";
-import { MarkCompletedResult, ProgressRepository } from "../domain/ports/progress.repository.js";
+import { DB } from '../../../database/database.module.js';
+import {
+  MarkCompletedResult,
+  ProgressRepository,
+} from '../domain/ports/progress.repository.js';
 
 @Injectable()
 export class DrizzleProgressRepository implements ProgressRepository {
@@ -30,7 +33,10 @@ export class DrizzleProgressRepository implements ProgressRepository {
 
       await tx
         .update(users)
-        .set({ totalXp: sql`${users.totalXp} + ${xpEarned}`, updatedAt: new Date() })
+        .set({
+          totalXp: sql`${users.totalXp} + ${xpEarned}`,
+          updatedAt: new Date(),
+        })
         .where(eq(users.id, userId));
       return { previousXp };
     });
