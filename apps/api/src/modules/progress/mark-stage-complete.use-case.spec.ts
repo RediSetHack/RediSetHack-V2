@@ -45,8 +45,8 @@ function makeEvent(
   return new GetTodayEventUseCase(repo);
 }
 
-function makeProgress(awarded = true): ProgressRepository {
-  return { markCompleted: vi.fn().mockResolvedValue(awarded) };
+function makeProgress(totalXp: number | null = 20): ProgressRepository {
+  return { markCompleted: vi.fn().mockResolvedValue(totalXp) };
 }
 
 describe('MarkStageCompleteUseCase', () => {
@@ -70,6 +70,9 @@ describe('MarkStageCompleteUseCase', () => {
       xpEarned: 20,
       eventMultiplier: 1,
       eventType: 'normal',
+      level: 1,
+      leveledUp: false,
+      badgesEarned: [],
     });
     expect(progress.markCompleted).toHaveBeenCalledWith('user_1', 2, 20);
   });
@@ -110,6 +113,25 @@ describe('MarkStageCompleteUseCase', () => {
     const completion = await useCase.execute('user_1', 1);
 
     expect(completion.xpEarned).toBe(10);
+  });
+
+  it('reports a Level-up when the reward carries the learner across a threshold', async () => {
+    const repo = makeStageRepo({
+      findById: vi.fn().mockResolvedValue(stages[1]),
+      findCompletedStageIds: vi.fn().mockResolvedValue([1]),
+    });
+    const progress = makeProgress(110);
+    const useCase = new MarkStageCompleteUseCase(
+      repo,
+      progress,
+      makeEvent('normal', 1),
+      makeEvaluateBadges(),
+    );
+
+    const completion = await useCase.execute('user_1', 2);
+
+    expect(completion.level).toBe(2);
+    expect(completion.leveledUp).toBe(true);
   });
 
   it('throws StageLockedError when predecessor is not completed', async () => {
@@ -155,7 +177,7 @@ describe('MarkStageCompleteUseCase', () => {
       findById: vi.fn().mockResolvedValue(stages[1]),
       findCompletedStageIds: vi.fn().mockResolvedValue([1]),
     });
-    const progress = makeProgress(false);
+    const progress = makeProgress(null);
     const useCase = new MarkStageCompleteUseCase(
       repo,
       progress,

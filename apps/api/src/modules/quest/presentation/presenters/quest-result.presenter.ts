@@ -1,5 +1,6 @@
 import { SubmitQuestOutput } from '../../application/submit-quest.use-case.js';
 import { QuestResultReview } from '../../application/view-quest-result.use-case.js';
+import { toBadgeAwardsPresenter } from '../../../badge/presentation/presenters/badge-award.presenter.js';
 
 export class QuestResultPresenter {
   static toSubmitResponse({
@@ -12,13 +13,7 @@ export class QuestResultPresenter {
       score: result.score,
       passed: result.passed,
       xpAwarded,
-      badgesEarned: badgesEarned.map((award) => ({
-        id: award.badge.id,
-        name: award.badge.name,
-        description: award.badge.description,
-        imageUrl: award.badge.imageUrl,
-        awardCount: award.awardCount,
-      })),
+      badgesEarned: toBadgeAwardsPresenter(badgesEarned),
     };
   }
 

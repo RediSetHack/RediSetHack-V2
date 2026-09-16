@@ -9,20 +9,25 @@ import { ProgressRepository } from "../domain/ports/progress.repository.js";
 export class DrizzleProgressRepository implements ProgressRepository {
   constructor(@Inject(DB) private readonly database: Database) {}
 
-  async markCompleted(userId: string, stageId: number, xpEarned: number): Promise<boolean> {
+  async markCompleted(
+    userId: string,
+    stageId: number,
+    xpEarned: number,
+  ): Promise<number | null> {
     return this.database.transaction(async (tx) => {
       const inserted = await tx
         .insert(userProgress)
         .values({ userId, stageId, completed: true, completedAt: new Date() })
         .onConflictDoNothing()
         .returning({ id: userProgress.id });
-      if (inserted.length === 0) return false;
+      if (inserted.length === 0) return null;
 
-      await tx
+      const updated = await tx
         .update(users)
         .set({ totalXp: sql`${users.totalXp} + ${xpEarned}`, updatedAt: new Date() })
-        .where(eq(users.id, userId));
-      return true;
+        .where(eq(users.id, userId))
+        .returning({ totalXp: users.totalXp });
+      return updated[0]?.totalXp ?? null;
     });
   }
 }
