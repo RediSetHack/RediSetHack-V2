@@ -37,7 +37,9 @@
     "drizzle-orm": "^0.45.2",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "svix": "^2.3.0"
+    "svix": "^2.3.0",
+    "zod": "^3.25.76",
+    "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {
     "@nestjs/cli": "^12.0.0",

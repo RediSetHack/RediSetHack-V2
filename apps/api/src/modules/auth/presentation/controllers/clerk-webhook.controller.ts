@@ -9,6 +9,12 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import type { RawBodyRequest } from "@nestjs/common";
+import {
+  ApiOperation,
+  ApiServiceUnavailableResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from "@nestjs/swagger";
 import type { IncomingHttpHeaders } from "node:http";
 import type { Request } from "express";
 import { Webhook } from "svix";
@@ -66,6 +72,7 @@ function toClerkAuthenticatedUser(data: Record<string, unknown>): ClerkAuthentic
   };
 }
 
+@ApiTags('Authentication & Account')
 @Controller("v1/api/clerk")
 export class ClerkWebhookController {
   private readonly logger = new Logger(ClerkWebhookController.name);
@@ -79,6 +86,16 @@ export class ClerkWebhookController {
   }
 
   @Post("webhook")
+  @ApiOperation({
+    summary: 'Sync a User from a Clerk webhook event.',
+    description:
+      'Called by Clerk, not by clients. Authenticated by a svix signature ' +
+      'over the raw body, not a bearer token. Payload shape is Clerk’s own.',
+  })
+  @ApiUnauthorizedResponse({ description: 'Invalid webhook signature.' })
+  @ApiServiceUnavailableResponse({
+    description: 'The webhook endpoint is not configured.',
+  })
   async handle(
     @Req() request: RawBodyRequest<Request>,
     @Headers() headers: IncomingHttpHeaders,
