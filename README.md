@@ -16,6 +16,7 @@ cp .env.example .env
 docker compose up -d postgres
 pnpm install
 pnpm turbo run db:push --filter=@repo/db   # apply schema
+pnpm --filter @repo/db build && pnpm db:seed  # seed default data (db:seed runs the built dist/seed.js)
 pnpm dev                                    # runs web + api
 ```
 
