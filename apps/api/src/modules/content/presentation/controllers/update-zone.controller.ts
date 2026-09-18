@@ -1,11 +1,11 @@
 import { Body, Controller, Param, ParseIntPipe, Patch } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ZoneSchema } from '@repo/contracts';
 
 import { UpdateZoneUseCase } from '../../application/update-zone.use-case.js';
 import { UpdateZoneRequestDto } from '../dto/update-zone.dto.js';
 import { ZonePresenter } from '../presenters.js';
-import { AdminOnly, ApiEntityNotFound, asNotFound } from './admin-crud.shared.js';
+import { AdminOnly, ApiEntityNotFound, ApiIdParam, asNotFound } from './admin-crud.shared.js';
 import { ApiZodResponse } from '../../../../swagger/api-zod-response.decorator.js';
 
 @ApiTags('Admin: Zones')
@@ -15,7 +15,7 @@ export class UpdateZoneController {
   @Patch(':id')
   @AdminOnly()
   @ApiOperation({ summary: 'Update a Zone.' })
-  @ApiParam({ name: 'id', description: "The Zone's id." })
+  @ApiIdParam('Zone')
   @ApiZodResponse(ZoneSchema)
   @ApiEntityNotFound('Zone')
   async handle(

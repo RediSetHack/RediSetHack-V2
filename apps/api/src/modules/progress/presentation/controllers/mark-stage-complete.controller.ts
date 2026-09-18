@@ -20,7 +20,7 @@ export class MarkStageCompleteController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Mark a Stage complete, awarding XP and Badges.' })
   @ApiParam({ name: 'stageId', description: "The Stage's id." })
-  @ApiZodResponse(StageCompletionResponseSchema)
+  @ApiZodResponse(StageCompletionResponseSchema, { status: 201 })
   @ApiNotFoundResponse({ description: 'Stage not found.' })
   @ApiForbiddenResponse({ description: 'The Stage is locked for this User.' })
   @ApiBadRequestResponse({ description: 'The Stage is already completed.' })

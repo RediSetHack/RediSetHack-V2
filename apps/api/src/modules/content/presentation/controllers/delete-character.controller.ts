@@ -5,10 +5,10 @@ import {
   Param,
   ParseIntPipe,
 } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { DeleteCharacterUseCase } from '../../application/delete-character.use-case.js';
-import { AdminOnly, ApiEntityNotFound, asNotFound } from './admin-crud.shared.js';
+import { AdminOnly, ApiEntityNotFound, ApiIdParam, asNotFound } from './admin-crud.shared.js';
 
 @ApiTags('Admin: Characters')
 @Controller('v1/api/admin/characters')
@@ -18,7 +18,7 @@ export class DeleteCharacterController {
   @HttpCode(204)
   @AdminOnly()
   @ApiOperation({ summary: 'Delete a Character.' })
-  @ApiParam({ name: 'id', description: "The Character's id." })
+  @ApiIdParam('Character')
   @ApiEntityNotFound('Character')
   async handle(@Param('id', ParseIntPipe) id: number) {
     try {

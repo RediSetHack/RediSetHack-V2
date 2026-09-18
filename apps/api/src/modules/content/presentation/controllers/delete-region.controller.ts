@@ -5,10 +5,10 @@ import {
   Param,
   ParseIntPipe,
 } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { DeleteRegionUseCase } from '../../application/delete-region.use-case.js';
-import { AdminOnly, ApiEntityNotFound, asNotFound } from './admin-crud.shared.js';
+import { AdminOnly, ApiEntityNotFound, ApiIdParam, asNotFound } from './admin-crud.shared.js';
 
 @ApiTags('Admin: Regions')
 @Controller('v1/api/admin/regions')
@@ -18,7 +18,7 @@ export class DeleteRegionController {
   @HttpCode(204)
   @AdminOnly()
   @ApiOperation({ summary: 'Delete a Region.' })
-  @ApiParam({ name: 'id', description: "The Region's id." })
+  @ApiIdParam('Region')
   @ApiEntityNotFound('Region')
   async handle(@Param('id', ParseIntPipe) id: number) {
     try {

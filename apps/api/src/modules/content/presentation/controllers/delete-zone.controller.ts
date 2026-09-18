@@ -5,10 +5,10 @@ import {
   Param,
   ParseIntPipe,
 } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { DeleteZoneUseCase } from '../../application/delete-zone.use-case.js';
-import { AdminOnly, ApiEntityNotFound, asNotFound } from './admin-crud.shared.js';
+import { AdminOnly, ApiEntityNotFound, ApiIdParam, asNotFound } from './admin-crud.shared.js';
 
 @ApiTags('Admin: Zones')
 @Controller('v1/api/admin/zones')
@@ -18,7 +18,7 @@ export class DeleteZoneController {
   @HttpCode(204)
   @AdminOnly()
   @ApiOperation({ summary: 'Delete a Zone.' })
-  @ApiParam({ name: 'id', description: "The Zone's id." })
+  @ApiIdParam('Zone')
   @ApiEntityNotFound('Zone')
   async handle(@Param('id', ParseIntPipe) id: number) {
     try {

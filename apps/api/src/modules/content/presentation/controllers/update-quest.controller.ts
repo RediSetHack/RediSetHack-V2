@@ -1,10 +1,10 @@
 import { Body, Controller, Param, ParseIntPipe, Patch } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { UpdateQuestUseCase } from '../../application/update-quest.use-case.js';
 import { UpdateQuestRequestDto } from '../dto/update-quest.dto.js';
 import { QuestPresenter } from '../presenters.js';
-import { AdminOnly, ApiEntityNotFound, asNotFound } from './admin-crud.shared.js';
+import { AdminOnly, ApiEntityNotFound, ApiIdParam, asNotFound } from './admin-crud.shared.js';
 
 @ApiTags('Admin: Quests')
 @Controller('v1/api/admin/quests')
@@ -13,7 +13,7 @@ export class UpdateQuestController {
   @Patch(':id')
   @AdminOnly()
   @ApiOperation({ summary: 'Update a Quest.' })
-  @ApiParam({ name: 'id', description: "The Quest's id." })
+  @ApiIdParam('Quest')
   @ApiEntityNotFound('Quest')
   async handle(
     @Param('id', ParseIntPipe) id: number,

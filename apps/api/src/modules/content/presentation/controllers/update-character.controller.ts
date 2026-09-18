@@ -1,11 +1,11 @@
 import { Body, Controller, Param, ParseIntPipe, Patch } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CharacterSchema } from '@repo/contracts';
 
 import { UpdateCharacterUseCase } from '../../application/update-character.use-case.js';
 import { UpdateCharacterRequestDto } from '../dto/update-character.dto.js';
 import { CharacterPresenter } from '../presenters.js';
-import { AdminOnly, ApiEntityNotFound, asNotFound } from './admin-crud.shared.js';
+import { AdminOnly, ApiEntityNotFound, ApiIdParam, asNotFound } from './admin-crud.shared.js';
 import { ApiZodResponse } from '../../../../swagger/api-zod-response.decorator.js';
 
 @ApiTags('Admin: Characters')
@@ -15,7 +15,7 @@ export class UpdateCharacterController {
   @Patch(':id')
   @AdminOnly()
   @ApiOperation({ summary: 'Update a Character.' })
-  @ApiParam({ name: 'id', description: "The Character's id." })
+  @ApiIdParam('Character')
   @ApiZodResponse(CharacterSchema)
   @ApiEntityNotFound('Character')
   async handle(

@@ -1,10 +1,10 @@
 import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CharacterSchema } from '@repo/contracts';
 
 import { GetCharacterUseCase } from '../../application/get-character.use-case.js';
 import { CharacterPresenter } from '../presenters.js';
-import { AdminOnly, ApiEntityNotFound, asNotFound } from './admin-crud.shared.js';
+import { AdminOnly, ApiEntityNotFound, ApiIdParam, asNotFound } from './admin-crud.shared.js';
 import { ApiZodResponse } from '../../../../swagger/api-zod-response.decorator.js';
 
 @ApiTags('Admin: Characters')
@@ -14,7 +14,7 @@ export class GetCharacterController {
   @Get(':id')
   @AdminOnly()
   @ApiOperation({ summary: 'Get a Character by id.' })
-  @ApiParam({ name: 'id', description: "The Character's id." })
+  @ApiIdParam('Character')
   @ApiZodResponse(CharacterSchema)
   @ApiEntityNotFound('Character')
   async handle(@Param('id', ParseIntPipe) id: number) {

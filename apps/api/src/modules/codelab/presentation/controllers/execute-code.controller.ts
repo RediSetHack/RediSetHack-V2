@@ -23,7 +23,7 @@ export class ExecuteCodeController {
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Run a Codelab code submission.' })
-  @ApiZodResponse(ExecuteCodeResponseSchema)
+  @ApiZodResponse(ExecuteCodeResponseSchema, { status: 201 })
   @ApiBadRequestResponse({ description: 'Unsupported language.' })
   async handle(@Body() dto: ExecuteCodeRequestDto) {
     try {

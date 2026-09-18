@@ -9,6 +9,7 @@ import {
   ApiBearerAuth,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
+  ApiParam,
 } from '@nestjs/swagger';
 
 import { AdminGuard } from '../../../auth/presentation/guards/admin.guard.js';
@@ -42,6 +43,9 @@ export const ApiEntityNotFound = (entity: string) =>
 
 export const ApiParentNotFound = (parent: string) =>
   ApiBadRequestResponse({ description: `Parent ${parent} not found.` });
+
+export const ApiIdParam = (entity: string) =>
+  ApiParam({ name: 'id', description: `The ${entity}'s id.` });
 
 export function asNotFound(error: unknown): never {
   if (

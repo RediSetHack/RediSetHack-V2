@@ -33,18 +33,38 @@ function getOperation(
   return pathItem?.[route.method];
 }
 
+type JsonSchema = {
+  $ref?: string;
+  type?: string;
+  properties?: object;
+  items?: JsonSchema;
+};
+
 // DTO schemas are registered once under `components.schemas` and referenced
 // from every operation via `$ref`, rather than inlined per route.
 function resolveSchema(
   document: OpenAPIObject,
-  schema: { $ref?: string; properties?: object } | undefined,
-): { properties?: object } | undefined {
+  schema: JsonSchema | undefined,
+): JsonSchema | undefined {
   if (!schema) return undefined;
   if (!schema.$ref) return schema;
   const name = schema.$ref.replace('#/components/schemas/', '');
-  return document.components?.schemas?.[name] as
-    | { properties?: object }
-    | undefined;
+  return document.components?.schemas?.[name] as JsonSchema | undefined;
+}
+
+// A list response (`z.array(...)`) resolves to `{ type: 'array', items }`
+// rather than `properties`; unwrap one level so both shapes can be checked
+// for "did this actually describe fields" the same way.
+function resolveFields(
+  document: OpenAPIObject,
+  schema: JsonSchema | undefined,
+): object | undefined {
+  const resolved = resolveSchema(document, schema);
+  if (!resolved) return undefined;
+  if (resolved.type === 'array') {
+    return resolveSchema(document, resolved.items)?.properties;
+  }
+  return resolved.properties;
 }
 
 const METHOD_NAMES: Record<number, string> = {
@@ -180,13 +200,34 @@ describe('OpenAPI document coverage', () => {
       const operation = getOperation(document, route);
       const rawSchema = (
         operation?.requestBody as
-          | { content?: Record<string, { schema?: { $ref?: string } }> }
+          | { content?: Record<string, { schema?: JsonSchema }> }
           | undefined
       )?.content?.['application/json']?.schema;
       if (!rawSchema) return false;
-      const properties = resolveSchema(document, rawSchema)?.properties;
-      return !properties || Object.keys(properties).length === 0;
+      const fields = resolveFields(document, rawSchema);
+      return !fields || Object.keys(fields).length === 0;
     });
     expect(emptyBodies).toEqual([]);
+  });
+
+  it('resolves every documented success response to a schema with fields', () => {
+    // Not every route documents a response body (§ "grown per feature" —
+    // see admin-crud.shared.ts and #53's Sequencing section), so this only
+    // holds routes that DO claim one to the standard of actually having it,
+    // rather than asserting every route must have one.
+    const emptySchemas = routes.filter((route) => {
+      const operation = getOperation(document, route);
+      const responses = operation?.responses as
+        | Record<string, { content?: Record<string, { schema?: JsonSchema }> }>
+        | undefined;
+      const successResponse = Object.entries(responses ?? {}).find(
+        ([status]) => status.startsWith('2'),
+      )?.[1];
+      const rawSchema = successResponse?.content?.['application/json']?.schema;
+      if (!rawSchema) return false;
+      const fields = resolveFields(document, rawSchema);
+      return !fields || Object.keys(fields).length === 0;
+    });
+    expect(emptySchemas).toEqual([]);
   });
 });
