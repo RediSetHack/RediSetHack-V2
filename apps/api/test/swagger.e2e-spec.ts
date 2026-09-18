@@ -6,7 +6,10 @@ import { AppModule } from './../src/app.module.js';
 import { setupSwagger } from './../src/swagger.js';
 
 describe('Swagger (e2e)', () => {
-  describe('when in development mode (Swagger enabled)', () => {
+  // `setupSwagger` itself is env-agnostic; `shouldServeDocs` (unit-tested in
+  // swagger.spec.ts) is what gates development/staging vs. production in
+  // main.ts, so this block stands in for both non-production environments.
+  describe('when in development or staging mode (Swagger enabled)', () => {
     let app: INestApplication;
 
     beforeEach(async () => {

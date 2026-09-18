@@ -2,7 +2,7 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
-import { setupSwagger } from './swagger.js';
+import { setupSwagger, shouldServeDocs } from './swagger.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
@@ -15,9 +15,9 @@ async function bootstrap() {
     configService.get<string>('NODE_ENV') ??
     process.env.NODE_ENV ??
     'development';
-  const isDevelopment = nodeEnv === 'development';
+  const docsEnabled = shouldServeDocs(nodeEnv);
 
-  if (isDevelopment) {
+  if (docsEnabled) {
     setupSwagger(app);
   }
 
@@ -28,7 +28,7 @@ async function bootstrap() {
     `Application running in ${nodeEnv} mode on port ${port}`,
     'Bootstrap',
   );
-  if (isDevelopment) {
+  if (docsEnabled) {
     Logger.log(
       `Swagger documentation available at http://localhost:${port}/docs`,
       'Bootstrap',
