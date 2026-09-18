@@ -1,4 +1,5 @@
 import { codeToHtml } from "shiki";
+import Link from "next/link";
 import type { RenderableBlock } from "@/lib/lesson-blocks";
 
 async function highlight(code: string, language: string): Promise<string> {
@@ -39,12 +40,22 @@ function ExerciseBlockView({
   language,
   starterCode,
 }: Readonly<{ prompt: string; language: string; starterCode: string }>) {
+  const codelabHref = `/codelab?language=${encodeURIComponent(language)}&code=${encodeURIComponent(starterCode)}`;
+
   return (
     <div className="rounded-md border border-border/60 p-4">
       <p className="font-medium">{prompt}</p>
       <div className="mt-3">
         <CodeBlockView language={language} content={starterCode} />
       </div>
+      <p className="mt-3">
+        <Link
+          href={codelabHref}
+          className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+        >
+          Open in Codelab
+        </Link>
+      </p>
     </div>
   );
 }

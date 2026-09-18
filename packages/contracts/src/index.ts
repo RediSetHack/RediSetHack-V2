@@ -5,6 +5,7 @@
 // slice needs them — see the package README and ADR 0004. Each domain adds
 // its own re-export line here as it lands; none are added speculatively.
 export * from "./badges/index.js";
+export * from "./codelab/index.js";
 export * from "./constants/index.js";
 export * from "./content/index.js";
 export * from "./daily-event/index.js";

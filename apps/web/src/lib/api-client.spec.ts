@@ -16,6 +16,7 @@ import {
   getQuestResult,
   getLeaderboard,
   markStageComplete,
+  executeCode,
   ApiError,
 } from "./api-client.js";
 
@@ -758,6 +759,88 @@ describe("api-client", () => {
           mockFetch as unknown as typeof fetch,
         ),
       ).rejects.toMatchObject({ status: 400 });
+    });
+  });
+
+  describe("executeCode", () => {
+    it("throws ApiError 401 when token is missing", async () => {
+      await expect(
+        executeCode("http://localhost:3001", "", {
+          language: "python",
+          code: "print(1)",
+          stdin: "",
+        }),
+      ).rejects.toThrowError(ApiError);
+    });
+
+    it("POSTs the code, language, and stdin with Bearer authorization", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          stdout: "1\n",
+          stderr: "",
+          exitCode: 0,
+          executionTimeMs: 9,
+        }),
+      });
+
+      const result = await executeCode(
+        "http://localhost:3001/",
+        "test-token",
+        { language: "python", code: "print(\"hello\")", stdin: "" },
+        mockFetch as unknown as typeof fetch,
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/codelab/execute", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer test-token",
+        },
+        body: JSON.stringify({ language: "python", code: "print(\"hello\")", stdin: "" }),
+      });
+      expect(result.stdout).toBe("1\n");
+      expect(result.exitCode).toBe(0);
+    });
+
+    it("returns compile and runtime errors without throwing", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          stdout: "",
+          stderr: "NameError: name 'x' is not defined",
+          exitCode: 1,
+          executionTimeMs: 4,
+        }),
+      });
+
+      const result = await executeCode(
+        "http://localhost:3001",
+        "test-token",
+        { language: "python", code: "print(x)", stdin: "" },
+        mockFetch as unknown as typeof fetch,
+      );
+
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain("NameError");
+      expect(result.exitCode).toBe(1);
+    });
+
+    it("throws ApiError on a non-2xx response", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 502,
+        json: async () => ({ message: "Execution provider unreachable" }),
+      });
+
+      await expect(
+        executeCode(
+          "http://localhost:3001",
+          "test-token",
+          { language: "python", code: "print(x)", stdin: "" },
+          mockFetch as unknown as typeof fetch,
+        ),
+      ).rejects.toMatchObject({ status: 502 });
     });
   });
 });

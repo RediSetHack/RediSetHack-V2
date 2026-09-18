@@ -1,6 +1,8 @@
 import type {
   Character,
   DailyEventResponse,
+  ExecuteCodeResponse,
+  Language,
   LeaderboardResponse,
   LessonResponse,
   ProfileResponse,
@@ -26,6 +28,7 @@ export type QuestSubmission = QuestResponse;
 export type QuestSubmitResult = SubmitQuestResponse;
 export type QuestResultReview = QuestResultReviewResponse;
 export type StageCompletion = StageCompletionResponse;
+export type CodeExecutionResult = ExecuteCodeResponse;
 export type { Region, Stage, Zone, Quest };
 
 export interface UpdatedUserResponse {
@@ -329,4 +332,15 @@ export async function markStageComplete(
 ): Promise<StageCompletion> {
   const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/stages/${stageId}/complete`;
   return postAuthedJson<StageCompletion>(endpoint, token, {}, fetchFn);
+}
+
+/** Executes code in the Codelab, `POST /v1/api/codelab/execute`. */
+export async function executeCode(
+  apiBaseUrl: string,
+  token: string,
+  input: { language: Language; code: string; stdin: string },
+  fetchFn: typeof fetch = fetch,
+): Promise<CodeExecutionResult> {
+  const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/codelab/execute`;
+  return postAuthedJson<CodeExecutionResult>(endpoint, token, input, fetchFn);
 }
