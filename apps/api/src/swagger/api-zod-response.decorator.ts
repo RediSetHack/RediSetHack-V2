@@ -4,8 +4,7 @@ import {
   type ApiResponseOptions,
   type SchemaObject,
 } from '@nestjs/swagger';
-import type { ZodType } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
+import { toJSONSchema, type ZodType } from 'zod';
 
 type ApiZodResponseOptions = Omit<ApiResponseOptions, 'schema' | 'type'>;
 
@@ -21,9 +20,9 @@ export function ApiZodResponse(
     ApiResponse({
       status: 200,
       ...options,
-      schema: zodToJsonSchema(schema, {
-        target: 'openApi3',
-        $refStrategy: 'none',
+      schema: toJSONSchema(schema, {
+        target: 'openapi-3.0',
+        unrepresentable: 'any',
       }) as SchemaObject,
     }),
   );
