@@ -1,10 +1,12 @@
-# T13: Record trustworthy learning interactions
+# Thesis 13: Record trustworthy learning interactions
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/130
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -20,7 +22,8 @@ An accepted Quest submission or reading completion produces one interpretable le
 
 ## Blocked by
 
-T05: Credit Quest XP atomically, T12: Tag activities with competencies and difficulty
+- #122 — Credit Quest XP atomically
+- #129 — Tag activities with competencies and difficulty
 
 ## Further notes
 

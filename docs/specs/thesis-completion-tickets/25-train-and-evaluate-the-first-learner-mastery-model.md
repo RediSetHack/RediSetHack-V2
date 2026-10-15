@@ -1,10 +1,12 @@
-# T25: Train and evaluate the first Learner Mastery Model
+# Thesis 25: Train and evaluate the first Learner Mastery Model
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/142
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -20,7 +22,7 @@ Researchers can reproduce a trained competency/performance estimator and compare
 
 ## Blocked by
 
-T24: Export a privacy-aware reproducible learner dataset
+- #141 — Export a privacy-aware reproducible learner dataset
 
 ## Further notes
 

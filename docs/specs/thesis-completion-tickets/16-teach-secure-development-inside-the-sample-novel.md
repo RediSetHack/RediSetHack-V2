@@ -1,10 +1,12 @@
-# T16: Teach secure development inside the sample Novel
+# Thesis 16: Teach secure development inside the sample Novel
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/133
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -20,7 +22,8 @@ Learners encounter a reviewed secure-programming lesson and repair a vulnerable 
 
 ## Blocked by
 
-T11: Deliver the first resumable Novel and chapters, T15: Grade one coding activity from Lesson to Result
+- #128 — Deliver the first resumable Novel and chapters
+- #132 — Grade one coding activity from Lesson to Result
 
 ## Further notes
 

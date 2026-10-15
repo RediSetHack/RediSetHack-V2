@@ -1,10 +1,12 @@
-# T30: Prepare approved companion training and evaluation material
+# Thesis 30: Prepare approved companion training and evaluation material
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/147
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -20,7 +22,8 @@ Researchers can inspect a reviewed tutoring corpus and held-out rubric covering 
 
 ## Blocked by
 
-T16: Teach secure development inside the sample Novel, T22: Review and publish a specific content revision
+- #133 — Teach secure development inside the sample Novel
+- #139 — Review and publish a specific content revision
 
 ## Further notes
 

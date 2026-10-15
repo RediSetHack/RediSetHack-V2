@@ -1,10 +1,12 @@
-# T21: Let approved contributors own and submit drafts
+# Thesis 21: Let approved contributors own and submit drafts
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/138
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -20,7 +22,7 @@ An approved contributor creates and revises their own Novel material in a small 
 
 ## Blocked by
 
-T11: Deliver the first resumable Novel and chapters
+- #128 — Deliver the first resumable Novel and chapters
 
 ## Further notes
 

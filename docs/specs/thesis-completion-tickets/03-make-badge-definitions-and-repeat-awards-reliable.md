@@ -1,10 +1,12 @@
-# T03: Make Badge definitions and repeat awards reliable
+# Thesis 03: Make Badge definitions and repeat awards reliable
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/120
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -20,7 +22,7 @@ An administrator defines valid milestones and learners receive the intended Badg
 
 ## Blocked by
 
-None (can start immediately)
+None (can start immediately).
 
 ## Further notes
 

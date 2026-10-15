@@ -1,10 +1,12 @@
-# T01: Make authored Quests playable
+# Thesis 01: Make authored Quests playable
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/118
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -20,7 +22,7 @@ An administrator creates or edits a Quest through the existing administration AP
 
 ## Blocked by
 
-None (can start immediately)
+None (can start immediately).
 
 ## Further notes
 

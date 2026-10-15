@@ -1,10 +1,12 @@
-# T34: Personalize the companion through constrained learner tools
+# Thesis 34: Personalize the companion through constrained learner tools
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/151
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -20,7 +22,8 @@ The companion can explain the learner's recent results, mastery, and eligible re
 
 ## Blocked by
 
-T29: Serve adaptive recommendations using mastery and the learned model, T32: Deliver activity-scoped companion conversations and graduated hints
+- #146 — Serve adaptive recommendations using mastery and the learned model
+- #149 — Deliver activity-scoped companion conversations and graduated hints
 
 ## Further notes
 

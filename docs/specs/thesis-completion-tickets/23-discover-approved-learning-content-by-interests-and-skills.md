@@ -1,10 +1,12 @@
-# T23: Discover approved learning content by interests and skills
+# Thesis 23: Discover approved learning content by interests and skills
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/140
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -20,7 +22,9 @@ Learners browse and filter approved Novels and activities by topic, competency, 
 
 ## Blocked by
 
-T06: Enforce Stage eligibility on every learner route, T12: Tag activities with competencies and difficulty, T22: Review and publish a specific content revision
+- #123 — Enforce Stage eligibility on every learner route
+- #129 — Tag activities with competencies and difficulty
+- #139 — Review and publish a specific content revision
 
 ## Further notes
 

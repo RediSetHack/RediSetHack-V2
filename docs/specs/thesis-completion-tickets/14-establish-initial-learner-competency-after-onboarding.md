@@ -1,10 +1,12 @@
-# T14: Establish initial learner competency after onboarding
+# Thesis 14: Establish initial learner competency after onboarding
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/131
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -20,7 +22,8 @@ After Character selection a learner completes a designated assessment and sees a
 
 ## Blocked by
 
-T09: Make onboarding identity synchronization trustworthy, T13: Record trustworthy learning interactions
+- #126 — Make onboarding identity synchronization trustworthy
+- #130 — Record trustworthy learning interactions
 
 ## Further notes
 

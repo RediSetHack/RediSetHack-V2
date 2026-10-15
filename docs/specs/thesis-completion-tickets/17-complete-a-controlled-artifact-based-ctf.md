@@ -1,10 +1,12 @@
-# T17: Complete a controlled artifact-based CTF
+# Thesis 17: Complete a controlled artifact-based CTF
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/134
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -20,7 +22,7 @@ Learners inspect an approved challenge artifact, submit a flag within explicit a
 
 ## Blocked by
 
-T13: Record trustworthy learning interactions
+- #130 — Record trustworthy learning interactions
 
 ## Further notes
 

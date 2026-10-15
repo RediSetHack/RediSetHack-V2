@@ -1,10 +1,12 @@
-# T09: Make onboarding identity synchronization trustworthy
+# Thesis 09: Make onboarding identity synchronization trustworthy
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/126
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -20,7 +22,7 @@ A newly registered learner reaches Character selection using verified identity d
 
 ## Blocked by
 
-None (can start immediately)
+None (can start immediately).
 
 ## Further notes
 

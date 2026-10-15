@@ -1,10 +1,12 @@
-# T27: Offer eligible baseline recommendations and record outcomes
+# Thesis 27: Offer eligible baseline recommendations and record outcomes
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/144
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -20,7 +22,9 @@ Learners can choose a next eligible activity from a transparent baseline list an
 
 ## Blocked by
 
-T06: Enforce Stage eligibility on every learner route, T13: Record trustworthy learning interactions, T22: Review and publish a specific content revision
+- #123 — Enforce Stage eligibility on every learner route
+- #130 — Record trustworthy learning interactions
+- #139 — Review and publish a specific content revision
 
 ## Further notes
 

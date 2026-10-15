@@ -1,10 +1,12 @@
-# T35: Evaluate the integrated companion learning journey
+# Thesis 35: Evaluate the integrated companion learning journey
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/152
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -20,7 +22,8 @@ Researchers and maintainers can demonstrate whether the served companion follows
 
 ## Blocked by
 
-T33: Ground companion hints in approved resources, T34: Personalize the companion through constrained learner tools
+- #150 — Ground companion hints in approved resources
+- #151 — Personalize the companion through constrained learner tools
 
 ## Further notes
 

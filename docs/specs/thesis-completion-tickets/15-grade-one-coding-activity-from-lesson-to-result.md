@@ -1,10 +1,12 @@
-# T15: Grade one coding activity from Lesson to Result
+# Thesis 15: Grade one coding activity from Lesson to Result
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/132
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -20,7 +22,8 @@ A learner opens a Python exercise from a Stage, submits code, receives test feed
 
 ## Blocked by
 
-T08: Bound Codelab execution and expose useful failures, T13: Record trustworthy learning interactions
+- #125 — Bound Codelab execution and expose useful failures
+- #130 — Record trustworthy learning interactions
 
 ## Further notes
 

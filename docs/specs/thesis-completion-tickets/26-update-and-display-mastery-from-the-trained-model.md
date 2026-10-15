@@ -1,10 +1,12 @@
-# T26: Update and display mastery from the trained model
+# Thesis 26: Update and display mastery from the trained model
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/143
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -20,7 +22,9 @@ A learner completes an assessment/activity, receives a versioned per-skill maste
 
 ## Blocked by
 
-T14: Establish initial learner competency after onboarding, T18: Complete optional Side Quests with prerequisites, T25: Train and evaluate the first Learner Mastery Model
+- #131 — Establish initial learner competency after onboarding
+- #135 — Complete optional Side Quests with prerequisites
+- #142 — Train and evaluate the first Learner Mastery Model
 
 ## Further notes
 

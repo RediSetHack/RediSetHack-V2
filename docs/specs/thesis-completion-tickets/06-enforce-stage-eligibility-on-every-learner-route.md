@@ -1,10 +1,12 @@
-# T06: Enforce Stage eligibility on every learner route
+# Thesis 06: Enforce Stage eligibility on every learner route
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/123
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -20,7 +22,7 @@ Locked Stage content and attached Quests stay inaccessible until the learner mee
 
 ## Blocked by
 
-None (can start immediately)
+None (can start immediately).
 
 ## Further notes
 

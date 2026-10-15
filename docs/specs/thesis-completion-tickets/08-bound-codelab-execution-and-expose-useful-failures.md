@@ -1,10 +1,12 @@
-# T08: Bound Codelab execution and expose useful failures
+# Thesis 08: Bound Codelab execution and expose useful failures
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/125
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -20,7 +22,7 @@ Learners can run supported programs and receive bounded success, compilation, ru
 
 ## Blocked by
 
-None (can start immediately)
+None (can start immediately).
 
 ## Further notes
 

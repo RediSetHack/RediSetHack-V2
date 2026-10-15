@@ -1,10 +1,12 @@
-# T18: Complete optional Side Quests with prerequisites
+# Thesis 18: Complete optional Side Quests with prerequisites
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/135
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -20,7 +22,10 @@ Learners discover an optional objective, understand its prerequisites, complete 
 
 ## Blocked by
 
-T03: Make Badge definitions and repeat awards reliable, T06: Enforce Stage eligibility on every learner route, T11: Deliver the first resumable Novel and chapters, T13: Record trustworthy learning interactions
+- #120 — Make Badge definitions and repeat awards reliable
+- #123 — Enforce Stage eligibility on every learner route
+- #128 — Deliver the first resumable Novel and chapters
+- #130 — Record trustworthy learning interactions
 
 ## Further notes
 

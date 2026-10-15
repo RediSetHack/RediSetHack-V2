@@ -1,10 +1,12 @@
-# T22: Review and publish a specific content revision
+# Thesis 22: Review and publish a specific content revision
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/139
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -20,7 +22,7 @@ An administrator acting as moderator reviews a submission, records a decision, a
 
 ## Blocked by
 
-T21: Let approved contributors own and submit drafts
+- #138 — Let approved contributors own and submit drafts
 
 ## Further notes
 

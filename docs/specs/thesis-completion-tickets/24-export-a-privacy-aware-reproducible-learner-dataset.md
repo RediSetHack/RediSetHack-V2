@@ -1,10 +1,12 @@
-# T24: Export a privacy-aware reproducible learner dataset
+# Thesis 24: Export a privacy-aware reproducible learner dataset
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/141
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -20,7 +22,8 @@ An authorized researcher exports a validated versioned dataset from accepted int
 
 ## Blocked by
 
-T10: Honor Clerk account deletion locally, T13: Record trustworthy learning interactions
+- #127 — Honor Clerk account deletion locally
+- #130 — Record trustworthy learning interactions
 
 ## Further notes
 

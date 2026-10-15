@@ -1,6 +1,8 @@
 # RediSetHack thesis completion specification
 
-Status: draft for test-boundary and ticket review. Baseline: develop at 42fa69a, audited 2026-10-15. Scope: the pasted thesis concept and its 25 in-scope features, including repairs necessary to make the current learning journeys reliable.
+Published: [specification #117](https://github.com/RediSetHack/RediSetHack-V2/issues/117).
+
+Status: approved and published on 2026-10-15; test boundaries, ticket breakdown, and release defaults approved by the maintainer. Baseline: develop at 42fa69a, audited 2026-10-15. Scope: the pasted thesis concept and its 25 in-scope features, including repairs necessary to make the current learning journeys reliable.
 
 ## Problem Statement
 
@@ -90,9 +92,9 @@ Repair the existing author-to-learner journeys first. Introduce new capabilities
 - Reuse existing learner screens and web client conventions. Update only consumers required for each new or repaired journey; do not rebuild the frontend.
 - Prefer a local prefactor inside its vertical slice. If a future mechanical schema/contract migration cannot land compatibly, use expand, consumer migration, and contract removal in separate green changes. No speculative repository-wide rename is part of this spec.
 
-### Proposed release defaults for this review
+### Approved release defaults
 
-These resolve ambiguities in the pasted PRD for a small complete release; they are proposals, not previously approved product decisions.
+These defaults resolve ambiguities in the pasted PRD for a small complete release and were approved with the ticket breakdown on 2026-10-15.
 
 - Represent a Novel through an explicitly designated Region, chapters through its Zones, and learning encounters through Stages with attached activities. Keep existing identifiers, routes, and progress records. Add story metadata and a documented glossary mapping; ordinary legacy catalog entries need not become Novels automatically.
 - Present existing numeric Level as Adventurer Rank, preserving its XP formula. Add eligibility rules where required rather than a second ranking system.
@@ -128,7 +130,7 @@ These resolve ambiguities in the pasted PRD for a small complete release; they a
 
 ## Testing Decisions
 
-Proposed for approval before publication:
+Approved test boundaries:
 
 1. **Primary boundary: public HTTP behavior using the existing Nest/Vitest/Supertest setup.** Exercise authoring, learner reads, session/submission behavior, rewards, permissions, and response contracts. Use disposable real PostgreSQL for migration, persistence, concurrency, rollback, deletion, and cross-module author-to-learner checks. Keep external Clerk, execution, and model providers deterministic at their ports. This changes the backing fixtures for relevant scenarios, not the public seam or runner.
 2. **Reuse the web client's existing boundary.** Test returned view data, request contracts, Lesson normalization, Quest countdown behavior, and user-visible errors through the existing Vitest client/state tests. Perform focused browser smoke and keyboard/screen-reader checks for the actual screens. Do not introduce a new browser/component runner just to restate contract tests.
@@ -147,10 +149,10 @@ Also excluded: a replacement admin dashboard, duplicate Clerk account administra
 
 ## Further Notes
 
-- The source audit is in PR #115. Its feature counts are not effort estimates or proof of live behavior. This spec replaces ambiguous audit suggestions with explicit preserved decisions and proposed defaults.
+- The source audit is in PR #115. Its feature counts are not effort estimates or proof of live behavior. This spec replaces ambiguous audit suggestions with explicit preserved decisions and approved defaults.
 - Existing spec #52 explicitly delegates account administration to Clerk and excludes generic admin screens. This spec retains those decisions while adding only the contributor/moderation and sharing flows required by the revised concept. Existing issues remain unchanged.
-- The classroom language in Chapter 2 conflicts with the explicit out-of-scope list. The proposed release retains content creation and learner-authorized guidance analytics while excluding assignments/classes.
+- The classroom language in Chapter 2 conflicts with the explicit out-of-scope list. The approved release retains content creation and learner-authorized guidance analytics while excluding assignments/classes.
 - Performance, concurrency, supported browser/device, accessibility, uptime, and recovery targets must be recorded in the deployment acceptance slice before measurements. They are not invented here. Production-scale availability promises need separate scope agreement.
 - Research tasks can produce executable scaffolding and honest reports before sufficient real learner data exists, but the evaluated thesis models cannot be declared complete using synthetic fixtures alone. Record data/compute/approved-material prerequisites on the affected tickets.
-- Coverage of the 25 PRD features and audit gaps G1–G11 is recorded in the companion ticket review. Each new issue will reference the published spec and list actual blockers using native GitHub relationships where available.
+- Coverage of the 25 PRD features and audit gaps G1–G11 is recorded in the companion ticket review. All 37 implementation issues (#118–#154) reference the published spec and declare their blockers in both their bodies and native GitHub dependencies.
 - Each implementation uses a short-lived branch from develop, an isolated worktree, and a PR back to develop. This specification does not request implementation during the planning session.

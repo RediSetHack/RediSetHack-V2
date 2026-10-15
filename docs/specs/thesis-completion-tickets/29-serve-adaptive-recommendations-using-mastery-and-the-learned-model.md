@@ -1,10 +1,12 @@
-# T29: Serve adaptive recommendations using mastery and the learned model
+# Thesis 29: Serve adaptive recommendations using mastery and the learned model
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/146
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -20,7 +22,8 @@ Learners receive learned next-activity recommendations that reflect mastery, rec
 
 ## Blocked by
 
-T26: Update and display mastery from the trained model, T28: Train and evaluate the activity recommender
+- #143 — Update and display mastery from the trained model
+- #145 — Train and evaluate the activity recommender
 
 ## Further notes
 

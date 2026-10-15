@@ -1,10 +1,12 @@
-# T04: Persist authoritative Quest Sessions and historical Results
+# Thesis 04: Persist authoritative Quest Sessions and historical Results
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/121
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -21,7 +23,7 @@ Learners start a timed Quest, submit once, resume the recorded session where sup
 
 ## Blocked by
 
-T01: Make authored Quests playable
+- #118 — Make authored Quests playable
 
 ## Further notes
 

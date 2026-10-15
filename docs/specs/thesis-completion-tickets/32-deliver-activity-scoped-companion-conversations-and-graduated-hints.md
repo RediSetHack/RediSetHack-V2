@@ -1,10 +1,12 @@
-# T32: Deliver activity-scoped companion conversations and graduated hints
+# Thesis 32: Deliver activity-scoped companion conversations and graduated hints
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/149
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -20,7 +22,8 @@ Learners ask the adapted companion for help on their current activity and receiv
 
 ## Blocked by
 
-T13: Record trustworthy learning interactions, T31: Adapt and evaluate the companion model
+- #130 — Record trustworthy learning interactions
+- #148 — Adapt and evaluate the companion model
 
 ## Further notes
 

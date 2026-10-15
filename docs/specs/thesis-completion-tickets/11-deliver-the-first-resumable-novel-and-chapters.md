@@ -1,10 +1,12 @@
-# T11: Deliver the first resumable Novel and chapters
+# Thesis 11: Deliver the first resumable Novel and chapters
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/128
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -20,8 +22,9 @@ Learners enter a designated story-based Region as a Novel, navigate its Zones as
 
 ## Blocked by
 
-T02: Make authored Lesson blocks render consistently, T07: Retire content without erasing learning evidence
+- #119 — Make authored Lesson blocks render consistently
+- #124 — Retire content without erasing learning evidence
 
 ## Further notes
 
-Traceability: Novel-Based Learning System; proposed mapping requires spec approval.
+Traceability: Novel-Based Learning System; mapping approved with the spec.

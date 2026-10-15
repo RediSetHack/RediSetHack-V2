@@ -1,10 +1,12 @@
-# T36: Show learner-authorized guidance analytics
+# Thesis 36: Show learner-authorized guidance analytics
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/153
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -20,7 +22,7 @@ A learner grants an instructor access to a bounded progress and competency summa
 
 ## Blocked by
 
-T26: Update and display mastery from the trained model
+- #143 — Update and display mastery from the trained model
 
 ## Further notes
 

@@ -1,10 +1,12 @@
-# T20: Show and optionally share accomplishment profiles
+# Thesis 20: Show and optionally share accomplishment profiles
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/137
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -12,7 +14,7 @@ Learners see Novel, Side Quest, CTF, XP, Adventurer Rank, Badge, and learning-da
 
 ## Acceptance criteria
 
-- [ ] Reuse the numeric Level formula as the proposed Adventurer Rank; preserve Character and Badge multiplicity.
+- [ ] Reuse the numeric Level formula as the approved Adventurer Rank; preserve Character and Badge multiplicity.
 - [ ] Aggregate completed Novel/Side Quest/CTF evidence and existing streak/contribution data in the self profile.
 - [ ] Keep sharing off by default; expose only an approved accomplishment summary and allow revocation without exposing email, code, conversations, or private identifiers.
 - [ ] Verify private/public/revoked views and accessible empty/loading/error states; historical evidence survives content retirement.
@@ -20,7 +22,10 @@ Learners see Novel, Side Quest, CTF, XP, Adventurer Rank, Badge, and learning-da
 
 ## Blocked by
 
-T11: Deliver the first resumable Novel and chapters, T17: Complete a controlled artifact-based CTF, T18: Complete optional Side Quests with prerequisites, T19: Show meaningful learning days, streaks, and contributions
+- #128 — Deliver the first resumable Novel and chapters
+- #134 — Complete a controlled artifact-based CTF
+- #135 — Complete optional Side Quests with prerequisites
+- #136 — Show meaningful learning days, streaks, and contributions
 
 ## Further notes
 

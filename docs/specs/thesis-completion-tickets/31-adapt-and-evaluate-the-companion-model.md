@@ -1,10 +1,12 @@
-# T31: Adapt and evaluate the companion model
+# Thesis 31: Adapt and evaluate the companion model
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/148
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -20,7 +22,7 @@ Researchers can reproduce a RediSetHack-adapted model artifact and inspect its h
 
 ## Blocked by
 
-T30: Prepare approved companion training and evaluation material
+- #147 — Prepare approved companion training and evaluation material
 
 ## Further notes
 

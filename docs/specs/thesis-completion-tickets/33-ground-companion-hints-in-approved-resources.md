@@ -1,10 +1,12 @@
-# T33: Ground companion hints in approved resources
+# Thesis 33: Ground companion hints in approved resources
 
-Draft for review; not yet published. Intended label after approval: `ready-for-agent`.
+Published: https://github.com/RediSetHack/RediSetHack-V2/issues/150
+
+Status: ready-for-agent. Approved on 2026-10-15.
 
 ## Parent
 
-RediSetHack thesis completion specification (GitHub issue to be created after review).
+https://github.com/RediSetHack/RediSetHack-V2/issues/117
 
 ## What to build
 
@@ -20,7 +22,8 @@ The companion answers with relevant approved educational passages and inspectabl
 
 ## Blocked by
 
-T22: Review and publish a specific content revision, T32: Deliver activity-scoped companion conversations and graduated hints
+- #139 — Review and publish a specific content revision
+- #149 — Deliver activity-scoped companion conversations and graduated hints
 
 ## Further notes
 
