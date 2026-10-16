@@ -15,7 +15,7 @@ export const QuestSchema = z.object({
   title: z.string(),
   description: z.string().nullable(),
   timeLimitSeconds: z.number().int().positive(),
-  passingScore: z.number().int().nonnegative(),
+  passingScore: z.number().int().min(0).max(100),
   xpReward: z.number().int().nonnegative(),
   completed: z.boolean(),
 });

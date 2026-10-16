@@ -71,6 +71,7 @@ export class SubmitQuestUseCase {
       score,
       passed,
       responses: input.responses,
+      questionSnapshot: questions,
     });
 
     let xpAwarded = 0;

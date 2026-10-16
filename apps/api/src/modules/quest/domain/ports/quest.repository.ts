@@ -10,6 +10,7 @@ export type CreateResultInput = {
   score: number;
   passed: boolean;
   responses: QuestResponse[];
+  questionSnapshot: QuestQuestion[];
 };
 
 export abstract class QuestRepository {
