@@ -22,6 +22,20 @@
       "when": 1789290825160,
       "tag": "0002_striped_joshua_kane",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792115464125,
+      "tag": "0003_lucky_deathbird",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792115970471,
+      "tag": "0004_melodic_dark_beast",
+      "breakpoints": true
     }
   ]
 }

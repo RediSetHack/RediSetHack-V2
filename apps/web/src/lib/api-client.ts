@@ -16,6 +16,12 @@ import type {
   SubmitQuestResponse,
   Zone,
 } from "@repo/contracts";
+import {
+  QuestListResponseSchema,
+  QuestResultReviewResponseSchema,
+  QuestSessionResponseSchema,
+  SubmitQuestResponseSchema,
+} from "@repo/contracts";
 export type { LeaderboardEntry, LessonBlock } from "@repo/contracts";
 
 export type CharacterOption = Character;
@@ -103,7 +109,11 @@ export async function getCharacters(
   fetchFn: typeof fetch = fetch,
 ): Promise<CharacterOption[]> {
   const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/characters`;
-  return fetchPublicJson<CharacterOption[]>(endpoint, "character catalog", fetchFn);
+  return fetchPublicJson<CharacterOption[]>(
+    endpoint,
+    "character catalog",
+    fetchFn,
+  );
 }
 
 export async function selectUserCharacter(
@@ -259,7 +269,9 @@ export async function getQuests(
   fetchFn: typeof fetch = fetch,
 ): Promise<Quest[]> {
   const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/quests`;
-  return fetchAuthedJson<Quest[]>(endpoint, token, fetchFn);
+  return QuestListResponseSchema.parse(
+    await fetchAuthedJson<unknown>(endpoint, token, fetchFn),
+  );
 }
 
 /** Fetches an authed JSON resource with a POST body, throwing on a missing token or failed response. */
@@ -297,7 +309,9 @@ export async function startQuestSession(
   fetchFn: typeof fetch = fetch,
 ): Promise<QuestSession> {
   const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/quests/${questId}/start`;
-  return postAuthedJson<QuestSession>(endpoint, token, {}, fetchFn);
+  return QuestSessionResponseSchema.parse(
+    await postAuthedJson<unknown>(endpoint, token, {}, fetchFn),
+  );
 }
 
 /** Submits a Quest Session's answers for server-side scoring. */
@@ -309,7 +323,9 @@ export async function submitQuest(
   fetchFn: typeof fetch = fetch,
 ): Promise<QuestSubmitResult> {
   const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/quests/${questId}/submit`;
-  return postAuthedJson<QuestSubmitResult>(endpoint, token, { responses }, fetchFn);
+  return SubmitQuestResponseSchema.parse(
+    await postAuthedJson<unknown>(endpoint, token, { responses }, fetchFn),
+  );
 }
 
 /** Reviews a submitted Result against the correct answers. */
@@ -320,7 +336,9 @@ export async function getQuestResult(
   fetchFn: typeof fetch = fetch,
 ): Promise<QuestResultReview> {
   const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/quests/results/${resultId}`;
-  return fetchAuthedJson<QuestResultReview>(endpoint, token, fetchFn);
+  return QuestResultReviewResponseSchema.parse(
+    await fetchAuthedJson<unknown>(endpoint, token, fetchFn),
+  );
 }
 
 /** Marks a Stage complete, `POST /v1/api/stages/:stageId/complete`. */

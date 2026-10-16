@@ -70,8 +70,6 @@ export const quests = pgTable(
     timeLimitSeconds: integer("time_limit_seconds").notNull().default(60),
     passingScore: integer("passing_score").notNull().default(70),
     xpReward: integer("xp_reward").notNull().default(0),
-    // Structured questions, e.g. [{ id, prompt, options: [{ id, text }], correctOptionId }]
-    questionsJson: jsonb("questions_json").notNull().default([]),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index("quests_stage_id_index").on(table.stageId)],
@@ -86,6 +84,7 @@ export const questQuestions = pgTable(
       .notNull()
       .references(() => quests.id, { onDelete: "cascade" }),
     prompt: text("prompt").notNull(),
+    authoringId: text("authoring_id"),
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -102,6 +101,7 @@ export const questOptions = pgTable(
       .notNull()
       .references(() => questQuestions.id, { onDelete: "cascade" }),
     text: text("text").notNull(),
+    authoringId: text("authoring_id"),
     isCorrect: boolean("is_correct").notNull().default(false),
     sortOrder: integer("sort_order").notNull().default(0),
   },
@@ -122,6 +122,7 @@ export const results = pgTable(
     score: integer("score").notNull().default(0),
     passed: boolean("passed").notNull().default(false),
     responsesJson: jsonb("responses_json"),
+    questionsJson: jsonb("questions_json"),
     submittedAt: timestamp("submitted_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [

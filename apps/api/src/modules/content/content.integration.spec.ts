@@ -109,7 +109,10 @@ import { UpdateStageController } from './presentation/controllers/update-stage.c
 import { UpdateZoneController } from './presentation/controllers/update-zone.controller.js';
 import { ListCharactersController } from './presentation/controllers/list-characters.controller.js';
 import { ListCharactersUseCase } from './application/list-characters.use-case.js';
-import { CharacterListResponseSchema } from '@repo/contracts';
+import {
+  CharacterListResponseSchema,
+  QuestAuthoringQuestionsSchema,
+} from '@repo/contracts';
 
 // --- In-memory fakes ---------------------------------------------------
 
@@ -753,6 +756,33 @@ describe('content admin CRUD', () => {
       });
     expect(invalid.status).toBe(400);
 
+    const empty = await request(app.getHttpServer())
+      .post('/v1/api/admin/quests')
+      .set(admin())
+      .send({ stageId: stage.body.id, title: 'Empty quiz', questions: [] });
+    expect(empty.status).toBe(400);
+
+    const outOfRangeScore = await request(app.getHttpServer())
+      .post('/v1/api/admin/quests')
+      .set(admin())
+      .send({
+        stageId: stage.body.id,
+        title: 'Invalid score',
+        passingScore: 101,
+        questions: [
+          {
+            id: 'q1',
+            prompt: '?',
+            options: [
+              { id: 'a', text: 'A' },
+              { id: 'b', text: 'B' },
+            ],
+            correctOptionId: 'a',
+          },
+        ],
+      });
+    expect(outOfRangeScore.status).toBe(400);
+
     const valid = await request(app.getHttpServer())
       .post('/v1/api/admin/quests')
       .set(admin())
@@ -773,6 +803,9 @@ describe('content admin CRUD', () => {
       });
     expect(valid.status).toBe(201);
     expect(valid.body.questions).toHaveLength(1);
+    expect(
+      QuestAuthoringQuestionsSchema.parse(valid.body.questions),
+    ).toHaveLength(1);
 
     const get = await request(app.getHttpServer())
       .get(`/v1/api/admin/quests/${valid.body.id}`)

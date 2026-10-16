@@ -1,8 +1,8 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable } from '@nestjs/common';
 
-import { QuestResult } from "../domain/entities/quest-result.entity.js";
-import { QuestResultNotFoundError } from "../domain/errors.js";
-import { QuestRepository } from "../domain/ports/quest.repository.js";
+import { QuestResult } from '../domain/entities/quest-result.entity.js';
+import { QuestResultNotFoundError } from '../domain/errors.js';
+import { QuestRepository } from '../domain/ports/quest.repository.js';
 
 export type AnswerBreakdownItem = {
   questionId: number;
@@ -12,7 +12,10 @@ export type AnswerBreakdownItem = {
   isCorrect: boolean;
 };
 
-export type QuestResultReview = { result: QuestResult; breakdown: AnswerBreakdownItem[] };
+export type QuestResultReview = {
+  result: QuestResult;
+  breakdown: AnswerBreakdownItem[];
+};
 
 @Injectable()
 export class ViewQuestResultUseCase {
@@ -26,8 +29,12 @@ export class ViewQuestResultUseCase {
       throw new QuestResultNotFoundError(resultId);
     }
 
-    const questions = await this.quests.findQuestions(result.questId);
-    const chosenByQuestion = new Map(result.responses.map((r) => [r.questionId, r.optionId]));
+    const questions =
+      result.questionSnapshot ??
+      (await this.quests.findQuestions(result.questId));
+    const chosenByQuestion = new Map(
+      result.responses.map((r) => [r.questionId, r.optionId]),
+    );
 
     const breakdown = questions.map((question) => {
       const chosenOptionId = chosenByQuestion.get(question.id) ?? null;
@@ -41,7 +48,8 @@ export class ViewQuestResultUseCase {
           isCorrect: option.isCorrect,
         })),
         chosenOptionId,
-        isCorrect: chosenOptionId !== null && correctOption?.id === chosenOptionId,
+        isCorrect:
+          chosenOptionId !== null && correctOption?.id === chosenOptionId,
       };
     });
 

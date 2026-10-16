@@ -48,6 +48,7 @@ function toResult(row: ResultRow): QuestResult {
     row.passed,
     (row.responsesJson as QuestResponse[] | null) ?? [],
     row.submittedAt,
+    (row.questionsJson as QuestQuestion[] | null) ?? null,
   );
 }
 
@@ -118,6 +119,7 @@ export class DrizzleQuestRepository implements QuestRepository {
         score: input.score,
         passed: input.passed,
         responsesJson: input.responses,
+        questionsJson: input.questionSnapshot,
       })
       .returning();
     return toResult(rows[0]!);
