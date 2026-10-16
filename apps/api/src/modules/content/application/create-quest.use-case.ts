@@ -9,7 +9,7 @@ export type CreateQuestInput = {
   timeLimitSeconds?: number;
   passingScore?: number;
   xpReward?: number;
-  questions?: QuestQuestion[];
+  questions: QuestQuestion[];
 };
 
 export class CreateQuestUseCase {
@@ -27,7 +27,7 @@ export class CreateQuestUseCase {
       timeLimitSeconds: input.timeLimitSeconds ?? 60,
       passingScore: input.passingScore ?? 70,
       xpReward: input.xpReward ?? 0,
-      questions: input.questions ?? [],
+      questions: input.questions,
     });
   }
 }

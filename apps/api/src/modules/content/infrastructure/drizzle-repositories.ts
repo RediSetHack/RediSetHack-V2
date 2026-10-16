@@ -1,8 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { asc, eq, inArray } from 'drizzle-orm';
 import {
   badgeDefinitions,
   quests,
+  questQuestions,
+  questOptions,
   regions,
   stages,
   zones,
@@ -181,7 +183,28 @@ export class DrizzleQuestRepository implements QuestRepository {
     const row = await this.database.query.quests.findFirst({
       where: eq(quests.id, id),
     });
-    return row ? toQuest(row) : null;
+    return row ? toQuest(row, await this.findQuestions(id)) : null;
+  }
+
+  private async findQuestions(questId: number): Promise<Quest['questions']> {
+    const questions = await this.database.query.questQuestions.findMany({
+      where: eq(questQuestions.questId, questId),
+      orderBy: [asc(questQuestions.sortOrder), asc(questQuestions.id)],
+    });
+    const options = questions.length ? await this.database.query.questOptions.findMany({
+      where: inArray(questOptions.questionId, questions.map(({ id }) => id)),
+      orderBy: [asc(questOptions.sortOrder), asc(questOptions.id)],
+    }) : [];
+    return questions.map((question) => {
+      const questionOptions = options.filter((option) => option.questionId === question.id);
+      const correct = questionOptions.find((option) => option.isCorrect);
+      return {
+        id: question.authoringId ?? String(question.id),
+        prompt: question.prompt,
+        options: questionOptions.map((option) => ({ id: option.authoringId ?? String(option.id), text: option.text })),
+        correctOptionId: correct?.authoringId ?? String(correct?.id ?? ''),
+      };
+    });
   }
 
   async create(input: {
@@ -193,11 +216,11 @@ export class DrizzleQuestRepository implements QuestRepository {
     xpReward: number;
     questions: Quest['questions'];
   }): Promise<Quest> {
-    const rows = await this.database
-      .insert(quests)
-      .values({ ...input, questionsJson: input.questions })
-      .returning();
-    return toQuest(rows[0]!);
+    return this.database.transaction(async (tx) => {
+      const rows = await tx.insert(quests).values(input).returning();
+      await this.syncQuestions(tx, rows[0]!.id, input.questions);
+      return toQuest(rows[0]!, input.questions);
+    });
   }
 
   async update(
@@ -211,16 +234,48 @@ export class DrizzleQuestRepository implements QuestRepository {
       questions: Quest['questions'];
     }>,
   ): Promise<Quest | null> {
-    const { questions, ...rest } = input;
-    const set =
-      questions !== undefined ? { ...rest, questionsJson: questions } : rest;
-    const rows = await this.database
-      .update(quests)
-      .set(set)
-      .where(eq(quests.id, id))
-      .returning();
-    const row = rows[0];
-    return row ? toQuest(row) : null;
+    return this.database.transaction(async (tx) => {
+      const { questions, ...rest } = input;
+      const row = Object.keys(rest).length
+        ? (await tx.update(quests).set(rest).where(eq(quests.id, id)).returning())[0]
+        : await tx.query.quests.findFirst({ where: eq(quests.id, id) });
+      if (!row) return null;
+      if (questions !== undefined) await this.syncQuestions(tx, id, questions);
+      return toQuest(row, questions ?? await this.findQuestions(id));
+    });
+  }
+
+  private async syncQuestions(tx: Parameters<Parameters<Database['transaction']>[0]>[0], questId: number, definitions: Quest['questions']) {
+    const existingQuestions = await tx.query.questQuestions.findMany({ where: eq(questQuestions.questId, questId) });
+    const usedQuestionIds = new Set<number>();
+    for (const [index, definition] of definitions.entries()) {
+      const question = existingQuestions.find((item) => !usedQuestionIds.has(item.id) && (item.authoringId === definition.id || String(item.id) === definition.id));
+      let questionId: number;
+      if (question) {
+        questionId = question.id;
+        usedQuestionIds.add(question.id);
+        await tx.update(questQuestions).set({ prompt: definition.prompt, sortOrder: index, authoringId: definition.id }).where(eq(questQuestions.id, questionId));
+      } else {
+        const [inserted] = await tx.insert(questQuestions).values({ questId, prompt: definition.prompt, sortOrder: index, authoringId: definition.id }).returning({ id: questQuestions.id });
+        questionId = inserted!.id;
+        usedQuestionIds.add(questionId);
+      }
+      const existingOptions = await tx.query.questOptions.findMany({ where: eq(questOptions.questionId, questionId) });
+      const usedOptionIds = new Set<number>();
+      for (const [optionIndex, option] of definition.options.entries()) {
+        const existing = existingOptions.find((item) => !usedOptionIds.has(item.id) && (item.authoringId === option.id || String(item.id) === option.id));
+        if (existing) {
+          usedOptionIds.add(existing.id);
+          await tx.update(questOptions).set({ text: option.text, isCorrect: option.id === definition.correctOptionId, sortOrder: optionIndex, authoringId: option.id }).where(eq(questOptions.id, existing.id));
+        } else {
+          await tx.insert(questOptions).values({ questionId, text: option.text, isCorrect: option.id === definition.correctOptionId, sortOrder: optionIndex, authoringId: option.id });
+        }
+      }
+      const removedOptions = existingOptions.filter(({ id: optionId }) => !usedOptionIds.has(optionId));
+      if (removedOptions.length) await tx.delete(questOptions).where(inArray(questOptions.id, removedOptions.map(({ id: optionId }) => optionId)));
+    }
+    const removedQuestions = existingQuestions.filter(({ id: questionId }) => !usedQuestionIds.has(questionId));
+    if (removedQuestions.length) await tx.delete(questQuestions).where(inArray(questQuestions.id, removedQuestions.map(({ id: questionId }) => questionId)));
   }
 
   async delete(id: number): Promise<boolean> {
@@ -317,7 +372,7 @@ function toStage(row: typeof stages.$inferSelect): Stage {
   );
 }
 
-function toQuest(row: typeof quests.$inferSelect): Quest {
+function toQuest(row: typeof quests.$inferSelect, questions: Quest['questions']): Quest {
   return new Quest(
     row.id,
     row.stageId,
@@ -326,7 +381,7 @@ function toQuest(row: typeof quests.$inferSelect): Quest {
     row.timeLimitSeconds,
     row.passingScore,
     row.xpReward,
-    row.questionsJson as Quest['questions'],
+    questions,
   );
 }
 

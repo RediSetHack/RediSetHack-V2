@@ -8,7 +8,11 @@ describe("LessonBlockSchema", () => {
   });
 
   it("parses a code block", () => {
-    const block = { type: "code", language: "javascript", content: "console.log(1)" };
+    const block = {
+      type: "code",
+      language: "javascript",
+      content: "console.log(1)",
+    };
     expect(LessonBlockSchema.parse(block)).toEqual(block);
   });
 
@@ -22,9 +26,34 @@ describe("LessonBlockSchema", () => {
     expect(LessonBlockSchema.parse(block)).toEqual(block);
   });
 
+  it("parses images and rejects malformed known blocks", () => {
+    const block = {
+      type: "image",
+      url: "https://example.com/loop.png",
+      alt: "A loop diagram",
+      caption: "Loop",
+    };
+    expect(LessonBlockSchema.parse(block)).toEqual(block);
+    expect(() =>
+      LessonBlockSchema.parse({ type: "image", url: "/loop.png" }),
+    ).toThrow();
+    expect(() =>
+      LessonBlockSchema.parse({ type: "exercise", prompt: "Start" }),
+    ).toThrow();
+  });
+
+  it("does not treat malformed known types as future blocks", () => {
+    expect(() =>
+      LessonBlockSchema.parse({ type: "code", language: "js", code: "old" }),
+    ).toThrow();
+  });
+
   it("parses a block of an unrecognised type instead of throwing", () => {
     const block = { type: "video", url: "https://example.com/clip.mp4" };
     expect(LessonBlockSchema.parse(block)).toEqual(block);
+    expect(LessonBlockSchema.parse({ type: "page-break" })).toEqual({
+      type: "page-break",
+    });
   });
 
   it("throws on a block with no type", () => {

@@ -183,7 +183,6 @@ describe('Badge definitions and repeat awards reliability (Issue #120)', () => {
         timeLimitSeconds: 60,
         passingScore: 70,
         xpReward: 50,
-        questionsJson: [],
       })
       .returning();
     testQuestId = quest.id;

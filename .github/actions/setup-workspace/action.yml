@@ -41,7 +41,7 @@ runs:
       shell: bash
       run: |
         cat >> "$GITHUB_ENV" <<'EOF'
-        DATABASE_URL=postgres://postgres:postgres@localhost:5432/redisethack
+        DATABASE_URL=postgres://postgres@localhost:5432/redisethack
         NEXT_PUBLIC_API_URL=http://localhost:3000
         NEXT_PUBLIC_APP_URL=http://localhost:3000
         NEXT_PUBLIC_AUTH_PUBLISHABLE_KEY=pk_test_placeholder

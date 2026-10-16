@@ -60,11 +60,28 @@ function ExerciseBlockView({
   );
 }
 
+function ImageBlockView({
+  url,
+  alt,
+  caption,
+}: Readonly<{ url: string; alt: string; caption?: string }>) {
+  return (
+    <figure className="space-y-2">
+      <img src={url} alt={alt} className="h-auto max-w-full rounded-md" />
+      {caption ? (
+        <figcaption className="text-sm text-muted-foreground">
+          {caption}
+        </figcaption>
+      ) : null}
+    </figure>
+  );
+}
+
 function UnsupportedBlockView({ type }: Readonly<{ type: string }>) {
   return (
     <p className="rounded-md border border-dashed border-border/60 p-4 text-sm text-muted-foreground">
-      This Lesson includes a &ldquo;{type}&rdquo; block this version of the app can&rsquo;t
-      display yet.
+      This Lesson includes a &ldquo;{type}&rdquo; block this version of the app
+      can&rsquo;t display yet.
     </p>
   );
 }
@@ -74,18 +91,30 @@ function UnsupportedBlockView({ type }: Readonly<{ type: string }>) {
  * dispatches to a component per block type. No per-Stage components are
  * ever written — a new Stage's content is just new block data.
  */
-export function LessonBlockView({ block }: Readonly<{ block: RenderableBlock }>) {
+export function LessonBlockView({
+  block,
+}: Readonly<{ block: RenderableBlock }>) {
   switch (block.kind) {
     case "text":
       return <TextBlockView content={block.content} />;
     case "code":
-      return <CodeBlockView language={block.language} content={block.content} />;
+      return (
+        <CodeBlockView language={block.language} content={block.content} />
+      );
     case "exercise":
       return (
         <ExerciseBlockView
           prompt={block.prompt}
           language={block.language}
           starterCode={block.starterCode}
+        />
+      );
+    case "image":
+      return (
+        <ImageBlockView
+          url={block.url}
+          alt={block.alt}
+          caption={block.caption}
         />
       );
     default:

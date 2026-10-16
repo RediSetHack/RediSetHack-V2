@@ -1,3 +1,5 @@
+import type { QuestQuestion } from './quest.entity.js';
+
 export type QuestResponse = {
   questionId: number;
   optionId: number;
@@ -12,5 +14,6 @@ export class QuestResult {
     public readonly passed: boolean,
     public readonly responses: QuestResponse[],
     public readonly submittedAt: Date,
+    public readonly questionSnapshot: QuestQuestion[] | null = null,
   ) {}
 }

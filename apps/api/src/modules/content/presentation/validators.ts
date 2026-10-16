@@ -1,28 +1,43 @@
 import { registerDecorator, ValidationOptions } from 'class-validator';
+import { QuestAuthoringQuestionsSchema } from '@repo/contracts';
 
-const LESSON_BLOCK_TYPES = new Set(['text', 'code', 'image']);
+const LESSON_BLOCK_TYPES = new Set(['text', 'code', 'image', 'exercise']);
+const BADGE_TRIGGERS = new Set(['cumulative', 'category', 'activity']);
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function isLessonBlock(block: unknown): boolean {
-  if (!isPlainObject(block) || !LESSON_BLOCK_TYPES.has(block.type as string))
+  if (
+    !isPlainObject(block) ||
+    typeof block.type !== 'string' ||
+    block.type.length === 0
+  )
     return false;
   switch (block.type) {
     case 'text':
-      return typeof block.content === 'string' && block.content.length > 0;
+      return typeof block.content === 'string';
     case 'code':
       return (
-        typeof block.language === 'string' && typeof block.code === 'string'
+        typeof block.language === 'string' &&
+        (typeof block.content === 'string' || typeof block.code === 'string')
       );
     case 'image':
       return (
         typeof block.url === 'string' &&
+        block.url.length > 0 &&
+        typeof block.alt === 'string' &&
         (block.caption === undefined || typeof block.caption === 'string')
       );
+    case 'exercise':
+      return (
+        typeof block.prompt === 'string' &&
+        typeof block.language === 'string' &&
+        typeof block.starterCode === 'string'
+      );
     default:
-      return false;
+      return !LESSON_BLOCK_TYPES.has(block.type);
   }
 }
 
@@ -46,30 +61,6 @@ export function IsLessonContent(validationOptions?: ValidationOptions) {
   };
 }
 
-function isQuestQuestion(question: unknown): boolean {
-  if (!isPlainObject(question)) return false;
-  if (typeof question.id !== 'string' || typeof question.prompt !== 'string')
-    return false;
-  if (!Array.isArray(question.options) || question.options.length < 2)
-    return false;
-  const options = question.options as unknown[];
-  const optionIds = new Set<string>();
-  for (const option of options) {
-    if (
-      !isPlainObject(option) ||
-      typeof option.id !== 'string' ||
-      typeof option.text !== 'string' ||
-      optionIds.has(option.id)
-    )
-      return false;
-    optionIds.add(option.id);
-  }
-  return (
-    typeof question.correctOptionId === 'string' &&
-    optionIds.has(question.correctOptionId)
-  );
-}
-
 /** Validates an array of quest questions with options and a correct-option reference. */
 export function IsQuestQuestions(validationOptions?: ValidationOptions) {
   return function (object: object, propertyName: string) {
@@ -80,7 +71,7 @@ export function IsQuestQuestions(validationOptions?: ValidationOptions) {
       options: validationOptions,
       validator: {
         validate(value: unknown) {
-          return Array.isArray(value) && value.every(isQuestQuestion);
+          return QuestAuthoringQuestionsSchema.safeParse(value).success;
         },
         defaultMessage() {
           return `${propertyName} must be an array of questions with id, prompt, options (>=2), and a matching correctOptionId`;

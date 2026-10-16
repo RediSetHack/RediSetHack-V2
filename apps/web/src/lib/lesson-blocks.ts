@@ -1,4 +1,10 @@
-import type { CodeBlock, ExerciseBlock, LessonBlock, TextBlock } from "@repo/contracts";
+import type {
+  CodeBlock,
+  ExerciseBlock,
+  ImageBlock,
+  LessonBlock,
+  TextBlock,
+} from "@repo/contracts";
 
 /**
  * The Lesson renderer's view model, one variant per component it dispatches
@@ -10,6 +16,7 @@ export type RenderableBlock =
   | { kind: "text"; content: string }
   | { kind: "code"; language: string; content: string }
   | { kind: "exercise"; prompt: string; language: string; starterCode: string }
+  | { kind: "image"; url: string; alt: string; caption?: string }
   | { kind: "unsupported"; type: string };
 
 // `LessonBlock` is a plain z.union (not a discriminatedUnion) so an
@@ -30,12 +37,18 @@ function normalizeBlock(block: LessonBlock): RenderableBlock {
       const { prompt, language, starterCode } = block as ExerciseBlock;
       return { kind: "exercise", prompt, language, starterCode };
     }
+    case "image": {
+      const { url, alt, caption } = block as ImageBlock;
+      return { kind: "image", url, alt, caption };
+    }
     default:
       return { kind: "unsupported", type: block.type };
   }
 }
 
 /** Turns a Lesson's raw structured blocks into the renderer's view model. */
-export function normalizeLessonBlocks(blocks: readonly LessonBlock[]): RenderableBlock[] {
+export function normalizeLessonBlocks(
+  blocks: readonly LessonBlock[],
+): RenderableBlock[] {
   return blocks.map(normalizeBlock);
 }

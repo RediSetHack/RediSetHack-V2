@@ -1,10 +1,7 @@
 // Content-catalog domain entities for the admin CRUD API (issue #13).
 // Mirrors the Drizzle tables in packages/db/src/schema.ts.
 
-export type LessonBlock =
-  | { type: 'text'; content: string }
-  | { type: 'code'; language: string; code: string }
-  | { type: 'image'; url: string; caption?: string };
+export type LessonBlock = import('@repo/contracts').LessonBlock;
 
 export type QuestionOption = { id: string; text: string };
 

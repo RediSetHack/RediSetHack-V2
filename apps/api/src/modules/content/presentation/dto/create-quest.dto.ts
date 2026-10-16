@@ -1,4 +1,4 @@
-import { IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsString, Max, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 import type { QuestQuestion } from '../../domain/entities.js';
@@ -45,6 +45,7 @@ export class CreateQuestRequestDto {
   @IsOptional()
   @IsInt()
   @Min(0)
+  @Max(100)
   passingScore?: number;
 
   @ApiPropertyOptional({ example: 20, description: 'XP awarded on passing.' })
@@ -60,7 +61,6 @@ export class CreateQuestRequestDto {
     description:
       'Each question is `{ id, prompt, options: [{ id, text }], correctOptionId }`.',
   })
-  @IsOptional()
   @IsQuestQuestions()
-  questions?: QuestQuestion[];
+  questions!: QuestQuestion[];
 }
