@@ -1,5 +1,6 @@
 import { BadgeCriteria, BadgeDefinition } from '../domain/entities.js';
-import { BadgeDefinitionRepository } from '../domain/ports.js';
+import { ParentZoneNotFoundError } from '../domain/errors.js';
+import { BadgeDefinitionRepository, ZoneRepository } from '../domain/ports.js';
 
 export type CreateBadgeDefinitionInput = {
   name: string;
@@ -10,8 +11,17 @@ export type CreateBadgeDefinitionInput = {
 };
 
 export class CreateBadgeDefinitionUseCase {
-  constructor(private readonly repository: BadgeDefinitionRepository) {}
-  execute(input: CreateBadgeDefinitionInput): Promise<BadgeDefinition> {
+  constructor(
+    private readonly repository: BadgeDefinitionRepository,
+    private readonly zones: ZoneRepository,
+  ) {}
+
+  async execute(input: CreateBadgeDefinitionInput): Promise<BadgeDefinition> {
+    if (input.criteria.trigger === 'category') {
+      const zone = await this.zones.findById(input.criteria.zoneId);
+      if (!zone) throw new ParentZoneNotFoundError(input.criteria.zoneId);
+    }
+
     return this.repository.create({
       name: input.name,
       slug: input.slug,

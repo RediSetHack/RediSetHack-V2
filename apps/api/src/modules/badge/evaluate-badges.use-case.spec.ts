@@ -36,6 +36,9 @@ function makeRepo(overrides: Partial<BadgeRepository> = {}): BadgeRepository {
     findAll: vi.fn().mockResolvedValue([]),
     countAwards: vi.fn().mockResolvedValue(0),
     awardMany: vi.fn(),
+    awardMilestones: vi
+      .fn()
+      .mockImplementation((_u, _b, m) => Promise.resolve(m)),
     findEarnedByUser: vi.fn(),
     countCompletedStages: vi.fn().mockResolvedValue(0),
     countPassedQuests: vi.fn().mockResolvedValue(0),
@@ -58,7 +61,7 @@ describe('EvaluateBadgesUseCase', () => {
     expect(awarded).toEqual([
       { badge: cumulativeBadge, awardCount: 1, newAwards: 1 },
     ]);
-    expect(repo.awardMany).toHaveBeenCalledWith('user_1', 1, 1);
+    expect(repo.awardMilestones).toHaveBeenCalledWith('user_1', 1, [1]);
   });
 
   it('increments the award count multiple times once several thresholds are crossed at once', async () => {
@@ -74,7 +77,7 @@ describe('EvaluateBadgesUseCase', () => {
     expect(awarded).toEqual([
       { badge: cumulativeBadge, awardCount: 3, newAwards: 2 },
     ]);
-    expect(repo.awardMany).toHaveBeenCalledWith('user_1', 1, 2);
+    expect(repo.awardMilestones).toHaveBeenCalledWith('user_1', 1, [2, 3]);
   });
 
   it('does not re-award a cumulative badge when no new threshold has been crossed', async () => {
@@ -119,7 +122,7 @@ describe('EvaluateBadgesUseCase', () => {
     expect(awarded).toEqual([
       { badge: categoryBadge, awardCount: 1, newAwards: 1 },
     ]);
-    expect(repo.awardMany).toHaveBeenCalledWith('user_1', 3, 1);
+    expect(repo.awardMilestones).toHaveBeenCalledWith('user_1', 3, [1]);
   });
 
   it('does not award a category badge again once it has already been earned', async () => {
@@ -153,5 +156,39 @@ describe('EvaluateBadgesUseCase', () => {
     expect(awarded).toEqual([
       { badge: cumulativeBadge, awardCount: 2, newAwards: 2 },
     ]);
+  });
+
+  it('awards sequential milestones through awardMilestones when provided', async () => {
+    const awardMilestones = vi.fn().mockResolvedValue([2, 3]);
+    const repo = makeRepo({
+      findAll: vi.fn().mockResolvedValue([cumulativeBadge]),
+      countCompletedStages: vi.fn().mockResolvedValue(15),
+      countAwards: vi.fn().mockResolvedValue(1),
+      awardMilestones,
+    });
+    const useCase = new EvaluateBadgesUseCase(repo);
+
+    const awarded = await useCase.execute('user_1');
+
+    expect(awardMilestones).toHaveBeenCalledWith('user_1', 1, [2, 3]);
+    expect(awarded).toEqual([
+      { badge: cumulativeBadge, awardCount: 3, newAwards: 2 },
+    ]);
+  });
+
+  it('handles concurrent evaluation where milestones were already inserted concurrently', async () => {
+    const awardMilestones = vi.fn().mockResolvedValue([]);
+    const repo = makeRepo({
+      findAll: vi.fn().mockResolvedValue([cumulativeBadge]),
+      countCompletedStages: vi.fn().mockResolvedValue(5),
+      countAwards: vi.fn().mockResolvedValue(0),
+      awardMilestones,
+    });
+    const useCase = new EvaluateBadgesUseCase(repo);
+
+    const awarded = await useCase.execute('user_1');
+
+    expect(awardMilestones).toHaveBeenCalledWith('user_1', 1, [1]);
+    expect(awarded).toEqual([]);
   });
 });

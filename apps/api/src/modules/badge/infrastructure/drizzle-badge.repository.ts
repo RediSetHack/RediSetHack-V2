@@ -57,17 +57,41 @@ export class DrizzleBadgeRepository implements BadgeRepository {
     return row?.value ?? 0;
   }
 
+  async awardMilestones(
+    userId: string,
+    badgeDefinitionId: number,
+    milestones: number[],
+  ): Promise<number[]> {
+    if (milestones.length === 0) return [];
+    const inserted = await this.database
+      .insert(badgeAwards)
+      .values(
+        milestones.map((milestone) => ({
+          userId,
+          badgeDefinitionId,
+          milestone,
+        })),
+      )
+      .onConflictDoNothing({
+        target: [
+          badgeAwards.userId,
+          badgeAwards.badgeDefinitionId,
+          badgeAwards.milestone,
+        ],
+      })
+      .returning({ milestone: badgeAwards.milestone });
+    return inserted.map((row) => row.milestone);
+  }
+
   async awardMany(
     userId: string,
     badgeDefinitionId: number,
     times: number,
   ): Promise<void> {
     if (times <= 0) return;
-    await this.database
-      .insert(badgeAwards)
-      .values(
-        Array.from({ length: times }, () => ({ userId, badgeDefinitionId })),
-      );
+    const current = await this.countAwards(userId, badgeDefinitionId);
+    const milestones = Array.from({ length: times }, (_, i) => current + i + 1);
+    await this.awardMilestones(userId, badgeDefinitionId, milestones);
   }
 
   async findEarnedByUser(userId: string): Promise<EarnedBadge[]> {

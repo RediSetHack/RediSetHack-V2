@@ -13,8 +13,8 @@ import { SLUG_PATTERN } from './slug-pattern.js';
 
 const CRITERIA_EXAMPLE: BadgeCriteria = {
   trigger: 'cumulative',
-  target: 'xp',
-  threshold: 1000,
+  target: 'stage_completions',
+  threshold: 5,
 };
 
 export class UpdateBadgeDefinitionRequestDto {

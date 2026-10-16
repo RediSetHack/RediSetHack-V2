@@ -497,7 +497,7 @@ describe('content admin CRUD', () => {
         },
         {
           provide: CreateBadgeDefinitionUseCase,
-          useFactory: () => new CreateBadgeDefinitionUseCase(badges),
+          useFactory: () => new CreateBadgeDefinitionUseCase(badges, zones),
         },
         {
           provide: GetBadgeDefinitionUseCase,
@@ -505,7 +505,7 @@ describe('content admin CRUD', () => {
         },
         {
           provide: UpdateBadgeDefinitionUseCase,
-          useFactory: () => new UpdateBadgeDefinitionUseCase(badges),
+          useFactory: () => new UpdateBadgeDefinitionUseCase(badges, zones),
         },
         {
           provide: DeleteBadgeDefinitionUseCase,
@@ -738,7 +738,21 @@ describe('content admin CRUD', () => {
   });
 
   it('validates badge trigger criteria and runs the badge CRUD lifecycle', async () => {
-    const invalid = await request(app.getHttpServer())
+    const region = await request(app.getHttpServer())
+      .post('/v1/api/admin/regions')
+      .set(admin())
+      .send({ name: 'Badge Region', slug: 'badge-region' });
+    const zone = await request(app.getHttpServer())
+      .post('/v1/api/admin/zones')
+      .set(admin())
+      .send({
+        regionId: region.body.id,
+        name: 'Badge Zone',
+        slug: 'badge-zone',
+      });
+
+    // Invalid trigger
+    const invalidTrigger = await request(app.getHttpServer())
       .post('/v1/api/admin/badges')
       .set(admin())
       .send({
@@ -746,8 +760,85 @@ describe('content admin CRUD', () => {
         slug: 'streaker',
         criteria: { trigger: 'bogus', target: 'x', threshold: 1 },
       });
-    expect(invalid.status).toBe(400);
+    expect(invalidTrigger.status).toBe(400);
 
+    // Invalid target for cumulative (e.g. 'xp' is not supported)
+    const invalidTarget = await request(app.getHttpServer())
+      .post('/v1/api/admin/badges')
+      .set(admin())
+      .send({
+        name: 'XP Badge',
+        slug: 'xp-badge',
+        criteria: { trigger: 'cumulative', target: 'xp', threshold: 100 },
+      });
+    expect(invalidTarget.status).toBe(400);
+
+    // Invalid threshold
+    const invalidThreshold = await request(app.getHttpServer())
+      .post('/v1/api/admin/badges')
+      .set(admin())
+      .send({
+        name: 'Zero Threshold',
+        slug: 'zero-threshold',
+        criteria: {
+          trigger: 'cumulative',
+          target: 'stage_completions',
+          threshold: 0,
+        },
+      });
+    expect(invalidThreshold.status).toBe(400);
+
+    // Category with non-existent zoneId
+    const missingZone = await request(app.getHttpServer())
+      .post('/v1/api/admin/badges')
+      .set(admin())
+      .send({
+        name: 'Ghost Zone Master',
+        slug: 'ghost-zone-master',
+        criteria: {
+          trigger: 'category',
+          target: 'zone_completion',
+          zoneId: 999999,
+        },
+      });
+    expect(missingZone.status).toBe(400);
+
+    // Valid category badge with real zone
+    const validCategory = await request(app.getHttpServer())
+      .post('/v1/api/admin/badges')
+      .set(admin())
+      .send({
+        name: 'Zone Conqueror',
+        slug: 'zone-conqueror',
+        criteria: {
+          trigger: 'category',
+          target: 'zone_completion',
+          zoneId: zone.body.id,
+        },
+      });
+    expect(validCategory.status).toBe(201);
+    expect(validCategory.body.criteria).toEqual({
+      trigger: 'category',
+      target: 'zone_completion',
+      zoneId: zone.body.id,
+    });
+
+    // Valid activity badge
+    const validActivity = await request(app.getHttpServer())
+      .post('/v1/api/admin/badges')
+      .set(admin())
+      .send({
+        name: 'Quest Hero',
+        slug: 'quest-hero',
+        criteria: {
+          trigger: 'activity',
+          target: 'quest_passes',
+          threshold: 10,
+        },
+      });
+    expect(validActivity.status).toBe(201);
+
+    // Valid cumulative badge
     const create = await request(app.getHttpServer())
       .post('/v1/api/admin/badges')
       .set(admin())
@@ -763,6 +854,20 @@ describe('content admin CRUD', () => {
     expect(create.status).toBe(201);
     const id = create.body.id;
 
+    // Reject updating category badge to non-existent zone
+    const invalidUpdateZone = await request(app.getHttpServer())
+      .patch(`/v1/api/admin/badges/${id}`)
+      .set(admin())
+      .send({
+        criteria: {
+          trigger: 'category',
+          target: 'zone_completion',
+          zoneId: 888888,
+        },
+      });
+    expect(invalidUpdateZone.status).toBe(400);
+
+    // Update cumulative badge
     const update = await request(app.getHttpServer())
       .patch(`/v1/api/admin/badges/${id}`)
       .set(admin())

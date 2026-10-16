@@ -13,6 +13,10 @@ export type BadgeAwardResult = {
 // awards any newly-crossed thresholds. Cumulative/activity badges repeat
 // every `threshold` count crossed (award count = floor(current / threshold));
 // category badges award once when their target zone is fully completed.
+//
+// Per ADR-0003 and Issue #120, each award milestone is uniquely persisted
+// to prevent duplicate awards during concurrent evaluations and to allow
+// safe retry / recovery after qualifying activities commit.
 @Injectable()
 export class EvaluateBadgesUseCase {
   constructor(private readonly badges: BadgeRepository) {}
@@ -23,18 +27,36 @@ export class EvaluateBadgesUseCase {
 
     for (const badge of definitions) {
       const earnedCount = await this.currentEarnedCount(userId, badge);
-      // ponytail: read-then-write, not locked — two evaluate() calls for the
-      // same user racing (e.g. a stage completion and a quest pass landing
-      // together) can both read the same alreadyAwarded count and both
-      // award, over-counting by one. Upgrade to a per-user advisory lock (or
-      // a unique (userId, badgeDefinitionId, sequence) constraint) if that
-      // ever matters in practice.
-      const alreadyAwarded = await this.badges.countAwards(userId, badge.id);
-      const newAwards = earnedCount - alreadyAwarded;
-      if (newAwards <= 0) continue;
+      if (earnedCount <= 0) continue;
 
-      await this.badges.awardMany(userId, badge.id, newAwards);
-      results.push({ badge, awardCount: earnedCount, newAwards });
+      const alreadyAwarded = await this.badges.countAwards(userId, badge.id);
+      if (alreadyAwarded >= earnedCount) continue;
+
+      const targetMilestones = Array.from(
+        { length: earnedCount - alreadyAwarded },
+        (_, i) => alreadyAwarded + i + 1,
+      );
+
+      let newlyAwarded = 0;
+      if (typeof this.badges.awardMilestones === 'function') {
+        const inserted = await this.badges.awardMilestones(
+          userId,
+          badge.id,
+          targetMilestones,
+        );
+        newlyAwarded = inserted.length;
+      } else {
+        await this.badges.awardMany(userId, badge.id, targetMilestones.length);
+        newlyAwarded = targetMilestones.length;
+      }
+
+      if (newlyAwarded > 0) {
+        results.push({
+          badge,
+          awardCount: alreadyAwarded + newlyAwarded,
+          newAwards: newlyAwarded,
+        });
+      }
     }
 
     return results;

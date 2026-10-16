@@ -1,7 +1,6 @@
 import { registerDecorator, ValidationOptions } from 'class-validator';
 
 const LESSON_BLOCK_TYPES = new Set(['text', 'code', 'image']);
-const BADGE_TRIGGERS = new Set(['cumulative', 'category', 'activity']);
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -91,7 +90,7 @@ export function IsQuestQuestions(validationOptions?: ValidationOptions) {
   };
 }
 
-/** Validates badge trigger criteria: { trigger: "cumulative"|"category"|"activity", target, threshold }. */
+/** Validates exact badge trigger criteria: cumulative, activity, or category. */
 export function IsBadgeCriteria(validationOptions?: ValidationOptions) {
   return function (object: object, propertyName: string) {
     registerDecorator({
@@ -102,16 +101,34 @@ export function IsBadgeCriteria(validationOptions?: ValidationOptions) {
       validator: {
         validate(value: unknown) {
           if (!isPlainObject(value)) return false;
-          return (
-            BADGE_TRIGGERS.has(value.trigger as string) &&
-            typeof value.target === 'string' &&
-            value.target.length > 0 &&
-            typeof value.threshold === 'number' &&
-            value.threshold > 0
-          );
+          if (value.trigger === 'cumulative') {
+            return (
+              value.target === 'stage_completions' &&
+              typeof value.threshold === 'number' &&
+              Number.isInteger(value.threshold) &&
+              value.threshold > 0
+            );
+          }
+          if (value.trigger === 'activity') {
+            return (
+              value.target === 'quest_passes' &&
+              typeof value.threshold === 'number' &&
+              Number.isInteger(value.threshold) &&
+              value.threshold > 0
+            );
+          }
+          if (value.trigger === 'category') {
+            return (
+              value.target === 'zone_completion' &&
+              typeof value.zoneId === 'number' &&
+              Number.isInteger(value.zoneId) &&
+              value.zoneId > 0
+            );
+          }
+          return false;
         },
         defaultMessage() {
-          return `${propertyName} must be { trigger: "cumulative"|"category"|"activity", target: string, threshold: number > 0 }`;
+          return `${propertyName} must be valid criteria: { trigger: 'cumulative', target: 'stage_completions', threshold: integer > 0 } | { trigger: 'activity', target: 'quest_passes', threshold: integer > 0 } | { trigger: 'category', target: 'zone_completion', zoneId: integer > 0 }`;
         },
       },
     });

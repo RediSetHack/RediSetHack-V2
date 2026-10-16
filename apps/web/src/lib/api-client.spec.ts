@@ -17,6 +17,7 @@ import {
   getLeaderboard,
   markStageComplete,
   executeCode,
+  evaluateBadges,
   ApiError,
 } from "./api-client.js";
 
@@ -26,7 +27,13 @@ describe("api-client", () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => [
-          { id: 1, name: "Binary Knight", slug: "binary-knight", description: null, imageUrl: null },
+          {
+            id: 1,
+            name: "Binary Knight",
+            slug: "binary-knight",
+            description: null,
+            imageUrl: null,
+          },
         ],
       });
 
@@ -39,7 +46,13 @@ describe("api-client", () => {
         "http://localhost:3001/v1/api/characters",
       );
       expect(result).toEqual([
-        { id: 1, name: "Binary Knight", slug: "binary-knight", description: null, imageUrl: null },
+        {
+          id: 1,
+          name: "Binary Knight",
+          slug: "binary-knight",
+          description: null,
+          imageUrl: null,
+        },
       ]);
     });
 
@@ -47,7 +60,10 @@ describe("api-client", () => {
       const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 500 });
 
       await expect(
-        getCharacters("http://localhost:3001", mockFetch as unknown as typeof fetch),
+        getCharacters(
+          "http://localhost:3001",
+          mockFetch as unknown as typeof fetch,
+        ),
       ).rejects.toMatchObject({ status: 500 });
     });
   });
@@ -138,7 +154,9 @@ describe("api-client", () => {
 
   describe("syncUser", () => {
     it("throws ApiError 401 when token is missing", async () => {
-      await expect(syncUser("http://localhost:3001", "")).rejects.toThrowError(ApiError);
+      await expect(syncUser("http://localhost:3001", "")).rejects.toThrowError(
+        ApiError,
+      );
     });
 
     it("sends POST request to /v1/api/user/sync and returns user data", async () => {
@@ -160,21 +178,29 @@ describe("api-client", () => {
         mockFetch as unknown as typeof fetch,
       );
 
-      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/user/sync", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer test-token",
+      expect(mockFetch).toHaveBeenCalledWith(
+        "http://localhost:3001/v1/api/user/sync",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer test-token",
+          },
+          body: JSON.stringify({
+            email: "test@example.com",
+            name: "Test User",
+          }),
         },
-        body: JSON.stringify({ email: "test@example.com", name: "Test User" }),
-      });
+      );
       expect(result.id).toBe("user_123");
     });
   });
 
   describe("getCurrentUser", () => {
     it("throws ApiError 401 when token is missing", async () => {
-      await expect(getCurrentUser("http://localhost:3001", "")).rejects.toThrowError(ApiError);
+      await expect(
+        getCurrentUser("http://localhost:3001", ""),
+      ).rejects.toThrowError(ApiError);
     });
 
     it("returns null when API returns 404 (user not found in database)", async () => {
@@ -186,14 +212,21 @@ describe("api-client", () => {
         }),
       });
 
-      const result = await getCurrentUser("http://localhost:3001", "test-token", mockFetch as unknown as typeof fetch);
+      const result = await getCurrentUser(
+        "http://localhost:3001",
+        "test-token",
+        mockFetch as unknown as typeof fetch,
+      );
 
-      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/user/me", {
-        method: "GET",
-        headers: {
-          Authorization: "Bearer test-token",
+      expect(mockFetch).toHaveBeenCalledWith(
+        "http://localhost:3001/v1/api/user/me",
+        {
+          method: "GET",
+          headers: {
+            Authorization: "Bearer test-token",
+          },
         },
-      });
+      );
       expect(result).toBeNull();
     });
 
@@ -209,7 +242,11 @@ describe("api-client", () => {
         }),
       });
 
-      const result = await getCurrentUser("http://localhost:3001", "test-token", mockFetch as unknown as typeof fetch);
+      const result = await getCurrentUser(
+        "http://localhost:3001",
+        "test-token",
+        mockFetch as unknown as typeof fetch,
+      );
 
       expect(result).toEqual({
         id: "user_123",
@@ -223,7 +260,9 @@ describe("api-client", () => {
 
   describe("getProfile", () => {
     it("throws ApiError 401 when token is missing", async () => {
-      await expect(getProfile("http://localhost:3001", "")).rejects.toThrowError(ApiError);
+      await expect(
+        getProfile("http://localhost:3001", ""),
+      ).rejects.toThrowError(ApiError);
     });
 
     it("sends Bearer authorization token and returns the profile", async () => {
@@ -231,7 +270,12 @@ describe("api-client", () => {
         ok: true,
         json: async () => ({
           userId: "user_123",
-          character: { id: 1, name: "Binary Knight", slug: "binary-knight", imageUrl: null },
+          character: {
+            id: 1,
+            name: "Binary Knight",
+            slug: "binary-knight",
+            imageUrl: null,
+          },
           totalXp: 450,
           level: 3,
           badges: [],
@@ -244,11 +288,14 @@ describe("api-client", () => {
         mockFetch as unknown as typeof fetch,
       );
 
-      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/users/profile", {
-        headers: {
-          Authorization: "Bearer test-token",
+      expect(mockFetch).toHaveBeenCalledWith(
+        "http://localhost:3001/v1/api/users/profile",
+        {
+          headers: {
+            Authorization: "Bearer test-token",
+          },
         },
-      });
+      );
       expect(result.level).toBe(3);
       expect(result.character?.name).toBe("Binary Knight");
     });
@@ -261,7 +308,11 @@ describe("api-client", () => {
       });
 
       await expect(
-        getProfile("http://localhost:3001", "test-token", mockFetch as unknown as typeof fetch),
+        getProfile(
+          "http://localhost:3001",
+          "test-token",
+          mockFetch as unknown as typeof fetch,
+        ),
       ).rejects.toMatchObject({ status: 404 });
     });
   });
@@ -283,7 +334,9 @@ describe("api-client", () => {
         mockFetch as unknown as typeof fetch,
       );
 
-      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/events/today");
+      expect(mockFetch).toHaveBeenCalledWith(
+        "http://localhost:3001/v1/api/events/today",
+      );
       expect(result.eventType).toBe("bonus");
     });
 
@@ -291,7 +344,10 @@ describe("api-client", () => {
       const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 500 });
 
       await expect(
-        getTodayEvent("http://localhost:3001", mockFetch as unknown as typeof fetch),
+        getTodayEvent(
+          "http://localhost:3001",
+          mockFetch as unknown as typeof fetch,
+        ),
       ).rejects.toMatchObject({ status: 500 });
     });
   });
@@ -301,7 +357,13 @@ describe("api-client", () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => [
-          { id: 1, name: "Foundations", slug: "foundations", description: null, sortOrder: 1 },
+          {
+            id: 1,
+            name: "Foundations",
+            slug: "foundations",
+            description: null,
+            sortOrder: 1,
+          },
         ],
       });
 
@@ -310,7 +372,9 @@ describe("api-client", () => {
         mockFetch as unknown as typeof fetch,
       );
 
-      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/regions");
+      expect(mockFetch).toHaveBeenCalledWith(
+        "http://localhost:3001/v1/api/regions",
+      );
       expect(result).toHaveLength(1);
     });
 
@@ -318,7 +382,10 @@ describe("api-client", () => {
       const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 500 });
 
       await expect(
-        getRegions("http://localhost:3001", mockFetch as unknown as typeof fetch),
+        getRegions(
+          "http://localhost:3001",
+          mockFetch as unknown as typeof fetch,
+        ),
       ).rejects.toMatchObject({ status: 500 });
     });
   });
@@ -328,7 +395,14 @@ describe("api-client", () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => [
-          { id: 1, regionId: 1, name: "Loops", slug: "loops", description: null, sortOrder: 1 },
+          {
+            id: 1,
+            regionId: 1,
+            name: "Loops",
+            slug: "loops",
+            description: null,
+            sortOrder: 1,
+          },
         ],
       });
 
@@ -338,7 +412,9 @@ describe("api-client", () => {
         mockFetch as unknown as typeof fetch,
       );
 
-      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/regions/1/zones");
+      expect(mockFetch).toHaveBeenCalledWith(
+        "http://localhost:3001/v1/api/regions/1/zones",
+      );
       expect(result).toHaveLength(1);
     });
 
@@ -346,14 +422,20 @@ describe("api-client", () => {
       const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 500 });
 
       await expect(
-        getZones("http://localhost:3001", 1, mockFetch as unknown as typeof fetch),
+        getZones(
+          "http://localhost:3001",
+          1,
+          mockFetch as unknown as typeof fetch,
+        ),
       ).rejects.toMatchObject({ status: 500 });
     });
   });
 
   describe("getStages", () => {
     it("throws ApiError 401 when token is missing", async () => {
-      await expect(getStages("http://localhost:3001", "", 1)).rejects.toThrowError(ApiError);
+      await expect(
+        getStages("http://localhost:3001", "", 1),
+      ).rejects.toThrowError(ApiError);
     });
 
     it("sends Bearer authorization token and returns a Zone's Stages", async () => {
@@ -380,11 +462,14 @@ describe("api-client", () => {
         mockFetch as unknown as typeof fetch,
       );
 
-      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/zones/1/stages", {
-        headers: {
-          Authorization: "Bearer test-token",
+      expect(mockFetch).toHaveBeenCalledWith(
+        "http://localhost:3001/v1/api/zones/1/stages",
+        {
+          headers: {
+            Authorization: "Bearer test-token",
+          },
         },
-      });
+      );
       expect(result[0]?.status).toBe("available");
     });
 
@@ -396,14 +481,21 @@ describe("api-client", () => {
       });
 
       await expect(
-        getStages("http://localhost:3001", "test-token", 1, mockFetch as unknown as typeof fetch),
+        getStages(
+          "http://localhost:3001",
+          "test-token",
+          1,
+          mockFetch as unknown as typeof fetch,
+        ),
       ).rejects.toMatchObject({ status: 403 });
     });
   });
 
   describe("getLesson", () => {
     it("throws ApiError 401 when token is missing", async () => {
-      await expect(getLesson("http://localhost:3001", "", 1)).rejects.toThrowError(ApiError);
+      await expect(
+        getLesson("http://localhost:3001", "", 1),
+      ).rejects.toThrowError(ApiError);
     });
 
     it("sends Bearer authorization token and returns the Stage's Lesson", async () => {
@@ -428,30 +520,45 @@ describe("api-client", () => {
         mockFetch as unknown as typeof fetch,
       );
 
-      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/stages/1/lesson", {
-        headers: {
-          Authorization: "Bearer test-token",
+      expect(mockFetch).toHaveBeenCalledWith(
+        "http://localhost:3001/v1/api/stages/1/lesson",
+        {
+          headers: {
+            Authorization: "Bearer test-token",
+          },
         },
-      });
-      expect(result.blocks).toEqual([{ type: "text", content: "Loops repeat code." }]);
+      );
+      expect(result.blocks).toEqual([
+        { type: "text", content: "Loops repeat code." },
+      ]);
     });
 
     it("throws ApiError on a locked Stage's 403 response", async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 403,
-        json: async () => ({ message: "Stage with id 1 is locked until its predecessor is completed" }),
+        json: async () => ({
+          message:
+            "Stage with id 1 is locked until its predecessor is completed",
+        }),
       });
 
       await expect(
-        getLesson("http://localhost:3001", "test-token", 1, mockFetch as unknown as typeof fetch),
+        getLesson(
+          "http://localhost:3001",
+          "test-token",
+          1,
+          mockFetch as unknown as typeof fetch,
+        ),
       ).rejects.toMatchObject({ status: 403 });
     });
   });
 
   describe("getQuests", () => {
     it("throws ApiError 401 when token is missing", async () => {
-      await expect(getQuests("http://localhost:3001", "")).rejects.toThrowError(ApiError);
+      await expect(getQuests("http://localhost:3001", "")).rejects.toThrowError(
+        ApiError,
+      );
     });
 
     it("sends Bearer authorization token and returns the Quest listing", async () => {
@@ -477,11 +584,14 @@ describe("api-client", () => {
         mockFetch as unknown as typeof fetch,
       );
 
-      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/quests", {
-        headers: {
-          Authorization: "Bearer test-token",
+      expect(mockFetch).toHaveBeenCalledWith(
+        "http://localhost:3001/v1/api/quests",
+        {
+          headers: {
+            Authorization: "Bearer test-token",
+          },
         },
-      });
+      );
       expect(result[0]?.completed).toBe(false);
     });
 
@@ -493,16 +603,20 @@ describe("api-client", () => {
       });
 
       await expect(
-        getQuests("http://localhost:3001", "test-token", mockFetch as unknown as typeof fetch),
+        getQuests(
+          "http://localhost:3001",
+          "test-token",
+          mockFetch as unknown as typeof fetch,
+        ),
       ).rejects.toMatchObject({ status: 500 });
     });
   });
 
   describe("startQuestSession", () => {
     it("throws ApiError 401 when token is missing", async () => {
-      await expect(startQuestSession("http://localhost:3001", "", 1)).rejects.toThrowError(
-        ApiError,
-      );
+      await expect(
+        startQuestSession("http://localhost:3001", "", 1),
+      ).rejects.toThrowError(ApiError);
     });
 
     it("POSTs with Bearer authorization and returns the session, answers withheld", async () => {
@@ -525,11 +639,17 @@ describe("api-client", () => {
         mockFetch as unknown as typeof fetch,
       );
 
-      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/quests/1/start", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: "Bearer test-token" },
-        body: JSON.stringify({}),
-      });
+      expect(mockFetch).toHaveBeenCalledWith(
+        "http://localhost:3001/v1/api/quests/1/start",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer test-token",
+          },
+          body: JSON.stringify({}),
+        },
+      );
       expect(result.expiresAt).toBe("2026-09-15T12:05:00.000Z");
     });
 
@@ -553,9 +673,9 @@ describe("api-client", () => {
 
   describe("submitQuest", () => {
     it("throws ApiError 401 when token is missing", async () => {
-      await expect(submitQuest("http://localhost:3001", "", 1, [])).rejects.toThrowError(
-        ApiError,
-      );
+      await expect(
+        submitQuest("http://localhost:3001", "", 1, []),
+      ).rejects.toThrowError(ApiError);
     });
 
     it("POSTs the responses payload and returns the score, pass outcome, and XP", async () => {
@@ -579,11 +699,17 @@ describe("api-client", () => {
         mockFetch as unknown as typeof fetch,
       );
 
-      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/quests/1/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: "Bearer test-token" },
-        body: JSON.stringify({ responses }),
-      });
+      expect(mockFetch).toHaveBeenCalledWith(
+        "http://localhost:3001/v1/api/quests/1/submit",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer test-token",
+          },
+          body: JSON.stringify({ responses }),
+        },
+      );
       expect(result.xpAwarded).toBe(50);
     });
 
@@ -608,9 +734,9 @@ describe("api-client", () => {
 
   describe("getQuestResult", () => {
     it("throws ApiError 401 when token is missing", async () => {
-      await expect(getQuestResult("http://localhost:3001", "", 5)).rejects.toThrowError(
-        ApiError,
-      );
+      await expect(
+        getQuestResult("http://localhost:3001", "", 5),
+      ).rejects.toThrowError(ApiError);
     });
 
     it("sends Bearer authorization token and returns the reviewed Result", async () => {
@@ -633,9 +759,12 @@ describe("api-client", () => {
         mockFetch as unknown as typeof fetch,
       );
 
-      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/quests/results/5", {
-        headers: { Authorization: "Bearer test-token" },
-      });
+      expect(mockFetch).toHaveBeenCalledWith(
+        "http://localhost:3001/v1/api/quests/results/5",
+        {
+          headers: { Authorization: "Bearer test-token" },
+        },
+      );
       expect(result.passed).toBe(true);
     });
 
@@ -659,9 +788,9 @@ describe("api-client", () => {
 
   describe("getLeaderboard", () => {
     it("throws ApiError 401 when token is missing", async () => {
-      await expect(getLeaderboard("http://localhost:3001", "", 1, 20)).rejects.toThrowError(
-        ApiError,
-      );
+      await expect(
+        getLeaderboard("http://localhost:3001", "", 1, 20),
+      ).rejects.toThrowError(ApiError);
     });
 
     it("sends Bearer authorization token with page and limit query params", async () => {
@@ -671,7 +800,9 @@ describe("api-client", () => {
           page: 2,
           limit: 10,
           total: 25,
-          entries: [{ rank: 11, userId: "user_1", name: "Ada", totalXp: 900, level: 4 }],
+          entries: [
+            { rank: 11, userId: "user_1", name: "Ada", totalXp: 900, level: 4 },
+          ],
         }),
       });
 
@@ -699,16 +830,22 @@ describe("api-client", () => {
       });
 
       await expect(
-        getLeaderboard("http://localhost:3001", "test-token", 1, 20, mockFetch as unknown as typeof fetch),
+        getLeaderboard(
+          "http://localhost:3001",
+          "test-token",
+          1,
+          20,
+          mockFetch as unknown as typeof fetch,
+        ),
       ).rejects.toMatchObject({ status: 500 });
     });
   });
 
   describe("markStageComplete", () => {
     it("throws ApiError 401 when token is missing", async () => {
-      await expect(markStageComplete("http://localhost:3001", "", 3)).rejects.toThrowError(
-        ApiError,
-      );
+      await expect(
+        markStageComplete("http://localhost:3001", "", 3),
+      ).rejects.toThrowError(ApiError);
     });
 
     it("POSTs with Bearer authorization and returns the completion reward", async () => {
@@ -732,14 +869,17 @@ describe("api-client", () => {
         mockFetch as unknown as typeof fetch,
       );
 
-      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/stages/3/complete", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer test-token",
+      expect(mockFetch).toHaveBeenCalledWith(
+        "http://localhost:3001/v1/api/stages/3/complete",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer test-token",
+          },
+          body: "{}",
         },
-        body: "{}",
-      });
+      );
       expect(result.xpEarned).toBe(100);
       expect(result.leveledUp).toBe(true);
     });
@@ -787,18 +927,25 @@ describe("api-client", () => {
       const result = await executeCode(
         "http://localhost:3001/",
         "test-token",
-        { language: "python", code: "print(\"hello\")", stdin: "" },
+        { language: "python", code: 'print("hello")', stdin: "" },
         mockFetch as unknown as typeof fetch,
       );
 
-      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/codelab/execute", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer test-token",
+      expect(mockFetch).toHaveBeenCalledWith(
+        "http://localhost:3001/v1/api/codelab/execute",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer test-token",
+          },
+          body: JSON.stringify({
+            language: "python",
+            code: 'print("hello")',
+            stdin: "",
+          }),
         },
-        body: JSON.stringify({ language: "python", code: "print(\"hello\")", stdin: "" }),
-      });
+      );
       expect(result.stdout).toBe("1\n");
       expect(result.exitCode).toBe(0);
     });
@@ -841,6 +988,54 @@ describe("api-client", () => {
           mockFetch as unknown as typeof fetch,
         ),
       ).rejects.toMatchObject({ status: 502 });
+    });
+  });
+
+  describe("evaluateBadges", () => {
+    it("evaluates badges with Bearer auth and returns newly earned awards", async () => {
+      const mockAwards = [
+        {
+          id: 1,
+          name: "Getting Started",
+          description: "Earned by completing 5 stages",
+          imageUrl: null,
+          awardCount: 1,
+        },
+      ];
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => mockAwards,
+      });
+
+      const result = await evaluateBadges(
+        "http://localhost:3001",
+        "test-token",
+        mockFetch as unknown as typeof fetch,
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        "http://localhost:3001/v1/api/badges/evaluate",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer test-token",
+          },
+          body: "{}",
+        },
+      );
+      expect(result).toEqual(mockAwards);
+    });
+
+    it("throws 401 when token is missing", async () => {
+      const mockFetch = vi.fn();
+      await expect(
+        evaluateBadges(
+          "http://localhost:3001",
+          "",
+          mockFetch as unknown as typeof fetch,
+        ),
+      ).rejects.toThrow("Authentication token is required");
     });
   });
 });

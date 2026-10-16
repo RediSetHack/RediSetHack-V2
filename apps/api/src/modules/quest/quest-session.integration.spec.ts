@@ -133,6 +133,9 @@ describe('Quest Session integration (start, submit, review)', () => {
     findAll: vi.fn().mockResolvedValue([badge]),
     countAwards: vi.fn().mockResolvedValue(0),
     awardMany: vi.fn(),
+    awardMilestones: vi
+      .fn()
+      .mockImplementation((_u, _b, m) => Promise.resolve(m)),
     findEarnedByUser: vi.fn(),
     countCompletedStages: vi.fn(),
     countPassedQuests: vi.fn().mockResolvedValue(1),

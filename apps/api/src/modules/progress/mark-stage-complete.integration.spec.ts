@@ -62,6 +62,9 @@ describe('POST /v1/api/stages/:stageId/complete integration', () => {
     findAll: vi.fn().mockResolvedValue([badge]),
     countAwards: vi.fn().mockResolvedValue(0),
     awardMany: vi.fn(),
+    awardMilestones: vi
+      .fn()
+      .mockImplementation((_u, _b, m) => Promise.resolve(m)),
     findEarnedByUser: vi.fn(),
     countCompletedStages: vi.fn().mockResolvedValue(1),
     countPassedQuests: vi.fn().mockResolvedValue(0),

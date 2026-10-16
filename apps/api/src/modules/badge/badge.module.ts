@@ -7,9 +7,16 @@ import { ListBadgesUseCase } from './application/list-badges.use-case.js';
 import { ListEarnedBadgesUseCase } from './application/list-earned-badges.use-case.js';
 import { ListBadgesController } from './presentation/controllers/list-badges.controller.js';
 import { ListEarnedBadgesController } from './presentation/controllers/list-earned-badges.controller.js';
+import { EvaluateBadgesController } from './presentation/controllers/evaluate-badges.controller.js';
+import { AdminEvaluateBadgesController } from './presentation/controllers/admin-evaluate-badges.controller.js';
 
 @Module({
-  controllers: [ListBadgesController, ListEarnedBadgesController],
+  controllers: [
+    ListBadgesController,
+    ListEarnedBadgesController,
+    EvaluateBadgesController,
+    AdminEvaluateBadgesController,
+  ],
   providers: [
     { provide: BadgeRepository, useClass: DrizzleBadgeRepository },
     EvaluateBadgesUseCase,

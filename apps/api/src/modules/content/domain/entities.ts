@@ -17,11 +17,10 @@ export type QuestQuestion = {
 
 export type BadgeTrigger = 'cumulative' | 'category' | 'activity';
 
-export type BadgeCriteria = {
-  trigger: BadgeTrigger;
-  target: string;
-  threshold: number;
-};
+export type BadgeCriteria =
+  | { trigger: 'cumulative'; target: 'stage_completions'; threshold: number }
+  | { trigger: 'activity'; target: 'quest_passes'; threshold: number }
+  | { trigger: 'category'; target: 'zone_completion'; zoneId: number };
 
 export class Region {
   constructor(
