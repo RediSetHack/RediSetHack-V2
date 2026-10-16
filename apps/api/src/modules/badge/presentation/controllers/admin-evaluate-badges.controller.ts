@@ -1,7 +1,22 @@
-import { Controller, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiForbiddenResponse,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
-import { AdminOnly } from '../../../content/presentation/controllers/admin-crud.shared.js';
+import { AdminGuard } from '../../../auth/presentation/guards/admin.guard.js';
+import { ClerkAuthGuard } from '../../../auth/presentation/guards/clerk-auth.guard.js';
 import { EvaluateBadgesUseCase } from '../../application/evaluate-badges.use-case.js';
 import { toBadgeAwardsPresenter } from '../presenters/badge-award.presenter.js';
 
@@ -12,7 +27,9 @@ export class AdminEvaluateBadgesController {
 
   @Post('evaluate/:userId')
   @HttpCode(HttpStatus.OK)
-  @AdminOnly()
+  @UseGuards(ClerkAuthGuard, AdminGuard)
+  @ApiBearerAuth()
+  @ApiForbiddenResponse({ description: 'The caller is not an admin.' })
   @ApiOperation({
     summary:
       'Evaluate and award any pending or missed Badges for a specific learner.',

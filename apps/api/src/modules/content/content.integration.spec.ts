@@ -109,7 +109,10 @@ import { UpdateStageController } from './presentation/controllers/update-stage.c
 import { UpdateZoneController } from './presentation/controllers/update-zone.controller.js';
 import { ListCharactersController } from './presentation/controllers/list-characters.controller.js';
 import { ListCharactersUseCase } from './application/list-characters.use-case.js';
-import { CharacterListResponseSchema } from '@repo/contracts';
+import {
+  BadgeDefinitionSchema,
+  CharacterListResponseSchema,
+} from '@repo/contracts';
 
 // --- In-memory fakes ---------------------------------------------------
 
@@ -852,6 +855,8 @@ describe('content admin CRUD', () => {
         },
       });
     expect(create.status).toBe(201);
+    const parsedCreate = BadgeDefinitionSchema.parse(create.body);
+    expect(parsedCreate.slug).toBe('streaker');
     const id = create.body.id;
 
     // Reject updating category badge to non-existent zone
@@ -879,7 +884,11 @@ describe('content admin CRUD', () => {
         },
       });
     expect(update.status).toBe(200);
-    expect(update.body.criteria.threshold).toBe(10);
+    const parsedUpdate = BadgeDefinitionSchema.parse(update.body);
+    expect(parsedUpdate.criteria.trigger).toBe('cumulative');
+    if (parsedUpdate.criteria.trigger === 'cumulative') {
+      expect(parsedUpdate.criteria.threshold).toBe(10);
+    }
 
     const del = await request(app.getHttpServer())
       .delete(`/v1/api/admin/badges/${id}`)

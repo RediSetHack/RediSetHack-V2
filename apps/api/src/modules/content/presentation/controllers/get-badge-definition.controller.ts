@@ -1,6 +1,8 @@
 import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { BadgeDefinitionSchema } from '@repo/contracts';
 
+import { ApiZodResponse } from '../../../../swagger/api-zod-response.decorator.js';
 import { GetBadgeDefinitionUseCase } from '../../application/get-badge-definition.use-case.js';
 import { BadgeDefinitionPresenter } from '../presenters.js';
 import { AdminOnly, ApiEntityNotFound, ApiIdParam, asNotFound } from './admin-crud.shared.js';
@@ -12,6 +14,7 @@ export class GetBadgeDefinitionController {
   @Get(':id')
   @AdminOnly()
   @ApiOperation({ summary: 'Get a Badge definition by id.' })
+  @ApiZodResponse(BadgeDefinitionSchema, { status: 200 })
   @ApiIdParam('Badge definition')
   @ApiEntityNotFound('Badge definition')
   async handle(@Param('id', ParseIntPipe) id: number) {

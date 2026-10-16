@@ -17,7 +17,11 @@ import {
   type Database,
 } from '@repo/db';
 import { eq, inArray } from 'drizzle-orm';
-import { BadgeAwardSchema } from '@repo/contracts';
+import {
+  BadgeAwardSchema,
+  BadgeDefinitionSchema,
+  EarnedBadgeSchema,
+} from '@repo/contracts';
 
 import { AppModule } from '../../app.module.js';
 import {
@@ -305,6 +309,8 @@ describe('Badge definitions and repeat awards reliability (Issue #120)', () => {
         },
       });
     expect(resCategory.status).toBe(201);
+    const parsedCategoryBadge = BadgeDefinitionSchema.parse(resCategory.body);
+    expect(parsedCategoryBadge.id).toBeDefined();
     createdBadgeIds.push(resCategory.body.id);
   });
 
@@ -396,7 +402,7 @@ describe('Badge definitions and repeat awards reliability (Issue #120)', () => {
       .set(learnerAuth());
     expect(meRes.status).toBe(200);
 
-    const meBadges = meRes.body as Array<{ id: number; count: number }>;
+    const meBadges = EarnedBadgeSchema.array().parse(meRes.body);
     const meCumulative = meBadges.find((b) => b.id === cumulativeBadgeId);
     const meActivity = meBadges.find((b) => b.id === activityBadgeId);
     const meCategory = meBadges.find((b) => b.id === categoryBadgeId);

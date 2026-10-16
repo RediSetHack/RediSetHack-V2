@@ -37,23 +37,17 @@ export class EvaluateBadgesUseCase {
         (_, i) => alreadyAwarded + i + 1,
       );
 
-      let newlyAwarded = 0;
-      if (typeof this.badges.awardMilestones === 'function') {
-        const inserted = await this.badges.awardMilestones(
-          userId,
-          badge.id,
-          targetMilestones,
-        );
-        newlyAwarded = inserted.length;
-      } else {
-        await this.badges.awardMany(userId, badge.id, targetMilestones.length);
-        newlyAwarded = targetMilestones.length;
-      }
+      const inserted = await this.badges.awardMilestones(
+        userId,
+        badge.id,
+        targetMilestones,
+      );
+      const newlyAwarded = inserted.length;
 
       if (newlyAwarded > 0) {
         results.push({
           badge,
-          awardCount: alreadyAwarded + newlyAwarded,
+          awardCount: Math.max(alreadyAwarded + newlyAwarded, ...inserted),
           newAwards: newlyAwarded,
         });
       }
