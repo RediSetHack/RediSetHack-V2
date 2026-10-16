@@ -3,15 +3,19 @@ import { normalizeLessonBlocks } from "./lesson-blocks.js";
 
 describe("normalizeLessonBlocks", () => {
   it("normalizes a text block", () => {
-    expect(normalizeLessonBlocks([{ type: "text", content: "Loops repeat code." }])).toEqual([
-      { kind: "text", content: "Loops repeat code." },
-    ]);
+    expect(
+      normalizeLessonBlocks([{ type: "text", content: "Loops repeat code." }]),
+    ).toEqual([{ kind: "text", content: "Loops repeat code." }]);
   });
 
   it("normalizes a code block", () => {
     expect(
-      normalizeLessonBlocks([{ type: "code", language: "javascript", content: "console.log(1)" }]),
-    ).toEqual([{ kind: "code", language: "javascript", content: "console.log(1)" }]);
+      normalizeLessonBlocks([
+        { type: "code", language: "javascript", content: "console.log(1)" },
+      ]),
+    ).toEqual([
+      { kind: "code", language: "javascript", content: "console.log(1)" },
+    ]);
   });
 
   it("normalizes an exercise block", () => {
@@ -34,10 +38,32 @@ describe("normalizeLessonBlocks", () => {
     ]);
   });
 
+  it("normalizes images and preserves their accessible description", () => {
+    expect(
+      normalizeLessonBlocks([
+        {
+          type: "image",
+          url: "https://example.com/a.png",
+          alt: "A diagram",
+          caption: "Loops",
+        },
+      ]),
+    ).toEqual([
+      {
+        kind: "image",
+        url: "https://example.com/a.png",
+        alt: "A diagram",
+        caption: "Loops",
+      },
+    ]);
+  });
+
   it("normalizes an unrecognized block type to 'unsupported' instead of throwing", () => {
-    expect(normalizeLessonBlocks([{ type: "video", url: "https://example.com/clip.mp4" }])).toEqual(
-      [{ kind: "unsupported", type: "video" }],
-    );
+    expect(
+      normalizeLessonBlocks([
+        { type: "video", url: "https://example.com/clip.mp4" },
+      ]),
+    ).toEqual([{ kind: "unsupported", type: "video" }]);
   });
 
   it("preserves block order across mixed types", () => {

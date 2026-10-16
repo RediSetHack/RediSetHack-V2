@@ -7,14 +7,27 @@ import {
   Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 
 import type { LessonBlock } from '../../domain/entities.js';
+import { normalizeLessonContent } from '../../domain/normalize-lesson-content.js';
 import { IsLessonContent } from '../validators.js';
 import { SLUG_PATTERN } from './slug-pattern.js';
 
 const LESSON_CONTENT_EXAMPLE: LessonBlock[] = [
   { type: 'text', content: 'A loop repeats a block of code.' },
-  { type: 'code', language: 'javascript', code: 'for (let i = 0; i < 3; i++) {}' },
+  {
+    type: 'code',
+    language: 'javascript',
+    content: 'for (let i = 0; i < 3; i++) {}',
+  },
+  {
+    type: 'exercise',
+    prompt: 'Write a loop.',
+    language: 'javascript',
+    starterCode: '',
+  },
+  { type: 'image', url: 'https://example.com/loop.png', alt: 'A loop diagram' },
 ];
 
 export class CreateStageRequestDto {
@@ -43,14 +56,19 @@ export class CreateStageRequestDto {
     example: LESSON_CONTENT_EXAMPLE,
     description:
       'The Lesson body as an ordered array of blocks. Each block is one of ' +
-      '`{ type: "text", content }`, `{ type: "code", language, code }`, or ' +
-      '`{ type: "image", url, caption? }`.',
+      '`{ type: "text", content }`, `{ type: "code", language, content }`, ' +
+      '`{ type: "image", url, alt, caption? }`, or ' +
+      '`{ type: "exercise", prompt, language, starterCode }`.',
   })
   @IsOptional()
+  @Transform(({ value }) => normalizeLessonContent(value))
   @IsLessonContent()
   lessonContent?: LessonBlock[];
 
-  @ApiPropertyOptional({ example: 10, description: 'XP awarded on completion.' })
+  @ApiPropertyOptional({
+    example: 10,
+    description: 'XP awarded on completion.',
+  })
   @IsOptional()
   @IsInt()
   @Min(0)
