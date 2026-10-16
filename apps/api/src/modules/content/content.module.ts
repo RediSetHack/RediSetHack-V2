@@ -208,9 +208,9 @@ import { ListCharactersController } from './presentation/controllers/list-charac
     },
     {
       provide: CreateBadgeDefinitionUseCase,
-      useFactory: (repo: BadgeDefinitionRepository) =>
-        new CreateBadgeDefinitionUseCase(repo),
-      inject: [BadgeDefinitionRepository],
+      useFactory: (repo: BadgeDefinitionRepository, zones: ZoneRepository) =>
+        new CreateBadgeDefinitionUseCase(repo, zones),
+      inject: [BadgeDefinitionRepository, ZoneRepository],
     },
     {
       provide: GetBadgeDefinitionUseCase,
@@ -220,9 +220,9 @@ import { ListCharactersController } from './presentation/controllers/list-charac
     },
     {
       provide: UpdateBadgeDefinitionUseCase,
-      useFactory: (repo: BadgeDefinitionRepository) =>
-        new UpdateBadgeDefinitionUseCase(repo),
-      inject: [BadgeDefinitionRepository],
+      useFactory: (repo: BadgeDefinitionRepository, zones: ZoneRepository) =>
+        new UpdateBadgeDefinitionUseCase(repo, zones),
+      inject: [BadgeDefinitionRepository, ZoneRepository],
     },
     {
       provide: DeleteBadgeDefinitionUseCase,

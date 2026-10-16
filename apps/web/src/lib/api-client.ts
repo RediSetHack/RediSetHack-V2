@@ -1,4 +1,5 @@
 import type {
+  BadgeAward,
   Character,
   DailyEventResponse,
   ExecuteCodeResponse,
@@ -16,13 +17,17 @@ import type {
   SubmitQuestResponse,
   Zone,
 } from "@repo/contracts";
+export type {
+  BadgeAward,
+  LeaderboardEntry,
+  LessonBlock,
+} from "@repo/contracts";
 import {
   QuestListResponseSchema,
   QuestResultReviewResponseSchema,
   QuestSessionResponseSchema,
   SubmitQuestResponseSchema,
 } from "@repo/contracts";
-export type { LeaderboardEntry, LessonBlock } from "@repo/contracts";
 
 export type CharacterOption = Character;
 export type Profile = ProfileResponse;
@@ -361,4 +366,14 @@ export async function executeCode(
 ): Promise<CodeExecutionResult> {
   const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/codelab/execute`;
   return postAuthedJson<CodeExecutionResult>(endpoint, token, input, fetchFn);
+}
+
+/** Evaluates and awards pending or missed Badges for the learner, `POST /v1/api/badges/evaluate`. */
+export async function evaluateBadges(
+  apiBaseUrl: string,
+  token: string,
+  fetchFn: typeof fetch = fetch,
+): Promise<BadgeAward[]> {
+  const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/badges/evaluate`;
+  return postAuthedJson<BadgeAward[]>(endpoint, token, {}, fetchFn);
 }

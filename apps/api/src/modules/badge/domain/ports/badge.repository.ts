@@ -12,6 +12,12 @@ export abstract class BadgeRepository {
     badgeDefinitionId: number,
     count: number,
   ): Promise<void>;
+  // Inserts unique award milestones, returning only the milestones newly awarded.
+  abstract awardMilestones(
+    userId: string,
+    badgeDefinitionId: number,
+    milestones: number[],
+  ): Promise<number[]>;
   abstract findEarnedByUser(userId: string): Promise<EarnedBadge[]>;
 
   // Progress metrics the evaluation engine checks criteria against. Queried

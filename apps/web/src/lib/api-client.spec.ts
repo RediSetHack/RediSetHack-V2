@@ -17,6 +17,7 @@ import {
   getLeaderboard,
   markStageComplete,
   executeCode,
+  evaluateBadges,
   ApiError,
 } from "./api-client.js";
 
@@ -841,6 +842,62 @@ describe("api-client", () => {
           mockFetch as unknown as typeof fetch,
         ),
       ).rejects.toMatchObject({ status: 502 });
+    });
+  });
+
+  describe("evaluateBadges", () => {
+    it("throws ApiError 401 when token is missing", async () => {
+      await expect(evaluateBadges("http://localhost:3001", "")).rejects.toThrowError(
+        ApiError,
+      );
+    });
+
+    it("POSTs to /v1/api/badges/evaluate with Bearer authorization and returns awards", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [
+          {
+            id: 1,
+            name: "Adventurer",
+            description: "Complete 5 stages",
+            imageUrl: null,
+            awardCount: 1,
+          },
+        ],
+      });
+
+      const result = await evaluateBadges(
+        "http://localhost:3001/",
+        "test-token",
+        mockFetch as unknown as typeof fetch,
+      );
+
+      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/badges/evaluate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer test-token",
+        },
+        body: "{}",
+      });
+      expect(result).toHaveLength(1);
+      expect(result[0]?.awardCount).toBe(1);
+    });
+
+    it("throws ApiError on a non-2xx response", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: async () => ({ message: "Evaluation failed" }),
+      });
+
+      await expect(
+        evaluateBadges(
+          "http://localhost:3001",
+          "test-token",
+          mockFetch as unknown as typeof fetch,
+        ),
+      ).rejects.toMatchObject({ status: 400 });
     });
   });
 });

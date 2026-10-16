@@ -14,6 +14,9 @@ export function makeEvaluateBadges(
     findAll: vi.fn().mockResolvedValue([]),
     countAwards: vi.fn(),
     awardMany: vi.fn(),
+    awardMilestones: vi
+      .fn()
+      .mockImplementation((_u, _b, m) => Promise.resolve(m)),
     findEarnedByUser: vi.fn(),
     countCompletedStages: vi.fn(),
     countPassedQuests: vi.fn(),

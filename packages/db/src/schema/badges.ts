@@ -1,4 +1,13 @@
-import { index, integer, jsonb, pgTable, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import {
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 import { users } from "./identity.js";
 
 // ---------------------------------------------------------------------------
@@ -16,7 +25,9 @@ export const badgeDefinitions = pgTable(
     // { trigger: "cumulative", target: "stage_completions", threshold: 5 }
     criteriaJson: jsonb("criteria_json").notNull(),
     imageUrl: text("image_url"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [uniqueIndex("badge_definitions_slug_unique").on(table.slug)],
 );
@@ -32,10 +43,18 @@ export const badgeAwards = pgTable(
     badgeDefinitionId: integer("badge_definition_id")
       .notNull()
       .references(() => badgeDefinitions.id, { onDelete: "cascade" }),
-    awardedAt: timestamp("awarded_at", { withTimezone: true }).notNull().defaultNow(),
+    milestone: integer("milestone").notNull().default(1),
+    awardedAt: timestamp("awarded_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("badge_awards_user_id_index").on(table.userId),
     index("badge_awards_badge_definition_id_index").on(table.badgeDefinitionId),
+    uniqueIndex("badge_awards_user_id_badge_definition_id_milestone_unique").on(
+      table.userId,
+      table.badgeDefinitionId,
+      table.milestone,
+    ),
   ],
 );
