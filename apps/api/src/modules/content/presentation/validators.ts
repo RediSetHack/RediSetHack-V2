@@ -2,7 +2,6 @@ import { registerDecorator, ValidationOptions } from 'class-validator';
 import { QuestAuthoringQuestionsSchema } from '@repo/contracts';
 
 const LESSON_BLOCK_TYPES = new Set(['text', 'code', 'image', 'exercise']);
-const BADGE_TRIGGERS = new Set(['cumulative', 'category', 'activity']);
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);

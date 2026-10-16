@@ -1,6 +1,9 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
+  "globalEnv": [
+    "DATABASE_URL"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
@@ -14,11 +17,13 @@
       "dependsOn": ["^build", "^check-types"]
     },
     "test": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "passThroughEnv": ["DATABASE_URL"]
     },
     "test:cov": {
       "dependsOn": ["^build"],
-      "outputs": ["coverage/**"]
+      "outputs": ["coverage/**"],
+      "passThroughEnv": ["DATABASE_URL"]
     },
     "dev": {
       "dependsOn": ["^build"],
