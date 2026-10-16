@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { AppModule } from './app.module.js';
-import { setupSwagger } from './swagger.js';
+import { setupSwagger, shouldServeDocs } from './swagger.js';
 
 describe('setupSwagger', () => {
   let app: INestApplication;
@@ -30,5 +30,16 @@ describe('setupSwagger', () => {
     );
     expect(document.info.version).toBe('1.0');
     expect(document.components?.securitySchemes).toHaveProperty('bearer');
+  });
+});
+
+describe('shouldServeDocs', () => {
+  it('enables docs outside production', () => {
+    expect(shouldServeDocs('development')).toBe(true);
+    expect(shouldServeDocs('staging')).toBe(true);
+  });
+
+  it('disables docs in production', () => {
+    expect(shouldServeDocs('production')).toBe(false);
   });
 });

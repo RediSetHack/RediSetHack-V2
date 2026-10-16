@@ -1,16 +1,7 @@
-import {
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  Matches,
-} from 'class-validator';
+import { PartialType } from '@nestjs/swagger';
 
-import { SLUG_PATTERN } from './slug-pattern.js';
+import { CreateRegionRequestDto } from './create-region.dto.js';
 
-export class UpdateRegionRequestDto {
-  @IsOptional() @IsString() @IsNotEmpty() name?: string;
-  @IsOptional() @IsString() @Matches(SLUG_PATTERN) slug?: string;
-  @IsOptional() @IsString() description?: string;
-  @IsOptional() @IsInt() sortOrder?: number;
-}
+export class UpdateRegionRequestDto extends PartialType(
+  CreateRegionRequestDto,
+) {}

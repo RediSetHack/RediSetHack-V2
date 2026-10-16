@@ -1,6 +1,10 @@
 import type { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
+export function shouldServeDocs(nodeEnv: string): boolean {
+  return nodeEnv !== 'production';
+}
+
 export function setupSwagger(app: INestApplication) {
   const config = new DocumentBuilder()
     .setTitle('RediSetHack API')

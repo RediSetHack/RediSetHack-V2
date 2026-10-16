@@ -1,13 +1,7 @@
-import { IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator';
+import { OmitType, PartialType } from '@nestjs/swagger';
 
-import type { QuestQuestion } from '../../domain/entities.js';
-import { IsQuestQuestions } from '../validators.js';
+import { CreateQuestRequestDto } from './create-quest.dto.js';
 
-export class UpdateQuestRequestDto {
-  @IsOptional() @IsString() @IsNotEmpty() title?: string;
-  @IsOptional() @IsString() description?: string;
-  @IsOptional() @IsInt() @Min(1) timeLimitSeconds?: number;
-  @IsOptional() @IsInt() @Min(0) passingScore?: number;
-  @IsOptional() @IsInt() @Min(0) xpReward?: number;
-  @IsOptional() @IsQuestQuestions() questions?: QuestQuestion[];
-}
+export class UpdateQuestRequestDto extends PartialType(
+  OmitType(CreateQuestRequestDto, ['stageId'] as const),
+) {}

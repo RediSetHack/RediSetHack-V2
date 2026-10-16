@@ -1,4 +1,5 @@
 import { Body, Controller, NotFoundException, Patch, UseGuards } from "@nestjs/common";
+import { ApiBearerAuth, ApiNotFoundResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
 
 import { SelectCharacterUseCase } from "../../application/select-character.use-case.js";
 import { CharacterNotFoundError } from "../../domain/errors.js";
@@ -8,12 +9,16 @@ import { SelectCharacterRequestDto } from "../dto/select-character-request.dto.j
 import { UserPresenter } from "../presenters/user.presenter.js";
 import type { ClerkAuthenticatedUser } from "../../domain/ports/clerk-auth.port.js";
 
+@ApiTags('Authentication & Account')
 @Controller("v1/api/user")
 export class SelectCharacterController {
   constructor(private readonly selectCharacter: SelectCharacterUseCase) {}
 
   @Patch("character")
   @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Choose the authenticated User's Character." })
+  @ApiNotFoundResponse({ description: 'Character not found.' })
   async handle(
     @Body() dto: SelectCharacterRequestDto,
     @CurrentUser() user: ClerkAuthenticatedUser,
