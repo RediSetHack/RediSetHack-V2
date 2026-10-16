@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { StageRepository } from '../../content/domain/ports/stage.repository.js';
+import { normalizeLessonContent } from '../../content/domain/normalize-lesson-content.js';
 import { StageLockedError, StageNotFoundError } from '../domain/errors.js';
 import type { LessonBlock } from '../domain/entities/lesson.entity.js';
 import { getStageAccess, isUnlocked } from './stage-access.js';
@@ -17,7 +18,8 @@ export type StageLesson = {
 };
 
 function parseLessonBlocks(raw: unknown): LessonBlock[] {
-  return Array.isArray(raw) ? (raw as LessonBlock[]) : [];
+  const normalized = normalizeLessonContent(raw);
+  return Array.isArray(normalized) ? (normalized as LessonBlock[]) : [];
 }
 
 @Injectable()

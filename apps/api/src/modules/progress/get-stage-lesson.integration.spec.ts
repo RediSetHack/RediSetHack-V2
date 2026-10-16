@@ -104,6 +104,12 @@ describe('GET /v1/api/stages/:stageId/lesson integration', () => {
             language: 'javascript',
             starterCode: '// your code here',
           },
+          {
+            type: 'image',
+            url: 'https://example.com/loop.png',
+            alt: 'A loop diagram',
+            caption: 'Loop',
+          },
         ],
         50,
         1,
@@ -137,6 +143,12 @@ describe('GET /v1/api/stages/:stageId/lesson integration', () => {
           language: 'javascript',
           starterCode: '// your code here',
         },
+        {
+          type: 'image',
+          url: 'https://example.com/loop.png',
+          alt: 'A loop diagram',
+          caption: 'Loop',
+        },
       ],
     });
   });
@@ -152,6 +164,38 @@ describe('GET /v1/api/stages/:stageId/lesson integration', () => {
       .set(asLearner());
 
     expect(res.status).toBe(403);
+  });
+
+  it('normalizes legacy stored code and image blocks for learners', async () => {
+    stagesByZone.set(1, [
+      new Stage(
+        1,
+        1,
+        'Legacy lesson',
+        'legacy-lesson',
+        [
+          { type: 'code', language: 'javascript', code: 'console.log(1)' },
+          { type: 'image', url: '/loop.png', caption: 'Loop diagram' },
+        ] as unknown as Stage['lessonContent'],
+        0,
+        1,
+      ),
+    ]);
+
+    const res = await request(app.getHttpServer())
+      .get('/v1/api/stages/1/lesson')
+      .set(asLearner());
+
+    expect(res.status).toBe(200);
+    expect(LessonResponseSchema.parse(res.body).blocks).toEqual([
+      { type: 'code', language: 'javascript', content: 'console.log(1)' },
+      {
+        type: 'image',
+        url: '/loop.png',
+        alt: 'Loop diagram',
+        caption: 'Loop diagram',
+      },
+    ]);
   });
 
   it('marks the Lesson completed once its Stage is completed', async () => {

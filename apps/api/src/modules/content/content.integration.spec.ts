@@ -655,7 +655,7 @@ describe('content admin CRUD', () => {
         zoneId: zone.body.id,
         title: 'For loops',
         slug: 'for-loops',
-        lessonContent: [{ type: 'bogus' }],
+        lessonContent: [{ type: 'text' }],
       });
     expect(invalid.status).toBe(400);
 
@@ -671,6 +671,54 @@ describe('content admin CRUD', () => {
     expect(valid.status).toBe(201);
     expect(valid.body.lessonContent).toEqual([
       { type: 'text', content: 'Loops repeat code.' },
+    ]);
+
+    const authored = await request(app.getHttpServer())
+      .post('/v1/api/admin/stages')
+      .set(admin())
+      .send({
+        zoneId: zone.body.id,
+        title: 'Loop blocks',
+        slug: 'loop-blocks',
+        lessonContent: [
+          { type: 'code', language: 'javascript', code: 'console.log(1)' },
+          {
+            type: 'code',
+            language: 'javascript',
+            code: 'legacy()',
+            content: 'console.log(2)',
+          },
+          {
+            type: 'image',
+            url: 'https://example.com/loop.png',
+            caption: 'Loop diagram',
+          },
+          {
+            type: 'exercise',
+            prompt: 'Try it',
+            language: 'javascript',
+            starterCode: 'let i = 0;',
+          },
+          { type: 'video', url: 'https://example.com/future.mp4' },
+        ],
+      });
+    expect(authored.status).toBe(201);
+    expect(authored.body.lessonContent).toEqual([
+      { type: 'code', language: 'javascript', content: 'console.log(1)' },
+      { type: 'code', language: 'javascript', content: 'console.log(2)' },
+      {
+        type: 'image',
+        url: 'https://example.com/loop.png',
+        caption: 'Loop diagram',
+        alt: 'Loop diagram',
+      },
+      {
+        type: 'exercise',
+        prompt: 'Try it',
+        language: 'javascript',
+        starterCode: 'let i = 0;',
+      },
+      { type: 'video', url: 'https://example.com/future.mp4' },
     ]);
   });
 

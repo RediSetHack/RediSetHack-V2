@@ -15,6 +15,15 @@ export const CodeBlockSchema = z.object({
 });
 export type CodeBlock = z.infer<typeof CodeBlockSchema>;
 
+/** An image with a useful text alternative; caption is optional visible context. */
+export const ImageBlockSchema = z.object({
+  type: z.literal("image"),
+  url: z.string().min(1),
+  alt: z.string(),
+  caption: z.string().optional(),
+});
+export type ImageBlock = z.infer<typeof ImageBlockSchema>;
+
 /** A practice prompt with starter code the learner can open in the Codelab. */
 export const ExerciseBlockSchema = z.object({
   type: z.literal("exercise"),
@@ -30,11 +39,18 @@ export type ExerciseBlock = z.infer<typeof ExerciseBlockSchema>;
  * future block type still parses — the *rendering* degrades legibly, the
  * *contract* doesn't throw on it.
  */
-export const UnknownBlockSchema = z.object({ type: z.string() }).passthrough();
+export const UnknownBlockSchema = z
+  .object({
+    type: z
+      .string()
+      .refine((type) => !["text", "code", "image", "exercise"].includes(type)),
+  })
+  .passthrough();
 
 export const LessonBlockSchema = z.union([
   TextBlockSchema,
   CodeBlockSchema,
+  ImageBlockSchema,
   ExerciseBlockSchema,
   UnknownBlockSchema,
 ]);

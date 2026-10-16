@@ -1,6 +1,6 @@
 import { registerDecorator, ValidationOptions } from 'class-validator';
 
-const LESSON_BLOCK_TYPES = new Set(['text', 'code', 'image']);
+const LESSON_BLOCK_TYPES = new Set(['text', 'code', 'image', 'exercise']);
 const BADGE_TRIGGERS = new Set(['cumulative', 'category', 'activity']);
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -8,22 +8,35 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 function isLessonBlock(block: unknown): boolean {
-  if (!isPlainObject(block) || !LESSON_BLOCK_TYPES.has(block.type as string))
+  if (
+    !isPlainObject(block) ||
+    typeof block.type !== 'string' ||
+    block.type.length === 0
+  )
     return false;
   switch (block.type) {
     case 'text':
-      return typeof block.content === 'string' && block.content.length > 0;
+      return typeof block.content === 'string';
     case 'code':
       return (
-        typeof block.language === 'string' && typeof block.code === 'string'
+        typeof block.language === 'string' &&
+        (typeof block.content === 'string' || typeof block.code === 'string')
       );
     case 'image':
       return (
         typeof block.url === 'string' &&
+        block.url.length > 0 &&
+        typeof block.alt === 'string' &&
         (block.caption === undefined || typeof block.caption === 'string')
       );
+    case 'exercise':
+      return (
+        typeof block.prompt === 'string' &&
+        typeof block.language === 'string' &&
+        typeof block.starterCode === 'string'
+      );
     default:
-      return false;
+      return !LESSON_BLOCK_TYPES.has(block.type);
   }
 }
 
