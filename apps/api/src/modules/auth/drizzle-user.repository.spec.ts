@@ -4,6 +4,22 @@ import type { Database } from "@repo/db";
 import { DrizzleUserRepository } from "./infrastructure/drizzle-user.repository.js";
 import { InvalidUserEmailError } from "./domain/errors.js";
 
+function transactionalDb(mock: Database): Database {
+  const mocked = mock as unknown as { query: Record<string, unknown> };
+  const tx = {
+    ...mocked,
+    execute: vi.fn().mockResolvedValue(undefined),
+    query: {
+      ...mocked.query,
+      deletedUsers: { findFirst: vi.fn().mockResolvedValue(null) },
+    },
+  };
+  return {
+    ...mocked,
+    transaction: vi.fn((callback: (transaction: object) => unknown) => callback(tx)),
+  } as unknown as Database;
+}
+
 describe("DrizzleUserRepository", () => {
   it("throws InvalidUserEmailError when new user has no email", async () => {
     const mockDb = {
@@ -14,7 +30,7 @@ describe("DrizzleUserRepository", () => {
       },
     } as unknown as Database;
 
-    const repo = new DrizzleUserRepository(mockDb);
+    const repo = new DrizzleUserRepository(transactionalDb(mockDb));
 
     await expect(
       repo.upsert({
@@ -60,7 +76,7 @@ describe("DrizzleUserRepository", () => {
       insert: insertMock,
     } as unknown as Database;
 
-    const repo = new DrizzleUserRepository(mockDb);
+    const repo = new DrizzleUserRepository(transactionalDb(mockDb));
 
     const result = await repo.upsert({
       id: "user_existing",
@@ -109,7 +125,7 @@ describe("DrizzleUserRepository", () => {
       insert: insertMock,
     } as unknown as Database;
 
-    const repo = new DrizzleUserRepository(mockDb);
+    const repo = new DrizzleUserRepository(transactionalDb(mockDb));
 
     const result = await repo.upsert({
       id: "user_123",

@@ -3,8 +3,10 @@ import { ConfigService } from '@nestjs/config';
 
 import { ClerkAuthPort } from './domain/ports/clerk-auth.port.js';
 import { UserRepository } from './domain/ports/user.repository.js';
+import { AccountDeletionRepository } from './domain/ports/account-deletion.repository.js';
 import { CharacterRepository } from './domain/ports/character.repository.js';
 import { EnsureUserUseCase } from './application/ensure-user.use-case.js';
+import { DeleteUserUseCase } from './application/delete-user.use-case.js';
 import { GetUserUseCase } from './application/get-user.use-case.js';
 import { SelectCharacterUseCase } from './application/select-character.use-case.js';
 import {
@@ -45,11 +47,14 @@ import {
       inject: [ConfigService],
     },
     { provide: ClerkAuthPort, useClass: ClerkAuthService },
-    { provide: UserRepository, useClass: DrizzleUserRepository },
+    { provide: DrizzleUserRepository, useClass: DrizzleUserRepository },
+    { provide: UserRepository, useExisting: DrizzleUserRepository },
+    { provide: AccountDeletionRepository, useExisting: DrizzleUserRepository },
     { provide: CharacterRepository, useClass: DrizzleCharacterRepository },
     ClerkAuthGuard,
     AdminGuard,
     EnsureUserUseCase,
+    DeleteUserUseCase,
     GetUserUseCase,
     SelectCharacterUseCase,
   ],

@@ -5,6 +5,7 @@ import {
   badgeDefinitions,
   characters,
   dailyEvents,
+  deletedUsers,
   quests,
   regions,
   results,
@@ -16,13 +17,14 @@ import {
 
 describe("database schema (issue #6)", () => {
   it("exposes the required domain tables", () => {
-    const tables = [users, characters, regions, zones, stages, quests, results, badgeDefinitions, badgeAwards, userProgress, dailyEvents];
+    const tables = [users, deletedUsers, characters, regions, zones, stages, quests, results, badgeDefinitions, badgeAwards, userProgress, dailyEvents];
     const nameOf = (table: object) =>
       (table as Record<PropertyKey, unknown>)[Symbol.for("drizzle:Name")];
-    expect(tables).toHaveLength(11);
+    expect(tables).toHaveLength(12);
     expect(tables.map(nameOf)).toEqual(
       expect.arrayContaining([
         "users",
+        "deleted_users",
         "characters",
         "regions",
         "zones",
@@ -43,6 +45,11 @@ describe("database schema (issue #6)", () => {
     expect(users.email.dataType).toBe("string");
     expect(users.characterId).toBeDefined();
     expect(users.totalXp).toBeDefined();
+  });
+
+  it("keeps only a Clerk ID in the deletion marker", () => {
+    expect(deletedUsers.id.primary).toBe(true);
+    expect(Object.keys(deletedUsers).filter((key) => key !== "enableRLS")).toEqual(["id"]);
   });
 
   it("links quests to stages and zones to regions", () => {

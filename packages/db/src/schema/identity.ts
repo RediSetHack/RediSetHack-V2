@@ -22,6 +22,11 @@ export const users = pgTable(
   (table) => [uniqueIndex("users_email_unique").on(table.email)],
 );
 
+// A Clerk ID is terminally retired after deletion; keep no personal data here.
+export const deletedUsers = pgTable("deleted_users", {
+  id: text("id").primaryKey().notNull(),
+});
+
 // Characters are the avatar identities a user can select.
 export const characters = pgTable("characters", {
   id: serial("id").primaryKey(),

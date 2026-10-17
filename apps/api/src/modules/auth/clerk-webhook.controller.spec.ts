@@ -5,6 +5,7 @@ import request from "supertest";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { EnsureUserUseCase } from "./application/ensure-user.use-case.js";
+import { DeleteUserUseCase } from "./application/delete-user.use-case.js";
 import {
   CLERK_WEBHOOK_SECRET,
   ClerkWebhookController,
@@ -34,13 +35,16 @@ describe("ClerkWebhookController", () => {
   const ensureUser = {
     execute: vi.fn().mockResolvedValue({ id: "user_1" }),
   };
+  const deleteUser = { execute: vi.fn().mockResolvedValue(undefined) };
 
   beforeEach(async () => {
     ensureUser.execute.mockClear();
+    deleteUser.execute.mockClear();
     const moduleRef = await Test.createTestingModule({
       controllers: [ClerkWebhookController],
       providers: [
         { provide: EnsureUserUseCase, useValue: ensureUser },
+        { provide: DeleteUserUseCase, useValue: deleteUser },
         { provide: CLERK_WEBHOOK_SECRET, useValue: SIGNING_SECRET },
       ],
     }).compile();
@@ -167,11 +171,20 @@ describe("ClerkWebhookController", () => {
     expect(ensureUser.execute).not.toHaveBeenCalled();
   });
 
+  it("routes a signed user.deleted event to deletion", async () => {
+    const { body, headers } = sign(JSON.stringify({ type: "user.deleted", data: { id: "user_123" } }));
+    const res = await request(app.getHttpServer()).post("/v1/api/clerk/webhook").set(headers).send(body);
+    expect(res.status).toBe(201);
+    expect(deleteUser.execute).toHaveBeenCalledWith("user_123");
+    expect(ensureUser.execute).not.toHaveBeenCalled();
+  });
+
   it("returns 503 when CLERK_WEBHOOK_SECRET is not configured", async () => {
     const moduleRef = await Test.createTestingModule({
       controllers: [ClerkWebhookController],
       providers: [
         { provide: EnsureUserUseCase, useValue: ensureUser },
+        { provide: DeleteUserUseCase, useValue: deleteUser },
         { provide: CLERK_WEBHOOK_SECRET, useValue: "" },
       ],
     }).compile();

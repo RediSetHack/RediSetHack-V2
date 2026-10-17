@@ -22,7 +22,7 @@ No application code was changed and no application tests were run for this docum
 
 | # | In-scope PRD feature | Status | Evidence and remaining work |
 | --- | --- | --- | --- |
-| 1 | User Account Management | Partial | Clerk session verification, provisioning, signed create/update webhooks, own-user lookup, and admin/user guards exist. No API for user administration or local handling of account deletion. Clerk-managed signup/reset/verification configuration is unverified. See [auth module][auth] and [webhook][webhook]. |
+| 1 | User Account Management | Partial | Clerk session verification, provisioning, signed lifecycle webhooks, terminal local account deletion, own-user lookup, and admin/user guards exist. Administrative user/role operations and Clerk-managed signup/reset/verification configuration remain unverified. Local deletion behavior is defined in [ADR 0006](adr/0006-clerk-account-deletion.md). See [auth module][auth] and [webhook][webhook]. |
 | 2 | Character Selection and Player Identity | Completed, core API | Public character catalog, validated selection, persisted character ID, and character in profile exist. Five archetypes are seeded. Class-themed narrative/cosmetics are optional in the PRD and are not implemented. See [selection][character], [seed][seed], and [profile][profile]. |
 | 3 | Initial Learner Assessment | Missing | Existing Quests are general quizzes. No onboarding assessment designation, assessment assignment, competency mapping, baseline calculation, or assessment-completed state exists. See [quiz flow][quiz] and [schema][catalog]. |
 | 4 | Novel-Based Learning System | Partial | Region → Zone → Stage catalog and structured lessons exist. No agreed Novel/chapter mapping, story progression model, or integrated set of coding/security/CTF activities. Lesson formats disagree across authoring and consumption; see G2. [Catalog][catalog], [content module][content], [lesson reader][lesson]. |
@@ -100,7 +100,7 @@ These are source-traced findings, not runtime reproductions. Resolve them before
 - [ ] Add controlled CTF challenges, authorized environment boundaries, secure flag checking, attempt records, completion, and rewards.
 - [ ] Add optional Side Quests and enforce the PRD's applicable prerequisites: rank, skills, badges, Novel completion, and previous challenges. Class-themed variants remain optional.
 - [ ] Decide whether existing numeric Level is the Adventurer Rank. Reuse its implementation if it satisfies the agreed rule; avoid adding a parallel rank system without a requirement.
-- [ ] Complete account lifecycle requirements: local handling of Clerk account deletion and the agreed administrative user/role operations. Verify the managed signup, login, email verification, password reset, and session configuration.
+- [ ] Complete remaining account lifecycle requirements: the agreed administrative user/role operations. Local handling of Clerk account deletion is implemented per [ADR 0006](adr/0006-clerk-account-deletion.md). Verify the managed signup, login, email verification, password reset, and session configuration.
 
 ### Interaction data, mastery, and both ML models
 
@@ -141,7 +141,7 @@ These are source-traced findings, not runtime reproductions. Resolve them before
 
 | PRD data | Current storage or behavior | Status / remaining work |
 | --- | --- | --- |
-| Learner account and identity | `users`, `characters`; Clerk ID is the user key | Implemented core; research identifiers, retention, and deletion policy absent. |
+| Learner account and identity | `users`, `characters`; Clerk ID is the user key; `deleted_users` retains deleted Clerk IDs | Local deletion and cascading removal of learner records are implemented per [ADR 0006](adr/0006-clerk-account-deletion.md); research identifiers and retention policy remain absent. |
 | Scores, answers, prior quiz performance | `results.score`, `passed`, `responsesJson`, `submittedAt` | Partial; persist session identity, assessed content version, and input integrity. |
 | Attempt count | Multiple Result rows can be counted per user/Quest | Derivable for quizzes only; no general attempt model or summary API. |
 | Completion time | Stage completion/submission timestamps only | Missing elapsed activity time; no stored Quest start time. |
@@ -162,7 +162,7 @@ Evidence: [identity schema](../packages/db/src/schema/identity.ts), [catalog sch
 | Authentication and access control | Clerk verification; admin guard; own-Result check; signed webhooks | Verify deployment claims/keys; add creator/moderator permissions where agreed; apply activity eligibility consistently (G7). |
 | Validation and integrity | Global whitelist/transform validation, DTO constraints, foreign keys, selected unique indexes, transactional Stage XP | Resolve G1–G10. `POST /v1/api/user/sync` accepts only an optional `name`; email comes from a Clerk-verified address, and the route returns 503 when no verified email is available. |
 | Execution protection | Language allowlist and code/stdin length limits | Verify sandbox isolation/network/resource restrictions at the configured provider; add bounded requests and quotas. The adapter alone cannot prove execution isolation. |
-| Privacy and encryption | Authenticated personal endpoints; no email in leaderboard response | Dataset minimization, anonymization, retention, and deletion handling are absent. TLS and encryption at rest depend on deployment and are unverified. |
+| Privacy and encryption | Authenticated personal endpoints; no email in leaderboard response; local account deletion per [ADR 0006](adr/0006-clerk-account-deletion.md) | Dataset minimization, anonymization, and research-data retention policy remain absent. TLS and encryption at rest depend on deployment and are unverified. |
 | Performance and scaling | Some indexes, a 10-connection PostgreSQL pool per client, leaderboard pagination | Define response-time/concurrency targets and measure them. Other catalog/Quest listings are unpaginated; badge evaluation makes queries per definition. No load-test or horizontal-scaling evidence was found in the reviewed configuration. |
 | Reliability | Unique award/completion markers; transactional Stage updates; badge errors do not fail already-committed completions | Quiz XP atomicity, badge concurrency/recovery, provider timeout handling, readiness/health checks, operational monitoring, and backup/restore evidence remain. No health endpoint is registered. |
 | Web deployment/compatibility | REST API, shared response contracts, development Swagger | CORS is hardcoded to `http://localhost:3000`; configure the actual web origin. Browser/device compatibility and accessibility require a frontend audit. |
