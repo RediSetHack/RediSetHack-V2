@@ -22,9 +22,9 @@ Use Clerk for all authentication in V2: signup, login, email verification, passw
 
 3. **Provisioning & Synchronization Strategy**:
    - **Hybrid Provisioning**:
-     1. **Post-signup sync route (`/sign-up/complete` -> `POST /v1/api/user/sync`)**: Upon completing signup, the frontend immediately calls the API to create the user in the PostgreSQL database with their actual email and name. This eliminates onboarding latency and works seamlessly in local development without requiring public webhook tunnels.
+     1. **Post-signup sync route (`/sign-up/complete` -> `POST /v1/api/user/sync`)**: Upon completing signup, the frontend immediately calls the API to create the user in PostgreSQL. The request body accepts only an optional `name`; email is taken from a Clerk-verified address, and the API returns 503 when no verified email is available so onboarding can be retried. This eliminates onboarding latency and works seamlessly in local development without requiring public webhook tunnels.
      2. **Webhooks (`POST /v1/api/clerk/webhook`)**: In production, Clerk webhooks (`user.created`, `user.updated`) provide an asynchronous backstop for email changes or external updates.
    - **Database Invariant**:
-     - Creating a new user record requires a valid email address; attempting to create a user without an email throws an `InvalidUserEmailError` (HTTP 400).
+     - Creating a new user record requires a valid email address; attempting to create a user without a Clerk-verified email throws an `InvalidUserEmailError` (HTTP 503 from the sync route).
      - Updating an existing user record with empty token claims preserves the user's previously stored email address.
 

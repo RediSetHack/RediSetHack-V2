@@ -116,7 +116,11 @@ describe("ClerkAuthService", () => {
   it("looks up verified provider identity when optional email claims are absent", async () => {
     const authenticateRequest = vi.fn().mockResolvedValue(signedInState({ name: "Ada" }));
     const getUser = vi.fn().mockResolvedValue({
-      emailAddresses: [{ id: "email_1", emailAddress: "verified@example.com" }],
+      emailAddresses: [{
+        id: "email_1",
+        emailAddress: "verified@example.com",
+        verification: { status: "verified" },
+      }],
       primaryEmailAddressId: "email_1",
       firstName: "Ada",
       lastName: "Lovelace",

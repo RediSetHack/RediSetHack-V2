@@ -343,6 +343,15 @@ describe('auth integration', () => {
     expect(userStore.size).toBe(0);
   });
 
+  it('rejects a non-string sync name', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/v1/api/user/sync')
+      .set('authorization', 'Bearer valid-token')
+      .send({ name: 42 });
+
+    expect(res.status).toBe(400);
+  });
+
   it('returns the profile shape the app shell renders, validated against the contract', async () => {
     const res = await request(app.getHttpServer())
       .get('/v1/api/users/profile')

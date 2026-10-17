@@ -14,7 +14,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
-import { IsOptional, IsString } from "class-validator";
+import { IsOptional, IsString, MaxLength } from "class-validator";
 import type { IncomingMessage } from "node:http";
 
 import { ClerkAuthPort, type ClerkAuthenticatedUser } from "../../domain/ports/clerk-auth.port.js";
@@ -29,6 +29,7 @@ export class SyncUserRequestDto {
   })
   @IsOptional()
   @IsString()
+  @MaxLength(255)
   name?: string;
 }
 

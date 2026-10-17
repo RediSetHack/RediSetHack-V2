@@ -36,7 +36,7 @@ export class DrizzleUserRepository implements UserRepository {
       .values({ id: identity.id, email, name: identity.name })
       .onConflictDoUpdate({
         target: users.id,
-        set: { email, name: identity.name, updatedAt: now },
+        set: { email, name: identity.name ?? sql`${users.name}`, updatedAt: now },
       })
       .returning();
     return toDomain(rows[0]!);
