@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import {
   quests,
   questQuestions,
@@ -7,6 +7,7 @@ import {
   questSessions,
   questXpAwards,
   results,
+  users,
   type Database,
 } from '@repo/db';
 
@@ -174,7 +175,7 @@ export class DrizzleQuestRepository implements QuestRepository {
 
   async finalizeSession(
     input: FinalizeSessionInput,
-  ): Promise<QuestResult | null> {
+  ): Promise<{ result: QuestResult; xpAwarded: number } | null> {
     return this.database.transaction(async (tx) => {
       // The conditional UPDATE is the single-submission gate: only one
       // caller can move the session out of 'active'.
@@ -201,19 +202,37 @@ export class DrizzleQuestRepository implements QuestRepository {
           questionsJson: claimed.questionsJson,
         })
         .returning();
+      let xpAwarded = 0;
+      if (
+        input.passed &&
+        input.status === 'submitted' &&
+        (input.xpToAward ?? 0) > 0
+      ) {
+        const inserted = await tx
+          .insert(questXpAwards)
+          .values({ userId: claimed.userId, questId: claimed.questId })
+          .onConflictDoNothing()
+          .returning({ id: questXpAwards.id });
+        if (inserted.length > 0) {
+          xpAwarded = input.xpToAward!;
+          const updated = await tx
+            .update(users)
+            .set({
+              totalXp: sql`${users.totalXp} + ${xpAwarded}`,
+              updatedAt: new Date(),
+            })
+            .where(eq(users.id, claimed.userId))
+            .returning({ id: users.id });
+          if (updated.length !== 1)
+            throw new Error('Quest XP recipient not found');
+        }
+      }
       await tx
         .update(questSessions)
-        .set({ resultId: row!.id })
+        .set({ resultId: row!.id, xpAwarded })
         .where(eq(questSessions.id, input.sessionId));
-      return toResult(row!);
+      return { result: toResult(row!), xpAwarded };
     });
-  }
-
-  async recordSessionXp(sessionId: number, xpAwarded: number): Promise<void> {
-    await this.database
-      .update(questSessions)
-      .set({ xpAwarded })
-      .where(eq(questSessions.id, sessionId));
   }
 
   async findResultById(resultId: number): Promise<QuestResult | null> {
@@ -221,14 +240,5 @@ export class DrizzleQuestRepository implements QuestRepository {
       where: eq(results.id, resultId),
     });
     return row ? toResult(row) : null;
-  }
-
-  async claimXpAward(userId: string, questId: number): Promise<boolean> {
-    const inserted = await this.database
-      .insert(questXpAwards)
-      .values({ userId, questId })
-      .onConflictDoNothing()
-      .returning({ id: questXpAwards.id });
-    return inserted.length > 0;
   }
 }

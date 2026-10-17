@@ -11,6 +11,8 @@ export class FakeQuestRepository implements QuestRepository {
   sessions = new Map<number, QuestSession>();
   results = new Map<number, QuestResult>();
   xpClaims = new Set<string>();
+  creditXp: (userId: string, amount: number) => Promise<unknown> =
+    async () => {};
   private nextSessionId = 1;
   private nextResultId = 1;
 
@@ -79,6 +81,15 @@ export class FakeQuestRepository implements QuestRepository {
       new Date(),
       session.questions,
     );
+    const key = `${session.userId}:${session.questId}`;
+    const xpAwarded =
+      input.passed && input.status === 'submitted' && !this.xpClaims.has(key)
+        ? (input.xpToAward ?? 0)
+        : 0;
+    if (xpAwarded > 0) {
+      await this.creditXp(session.userId, xpAwarded);
+      this.xpClaims.add(key);
+    }
     this.results.set(result.id, result);
     this.sessions.set(
       session.id,
@@ -92,34 +103,10 @@ export class FakeQuestRepository implements QuestRepository {
         session.expiresAt,
         input.status,
         result.id,
-        0,
-      ),
-    );
-    return result;
-  }
-  async recordSessionXp(sessionId: number, xpAwarded: number) {
-    const s = this.sessions.get(sessionId)!;
-    this.sessions.set(
-      sessionId,
-      new QuestSession(
-        s.id,
-        s.userId,
-        s.questId,
-        s.questions,
-        s.passingScore,
-        s.startedAt,
-        s.expiresAt,
-        s.status,
-        s.resultId,
         xpAwarded,
       ),
     );
-  }
-  async claimXpAward(userId: string, questId: number) {
-    const key = `${userId}:${questId}`;
-    if (this.xpClaims.has(key)) return false;
-    this.xpClaims.add(key);
-    return true;
+    return { result, xpAwarded };
   }
   async findResultById(resultId: number) {
     return this.results.get(resultId) ?? null;

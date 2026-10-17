@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import { UserRepository } from '../../auth/domain/ports/user.repository.js';
 import {
   EvaluateBadgesUseCase,
   type BadgeAwardResult,
@@ -92,7 +91,6 @@ export class SubmitQuestUseCase {
 
   constructor(
     private readonly quests: QuestRepository,
-    private readonly users: UserRepository,
     private readonly getTodayEvent: GetTodayEventUseCase,
     private readonly evaluateBadges: EvaluateBadgesUseCase,
   ) {}
@@ -106,10 +104,7 @@ export class SubmitQuestUseCase {
     // Not found, not-owned, and wrong-Quest are indistinguishable to the
     // requester, matching Result review.
     const session = await this.quests.findSessionById(input.sessionId);
-    if (
-      session?.userId !== input.userId ||
-      session.questId !== input.questId
-    ) {
+    if (session?.userId !== input.userId || session.questId !== input.questId) {
       throw new QuestSessionNotFoundError(input.sessionId);
     }
     if (session.status !== 'active') {
@@ -121,37 +116,29 @@ export class SubmitQuestUseCase {
     const expired = Date.now() >= session.expiresAt.getTime();
     if (!expired) validateResponses(session.questions, input.responses);
 
-    const score = expired ? 0 : scorePercent(session.questions, input.responses);
+    const score = expired
+      ? 0
+      : scorePercent(session.questions, input.responses);
     const passed = !expired && score >= session.passingScore;
-    const result = await this.quests.finalizeSession({
+    const xpToAward =
+      passed && quest.xpReward > 0
+        ? quest.xpReward * (await this.getTodayEvent.execute()).xpMultiplier
+        : 0;
+    const finalized = await this.quests.finalizeSession({
       sessionId: session.id,
       status: expired ? 'expired' : 'submitted',
       score,
       passed,
       responses: expired ? [] : input.responses,
+      xpToAward,
     });
-    if (!result) {
+    if (!finalized) {
       // Lost a race with a concurrent submission of the same session.
       const settled = await this.quests.findSessionById(session.id);
       return this.replay(settled!, input.responses);
     }
 
-    let xpAwarded = 0;
-    if (passed && quest.xpReward > 0) {
-      // The unique constraint behind claimXpAward is the real enforcement
-      // point: only one concurrent passing submission can ever win this claim,
-      // so XP can't be double-awarded regardless of how many retakes race here.
-      const claimed = await this.quests.claimXpAward(
-        input.userId,
-        input.questId,
-      );
-      if (claimed) {
-        const event = await this.getTodayEvent.execute();
-        xpAwarded = quest.xpReward * event.xpMultiplier;
-        await this.users.awardXp(input.userId, xpAwarded);
-        await this.quests.recordSessionXp(session.id, xpAwarded);
-      }
-    }
+    const { result, xpAwarded } = finalized;
 
     // Badge evaluation is a side effect of a submission that already
     // committed: a failure here shouldn't turn a scored submission into an
@@ -185,7 +172,12 @@ export class SubmitQuestUseCase {
   ): Promise<SubmitQuestOutput> {
     const result = await this.quests.findResultById(session.resultId!);
     if (session.status === 'expired') {
-      return { result: result!, xpAwarded: 0, badgesEarned: [], outcome: 'expired' };
+      return {
+        result: result!,
+        xpAwarded: 0,
+        badgesEarned: [],
+        outcome: 'expired',
+      };
     }
     if (canonical(responses) !== canonical(result!.responses)) {
       throw new QuestSessionAlreadySubmittedError(session.id);
