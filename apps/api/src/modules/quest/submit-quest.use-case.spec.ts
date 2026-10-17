@@ -103,9 +103,9 @@ function makeUseCase(
   multiplier = 1,
   badges = makeEvaluateBadges(),
 ) {
+  quests.creditXp = users.awardXp.bind(users);
   return new SubmitQuestUseCase(
     quests,
-    users,
     makeGetTodayEvent(multiplier),
     badges,
   );

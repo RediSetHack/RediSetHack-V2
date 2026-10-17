@@ -49,12 +49,6 @@ describe('Quest listing integration (GET /v1/api/quests)', () => {
     async finalizeSession() {
       throw new Error('not used in this test');
     },
-    async recordSessionXp() {
-      throw new Error('not used in this test');
-    },
-    async claimXpAward() {
-      throw new Error('not used in this test');
-    },
     async findResultById() {
       throw new Error('not used in this test');
     },

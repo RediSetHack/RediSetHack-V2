@@ -103,7 +103,6 @@ describe.skipIf(!database)('authored Quest PostgreSQL flow', () => {
     const submit = new SubmitQuestUseCase(
       learnerQuests,
       {} as never,
-      {} as never,
       { execute: async () => [] } as never,
     );
     const historicalResult = await submit.execute({

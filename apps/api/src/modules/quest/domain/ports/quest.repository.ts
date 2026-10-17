@@ -19,6 +19,7 @@ export type FinalizeSessionInput = {
   score: number;
   passed: boolean;
   responses: QuestResponse[];
+  xpToAward?: number;
 };
 
 export abstract class QuestRepository {
@@ -34,15 +35,12 @@ export abstract class QuestRepository {
   // Inserts a new active session; if the learner already has one for this
   // Quest (a concurrent start), returns that one instead.
   abstract createSession(input: CreateSessionInput): Promise<QuestSession>;
-  // Atomically moves an active session to its terminal status and records
-  // its Result. Returns null when the session was no longer active, i.e.
+  // Atomically records the terminal Result, first-pass claim, XP balance,
+  // and credited session amount. Failure rolls back all of them. Returns null
+  // when the session was no longer active, i.e.
   // another request already finalized it.
   abstract finalizeSession(
     input: FinalizeSessionInput,
-  ): Promise<QuestResult | null>;
-  abstract recordSessionXp(sessionId: number, xpAwarded: number): Promise<void>;
-  // Atomically claims the first-pass XP award for (userId, questId); returns
-  // true only for the caller that wins the race, false for every other one.
-  abstract claimXpAward(userId: string, questId: number): Promise<boolean>;
+  ): Promise<{ result: QuestResult; xpAwarded: number } | null>;
   abstract findResultById(resultId: number): Promise<QuestResult | null>;
 }

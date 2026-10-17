@@ -2,13 +2,15 @@ import type { IncomingMessage } from 'node:http';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { and, eq } from 'drizzle-orm';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { and, eq, sql } from 'drizzle-orm';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
   createDb,
   questOptions,
   questQuestions,
   questSessions,
+  questXpAwards,
+  results,
   quests,
   regions,
   stages,
@@ -21,6 +23,10 @@ import {
   QuestSessionResponseSchema,
   SubmitQuestResponseSchema,
 } from '@repo/contracts';
+
+import { EvaluateBadgesUseCase } from '../badge/application/evaluate-badges.use-case.js';
+import { DailyEventRepository } from '../daily-event/domain/ports/daily-event.repository.js';
+import { DailyEvent } from '../daily-event/domain/entities/daily-event.entity.js';
 
 import { AppModule } from '../../app.module.js';
 import {
@@ -41,6 +47,7 @@ describe.skipIf(!dbUrl)('Quest Sessions over HTTP with PostgreSQL', () => {
   let questionId: number;
   let correctOptionId: number;
   let wrongOptionId: number;
+  let multiplier = 1;
 
   const fakeClerk: ClerkAuthPort = {
     async authenticate(
@@ -48,7 +55,11 @@ describe.skipIf(!dbUrl)('Quest Sessions over HTTP with PostgreSQL', () => {
     ): Promise<ClerkAuthenticatedUser | null> {
       const auth = req.headers['authorization'];
       const id =
-        auth === 'Bearer learner' ? learnerId : auth === 'Bearer other' ? otherId : null;
+        auth === 'Bearer learner'
+          ? learnerId
+          : auth === 'Bearer other'
+            ? otherId
+            : null;
       return id
         ? { id, email: `${id}@example.test`, name: id, role: 'user' }
         : null;
@@ -79,11 +90,23 @@ describe.skipIf(!dbUrl)('Quest Sessions over HTTP with PostgreSQL', () => {
   beforeAll(async () => {
     db = createDb(dbUrl!);
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+      .overrideProvider(DailyEventRepository)
+      .useValue({
+        findByDate: async () =>
+          new DailyEvent(
+            1,
+            '2026-10-17',
+            multiplier === 2 ? 'bonus' : 'normal',
+            multiplier,
+          ),
+      })
       .overrideProvider(ClerkAuthPort)
       .useValue(fakeClerk)
       .compile();
     app = moduleRef.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ transform: true, whitelist: true }),
+    );
     await app.init();
 
     await db.insert(users).values([
@@ -136,7 +159,183 @@ describe.skipIf(!dbUrl)('Quest Sessions over HTTP with PostgreSQL', () => {
       await db.delete(regions).where(eq(regions.id, regionId));
       await db.delete(users).where(eq(users.id, learnerId));
       await db.delete(users).where(eq(users.id, otherId));
-      await (db as unknown as { $client: { end(): Promise<void> } }).$client.end();
+      await (
+        db as unknown as { $client: { end(): Promise<void> } }
+      ).$client.end();
+    }
+  });
+
+  const balance = async (who: 'learner' | 'other' = 'other') => {
+    const res = await request(app.getHttpServer())
+      .get('/v1/api/user/me')
+      .set(as(who));
+    expect(res.status).toBe(200);
+    return res.body.totalXp as number;
+  };
+
+  const resetOther = async () => {
+    await db.delete(questSessions).where(eq(questSessions.userId, otherId));
+    await db.delete(results).where(eq(results.userId, otherId));
+    await db.delete(questXpAwards).where(eq(questXpAwards.userId, otherId));
+    await db.update(users).set({ totalXp: 0 }).where(eq(users.id, otherId));
+  };
+
+  it.each([
+    ['claim insertion', 'quest_xp_awards', 'INSERT', 'NEW.user_id', ''],
+    [
+      'balance credit',
+      'users',
+      'UPDATE',
+      'NEW.id',
+      'AND NEW.total_xp <> OLD.total_xp',
+    ],
+    [
+      'session receipt after credit',
+      'quest_sessions',
+      'UPDATE',
+      'NEW.user_id',
+      'AND NEW.result_id IS NOT NULL',
+    ],
+  ])(
+    'rolls back a failure at %s and lets the same submission recover',
+    async (_name, table, operation, owner, condition) => {
+      await resetOther();
+      const session = await start('other');
+      const trigger = sql.identifier(`fail_quest_xp_${Date.now()}`);
+      await db.execute(sql`CREATE FUNCTION ${trigger}() RETURNS trigger LANGUAGE plpgsql AS
+      $$ BEGIN RAISE EXCEPTION 'injected Quest award failure'; END $$`);
+      await db.execute(sql`CREATE TRIGGER ${trigger} BEFORE ${sql.raw(operation)} ON ${sql.identifier(table)}
+      FOR EACH ROW WHEN (${sql.raw(owner)} = ${sql.raw(`'${otherId}'`)} ${sql.raw(condition)})
+      EXECUTE FUNCTION ${trigger}()`);
+      try {
+        expect((await submit(session.id, correct(), 'other')).status).toBe(500);
+        const stored = await db.query.questSessions.findFirst({
+          where: eq(questSessions.id, session.id),
+        });
+        expect(stored).toMatchObject({
+          status: 'active',
+          resultId: null,
+          xpAwarded: 0,
+        });
+        expect(
+          await db
+            .select()
+            .from(questXpAwards)
+            .where(eq(questXpAwards.userId, otherId)),
+        ).toHaveLength(0);
+        expect(
+          await db.select().from(results).where(eq(results.userId, otherId)),
+        ).toHaveLength(0);
+        expect(await balance()).toBe(0);
+      } finally {
+        await db.execute(
+          sql`DROP TRIGGER ${trigger} ON ${sql.identifier(table)}`,
+        );
+        await db.execute(sql`DROP FUNCTION ${trigger}()`);
+      }
+      const recovered = await submit(session.id, correct(), 'other');
+      expect(recovered.status).toBe(201);
+      expect(SubmitQuestResponseSchema.parse(recovered.body)).toMatchObject({
+        passed: true,
+        xpAwarded: 10,
+      });
+      const replay = await submit(session.id, correct(), 'other');
+      expect(SubmitQuestResponseSchema.parse(replay.body)).toMatchObject({
+        resultId: recovered.body.resultId,
+        xpAwarded: 10,
+      });
+      expect(await balance()).toBe(10);
+      expect(
+        await db
+          .select()
+          .from(questXpAwards)
+          .where(eq(questXpAwards.userId, otherId)),
+      ).toHaveLength(1);
+      expect(
+        await db.select().from(results).where(eq(results.userId, otherId)),
+      ).toHaveLength(1);
+    },
+  );
+
+  it('races first-pass submissions, persists bonus XP on replay, and gives passing retakes no reward', async () => {
+    await resetOther();
+    multiplier = 2;
+    try {
+      const session = await start('other');
+      const responses = await Promise.all(
+        Array.from({ length: 8 }, () => submit(session.id, correct(), 'other')),
+      );
+      expect(responses.map((r) => r.status)).toEqual(Array(8).fill(201));
+      const awards = responses.map((r) =>
+        SubmitQuestResponseSchema.parse(r.body),
+      );
+      expect(new Set(awards.map((r) => r.resultId)).size).toBe(1);
+      expect(awards.map((r) => r.xpAwarded)).toEqual(Array(8).fill(20));
+      expect(await balance()).toBe(20);
+      multiplier = 1;
+      const replay = await submit(session.id, correct(), 'other');
+      expect(SubmitQuestResponseSchema.parse(replay.body)).toMatchObject({
+        resultId: awards[0]!.resultId,
+        xpAwarded: 20,
+      });
+      const retake = await start('other');
+      expect(retake.id).not.toBe(session.id);
+      const retakes = await Promise.all(
+        Array.from({ length: 4 }, () => submit(retake.id, correct(), 'other')),
+      );
+      for (const res of retakes) {
+        expect(res.status).toBe(201);
+        expect(SubmitQuestResponseSchema.parse(res.body)).toMatchObject({
+          passed: true,
+          xpAwarded: 0,
+        });
+      }
+      expect(await balance()).toBe(20);
+      expect(
+        await db
+          .select()
+          .from(questXpAwards)
+          .where(eq(questXpAwards.userId, otherId)),
+      ).toHaveLength(1);
+      expect(
+        await db.select().from(results).where(eq(results.userId, otherId)),
+      ).toHaveLength(2);
+    } finally {
+      multiplier = 1;
+    }
+  });
+
+  it('keeps the accepted Result and credit when badge evaluation fails', async () => {
+    await resetOther();
+    const session = await start('other');
+    const badges = vi
+      .spyOn(app.get(EvaluateBadgesUseCase), 'execute')
+      .mockRejectedValueOnce(new Error('injected badge failure'));
+    try {
+      const res = await submit(session.id, correct(), 'other');
+      expect(res.status).toBe(201);
+      const body = SubmitQuestResponseSchema.parse(res.body);
+      expect(body).toMatchObject({
+        passed: true,
+        xpAwarded: 10,
+        badgesEarned: [],
+      });
+      const review = await request(app.getHttpServer())
+        .get(`/v1/api/quests/results/${body.resultId}`)
+        .set(as('other'));
+      expect(review.status).toBe(200);
+      expect(QuestResultReviewResponseSchema.parse(review.body)).toMatchObject({
+        resultId: body.resultId,
+        passed: true,
+      });
+      expect(await balance()).toBe(10);
+      const replay = await submit(session.id, correct(), 'other');
+      expect(SubmitQuestResponseSchema.parse(replay.body)).toMatchObject({
+        resultId: body.resultId,
+        xpAwarded: 10,
+      });
+    } finally {
+      badges.mockRestore();
     }
   });
 
@@ -150,7 +349,11 @@ describe.skipIf(!dbUrl)('Quest Sessions over HTTP with PostgreSQL', () => {
     const row = await db.query.questSessions.findFirst({
       where: eq(questSessions.id, first.id),
     });
-    expect(row).toMatchObject({ userId: learnerId, status: 'active', passingScore: 100 });
+    expect(row).toMatchObject({
+      userId: learnerId,
+      status: 'active',
+      passingScore: 100,
+    });
     expect(row!.expiresAt.getTime() - row!.startedAt.getTime()).toBeCloseTo(
       300_000,
       -3,
@@ -175,7 +378,9 @@ describe.skipIf(!dbUrl)('Quest Sessions over HTTP with PostgreSQL', () => {
       xpAwarded: body.xpAwarded,
     });
 
-    const conflict = await submit(session.id, [{ questionId, optionId: wrongOptionId }]);
+    const conflict = await submit(session.id, [
+      { questionId, optionId: wrongOptionId },
+    ]);
     expect(conflict.status).toBe(409);
     const review = await request(app.getHttpServer())
       .get(`/v1/api/quests/results/${body.resultId}`)
@@ -218,8 +423,14 @@ describe.skipIf(!dbUrl)('Quest Sessions over HTTP with PostgreSQL', () => {
   });
 
   it.each([
-    ['an unknown question', () => [{ questionId: questionId + 100000, optionId: 1 }]],
-    ['an option outside the question', () => [{ questionId, optionId: correctOptionId + 100000 }]],
+    [
+      'an unknown question',
+      () => [{ questionId: questionId + 100000, optionId: 1 }],
+    ],
+    [
+      'an option outside the question',
+      () => [{ questionId, optionId: correctOptionId + 100000 }],
+    ],
     [
       'a duplicate question reference',
       () => [

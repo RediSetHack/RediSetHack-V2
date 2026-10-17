@@ -27,9 +27,7 @@ function makeRepo(overrides: Partial<QuestRepository> = {}): QuestRepository {
     findSessionById: vi.fn(),
     createSession: vi.fn(),
     finalizeSession: vi.fn(),
-    recordSessionXp: vi.fn(),
     findResultById: vi.fn(),
-    claimXpAward: vi.fn(),
     ...overrides,
   };
 }
