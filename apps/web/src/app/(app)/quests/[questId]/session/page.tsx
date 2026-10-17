@@ -18,9 +18,9 @@ export default async function QuestSessionPage({
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
   const token = await getToken();
 
-  // Starting a Quest Session on navigation, rather than caching it, is
-  // deliberate: every visit to this route begins a fresh, correctly-timed
-  // Session with its own deadline.
+  // Visiting this route starts a Quest Session, or resumes the learner's
+  // unexpired one with its original server deadline; once a Session is
+  // submitted or expired, visiting again is an explicit retake.
   let session;
   try {
     if (!token) {

@@ -26,7 +26,7 @@ A multiple-choice quiz with a time allowance, passing score, and XP reward.
 _Avoid_: Stage when referring to an assessment.
 
 **Quest Session**:
-A started, unsubmitted attempt at a Quest, carrying the questions with correct answers withheld and a server-side deadline.
+A learner-owned, timed attempt at a Quest, persisted with a snapshot of the questions assessed (correct answers withheld while active) and a server-set deadline. It ends exactly once, submitted or expired, and starting again after that is a retake. A submission after the deadline earns no credit.
 _Avoid_: Attempt, run, active quest.
 
 **Result**:

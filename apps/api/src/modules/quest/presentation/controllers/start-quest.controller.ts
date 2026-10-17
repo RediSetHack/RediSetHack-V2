@@ -2,6 +2,8 @@ import { Controller, NotFoundException, Param, ParseIntPipe, Post, UseGuards } f
 import { ApiBearerAuth, ApiNotFoundResponse, ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
 import { QuestSessionResponseSchema } from "@repo/contracts";
 
+import { CurrentUser } from "../../../auth/presentation/decorators/current-user.decorator.js";
+import type { ClerkAuthenticatedUser } from "../../../auth/domain/ports/clerk-auth.port.js";
 import { ClerkAuthGuard } from "../../../auth/presentation/guards/clerk-auth.guard.js";
 import { QuestNotFoundError } from "../../domain/errors.js";
 import { StartQuestUseCase } from "../../application/start-quest.use-case.js";
@@ -16,13 +18,16 @@ export class StartQuestController {
   @Post(":questId/start")
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Start a Quest Session.' })
+  @ApiOperation({ summary: 'Start a Quest Session, or resume the learner\'s unexpired one.' })
   @ApiParam({ name: 'questId', description: "The Quest's id." })
   @ApiZodResponse(QuestSessionResponseSchema, { status: 201 })
   @ApiNotFoundResponse({ description: 'Quest not found.' })
-  async handle(@Param("questId", ParseIntPipe) questId: number) {
+  async handle(
+    @Param("questId", ParseIntPipe) questId: number,
+    @CurrentUser() user: ClerkAuthenticatedUser,
+  ) {
     try {
-      const session = await this.startQuest.execute(questId);
+      const session = await this.startQuest.execute(user.id, questId);
       return QuestPresenter.toSession(session);
     } catch (error) {
       if (error instanceof QuestNotFoundError) {

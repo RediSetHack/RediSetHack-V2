@@ -511,10 +511,12 @@ describe("api-client", () => {
         ok: true,
         json: async () => ({
           id: 1,
+          questId: 1,
           title: "Loop fundamentals",
           description: null,
           timeLimitSeconds: 300,
           expiresAt: "2026-09-15T12:05:00.000Z",
+          serverTime: "2026-09-15T12:00:00.000Z",
           questions: [{ id: 1, prompt: "?", options: [{ id: 1, text: "A" }] }],
         }),
       });
@@ -554,7 +556,7 @@ describe("api-client", () => {
 
   describe("submitQuest", () => {
     it("throws ApiError 401 when token is missing", async () => {
-      await expect(submitQuest("http://localhost:3001", "", 1, [])).rejects.toThrowError(
+      await expect(submitQuest("http://localhost:3001", "", 1, 1, [])).rejects.toThrowError(
         ApiError,
       );
     });
@@ -566,6 +568,7 @@ describe("api-client", () => {
           resultId: 5,
           score: 100,
           passed: true,
+          outcome: "submitted",
           xpAwarded: 50,
           badgesEarned: [],
         }),
@@ -576,6 +579,7 @@ describe("api-client", () => {
         "http://localhost:3001/",
         "test-token",
         1,
+        7,
         responses,
         mockFetch as unknown as typeof fetch,
       );
@@ -583,7 +587,7 @@ describe("api-client", () => {
       expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/quests/1/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: "Bearer test-token" },
-        body: JSON.stringify({ responses }),
+        body: JSON.stringify({ sessionId: 7, responses }),
       });
       expect(result.xpAwarded).toBe(50);
     });
@@ -599,6 +603,7 @@ describe("api-client", () => {
         submitQuest(
           "http://localhost:3001",
           "test-token",
+          1,
           1,
           [],
           mockFetch as unknown as typeof fetch,

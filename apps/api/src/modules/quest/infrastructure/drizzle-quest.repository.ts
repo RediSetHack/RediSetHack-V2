@@ -4,6 +4,7 @@ import {
   quests,
   questQuestions,
   questOptions,
+  questSessions,
   questXpAwards,
   results,
   type Database,
@@ -20,12 +21,18 @@ import {
   type QuestResponse,
 } from '../domain/entities/quest-result.entity.js';
 import {
+  QuestSession,
+  type QuestSessionStatus,
+} from '../domain/entities/quest-session.entity.js';
+import {
   QuestRepository,
-  type CreateResultInput,
+  type CreateSessionInput,
+  type FinalizeSessionInput,
 } from '../domain/ports/quest.repository.js';
 
 type QuestRow = typeof quests.$inferSelect;
 type ResultRow = typeof results.$inferSelect;
+type SessionRow = typeof questSessions.$inferSelect;
 
 function toQuest(row: QuestRow): Quest {
   return new Quest(
@@ -49,6 +56,21 @@ function toResult(row: ResultRow): QuestResult {
     (row.responsesJson as QuestResponse[] | null) ?? [],
     row.submittedAt,
     (row.questionsJson as QuestQuestion[] | null) ?? null,
+  );
+}
+
+function toSession(row: SessionRow): QuestSession {
+  return new QuestSession(
+    row.id,
+    row.userId,
+    row.questId,
+    row.questionsJson as QuestQuestion[],
+    row.passingScore,
+    row.startedAt,
+    row.expiresAt,
+    row.status as QuestSessionStatus,
+    row.resultId,
+    row.xpAwarded,
   );
 }
 
@@ -110,19 +132,88 @@ export class DrizzleQuestRepository implements QuestRepository {
     return new Set(rows.map((row) => row.questId));
   }
 
-  async createResult(input: CreateResultInput): Promise<QuestResult> {
+  async findActiveSession(
+    userId: string,
+    questId: number,
+  ): Promise<QuestSession | null> {
+    const row = await this.database.query.questSessions.findFirst({
+      where: and(
+        eq(questSessions.userId, userId),
+        eq(questSessions.questId, questId),
+        eq(questSessions.status, 'active'),
+      ),
+    });
+    return row ? toSession(row) : null;
+  }
+
+  async findSessionById(sessionId: number): Promise<QuestSession | null> {
+    const row = await this.database.query.questSessions.findFirst({
+      where: eq(questSessions.id, sessionId),
+    });
+    return row ? toSession(row) : null;
+  }
+
+  async createSession(input: CreateSessionInput): Promise<QuestSession> {
+    // The partial unique index allows one active session per (user, quest);
+    // losing that race falls through to returning the winner's session.
     const rows = await this.database
-      .insert(results)
+      .insert(questSessions)
       .values({
         userId: input.userId,
         questId: input.questId,
-        score: input.score,
-        passed: input.passed,
-        responsesJson: input.responses,
-        questionsJson: input.questionSnapshot,
+        questionsJson: input.questions,
+        passingScore: input.passingScore,
+        expiresAt: input.expiresAt,
       })
+      .onConflictDoNothing()
       .returning();
-    return toResult(rows[0]!);
+    if (rows[0]) return toSession(rows[0]);
+    const existing = await this.findActiveSession(input.userId, input.questId);
+    return existing!;
+  }
+
+  async finalizeSession(
+    input: FinalizeSessionInput,
+  ): Promise<QuestResult | null> {
+    return this.database.transaction(async (tx) => {
+      // The conditional UPDATE is the single-submission gate: only one
+      // caller can move the session out of 'active'.
+      const [claimed] = await tx
+        .update(questSessions)
+        .set({ status: input.status })
+        .where(
+          and(
+            eq(questSessions.id, input.sessionId),
+            eq(questSessions.status, 'active'),
+          ),
+        )
+        .returning();
+      if (!claimed) return null;
+
+      const [row] = await tx
+        .insert(results)
+        .values({
+          userId: claimed.userId,
+          questId: claimed.questId,
+          score: input.score,
+          passed: input.passed,
+          responsesJson: input.responses,
+          questionsJson: claimed.questionsJson,
+        })
+        .returning();
+      await tx
+        .update(questSessions)
+        .set({ resultId: row!.id })
+        .where(eq(questSessions.id, input.sessionId));
+      return toResult(row!);
+    });
+  }
+
+  async recordSessionXp(sessionId: number, xpAwarded: number): Promise<void> {
+    await this.database
+      .update(questSessions)
+      .set({ xpAwarded })
+      .where(eq(questSessions.id, sessionId));
   }
 
   async findResultById(resultId: number): Promise<QuestResult | null> {

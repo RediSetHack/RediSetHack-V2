@@ -7,11 +7,13 @@ export class QuestResultPresenter {
     result,
     xpAwarded,
     badgesEarned,
+    outcome,
   }: SubmitQuestOutput) {
     return {
       resultId: result.id,
       score: result.score,
       passed: result.passed,
+      outcome,
       xpAwarded,
       badgesEarned: toBadgeAwardsPresenter(badgesEarned),
     };

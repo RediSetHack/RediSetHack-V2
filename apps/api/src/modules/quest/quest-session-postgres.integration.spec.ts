@@ -1,0 +1,323 @@
+import type { IncomingMessage } from 'node:http';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
+import request from 'supertest';
+import { and, eq } from 'drizzle-orm';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import {
+  createDb,
+  questOptions,
+  questQuestions,
+  questSessions,
+  quests,
+  regions,
+  stages,
+  users,
+  zones,
+  type Database,
+} from '@repo/db';
+import {
+  QuestResultReviewResponseSchema,
+  QuestSessionResponseSchema,
+  SubmitQuestResponseSchema,
+} from '@repo/contracts';
+
+import { AppModule } from '../../app.module.js';
+import {
+  ClerkAuthPort,
+  type ClerkAuthenticatedUser,
+} from '../auth/domain/ports/clerk-auth.port.js';
+
+const dbUrl = process.env.DATABASE_URL;
+
+describe.skipIf(!dbUrl)('Quest Sessions over HTTP with PostgreSQL', () => {
+  const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const learnerId = `qs-learner-${suffix}`;
+  const otherId = `qs-other-${suffix}`;
+  let app: INestApplication;
+  let db: Database;
+  let regionId: number;
+  let questId: number;
+  let questionId: number;
+  let correctOptionId: number;
+  let wrongOptionId: number;
+
+  const fakeClerk: ClerkAuthPort = {
+    async authenticate(
+      req: IncomingMessage,
+    ): Promise<ClerkAuthenticatedUser | null> {
+      const auth = req.headers['authorization'];
+      const id =
+        auth === 'Bearer learner' ? learnerId : auth === 'Bearer other' ? otherId : null;
+      return id
+        ? { id, email: `${id}@example.test`, name: id, role: 'user' }
+        : null;
+    },
+  };
+  const as = (who: 'learner' | 'other' = 'learner') => ({
+    authorization: `Bearer ${who}`,
+  });
+
+  const start = async (who: 'learner' | 'other' = 'learner') => {
+    const res = await request(app.getHttpServer())
+      .post(`/v1/api/quests/${questId}/start`)
+      .set(as(who));
+    expect(res.status).toBe(201);
+    return QuestSessionResponseSchema.parse(res.body);
+  };
+  const submit = (
+    sessionId: number,
+    responses: unknown,
+    who: 'learner' | 'other' = 'learner',
+  ) =>
+    request(app.getHttpServer())
+      .post(`/v1/api/quests/${questId}/submit`)
+      .set(as(who))
+      .send({ sessionId, responses });
+  const correct = () => [{ questionId, optionId: correctOptionId }];
+
+  beforeAll(async () => {
+    db = createDb(dbUrl!);
+    const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+      .overrideProvider(ClerkAuthPort)
+      .useValue(fakeClerk)
+      .compile();
+    app = moduleRef.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
+    await app.init();
+
+    await db.insert(users).values([
+      { id: learnerId, email: `${learnerId}@example.test`, name: 'Learner' },
+      { id: otherId, email: `${otherId}@example.test`, name: 'Other' },
+    ]);
+    const [region] = await db
+      .insert(regions)
+      .values({ name: 'Sessions', slug: `qs-${suffix}` })
+      .returning();
+    regionId = region!.id;
+    const [zone] = await db
+      .insert(zones)
+      .values({ regionId, name: 'Sessions', slug: `qs-${suffix}` })
+      .returning();
+    const [stage] = await db
+      .insert(stages)
+      .values({ zoneId: zone!.id, title: 'Sessions', slug: `qs-${suffix}` })
+      .returning();
+    const [quest] = await db
+      .insert(quests)
+      .values({
+        stageId: stage!.id,
+        title: 'Sessions quest',
+        timeLimitSeconds: 300,
+        passingScore: 100,
+        xpReward: 10,
+      })
+      .returning();
+    questId = quest!.id;
+    const [question] = await db
+      .insert(questQuestions)
+      .values({ questId, prompt: 'Original prompt?' })
+      .returning();
+    questionId = question!.id;
+    const options = await db
+      .insert(questOptions)
+      .values([
+        { questionId, text: 'Right', isCorrect: true, sortOrder: 0 },
+        { questionId, text: 'Wrong', isCorrect: false, sortOrder: 1 },
+      ])
+      .returning();
+    correctOptionId = options.find((o) => o.isCorrect)!.id;
+    wrongOptionId = options.find((o) => !o.isCorrect)!.id;
+  });
+
+  afterAll(async () => {
+    await app?.close();
+    if (db) {
+      await db.delete(regions).where(eq(regions.id, regionId));
+      await db.delete(users).where(eq(users.id, learnerId));
+      await db.delete(users).where(eq(users.id, otherId));
+      await (db as unknown as { $client: { end(): Promise<void> } }).$client.end();
+    }
+  });
+
+  it('persists the session and resumes it with the same server deadline', async () => {
+    const first = await start();
+    const again = await start();
+    expect(again.id).toBe(first.id);
+    expect(again.expiresAt).toBe(first.expiresAt);
+    expect(first.questId).toBe(questId);
+
+    const row = await db.query.questSessions.findFirst({
+      where: eq(questSessions.id, first.id),
+    });
+    expect(row).toMatchObject({ userId: learnerId, status: 'active', passingScore: 100 });
+    expect(row!.expiresAt.getTime() - row!.startedAt.getTime()).toBeCloseTo(
+      300_000,
+      -3,
+    );
+
+    // leave the session terminal for the following tests
+    await submit(first.id, correct());
+  });
+
+  it('replays an identical submission, rejects a conflicting one, and awards XP once', async () => {
+    const session = await start();
+    const first = await submit(session.id, correct());
+    expect(first.status).toBe(201);
+    const body = SubmitQuestResponseSchema.parse(first.body);
+    expect(body).toMatchObject({ outcome: 'submitted', passed: true });
+
+    const replay = await submit(session.id, correct());
+    expect(replay.status).toBe(201);
+    expect(SubmitQuestResponseSchema.parse(replay.body)).toMatchObject({
+      resultId: body.resultId,
+      score: body.score,
+      xpAwarded: body.xpAwarded,
+    });
+
+    const conflict = await submit(session.id, [{ questionId, optionId: wrongOptionId }]);
+    expect(conflict.status).toBe(409);
+    const review = await request(app.getHttpServer())
+      .get(`/v1/api/quests/results/${body.resultId}`)
+      .set(as());
+    expect(QuestResultReviewResponseSchema.parse(review.body)).toMatchObject({
+      score: 100,
+      passed: true,
+    });
+  });
+
+  it('survives concurrent duplicate submissions with a single Result', async () => {
+    const session = await start();
+    const responses = await Promise.all([
+      submit(session.id, correct()),
+      submit(session.id, correct()),
+      submit(session.id, correct()),
+    ]);
+    const ids = new Set(responses.map((r) => r.body.resultId));
+    expect(responses.map((r) => r.status)).toEqual([201, 201, 201]);
+    expect(ids.size).toBe(1);
+  });
+
+  it('allows an explicit retake as a new session once the last one is terminal', async () => {
+    const before = await start();
+    await submit(before.id, correct());
+    const retake = await start();
+    expect(retake.id).not.toBe(before.id);
+    await submit(retake.id, [{ questionId, optionId: wrongOptionId }]);
+  });
+
+  it("rejects another learner's session without closing it", async () => {
+    const session = await start();
+    const res = await submit(session.id, correct(), 'other');
+    expect(res.status).toBe(404);
+    const row = await db.query.questSessions.findFirst({
+      where: eq(questSessions.id, session.id),
+    });
+    expect(row?.status).toBe('active');
+    await submit(session.id, correct());
+  });
+
+  it.each([
+    ['an unknown question', () => [{ questionId: questionId + 100000, optionId: 1 }]],
+    ['an option outside the question', () => [{ questionId, optionId: correctOptionId + 100000 }]],
+    [
+      'a duplicate question reference',
+      () => [
+        { questionId, optionId: correctOptionId },
+        { questionId, optionId: wrongOptionId },
+      ],
+    ],
+  ])('400s on %s', async (_name, responses) => {
+    const session = await start();
+    const res = await submit(session.id, responses());
+    expect(res.status).toBe(400);
+    await submit(session.id, correct());
+  });
+
+  it('gives no credit for a submission after the persisted deadline', async () => {
+    const session = await start();
+    await db
+      .update(questSessions)
+      .set({ expiresAt: new Date(Date.now() - 1000) })
+      .where(eq(questSessions.id, session.id));
+
+    const res = await submit(session.id, correct());
+    expect(res.status).toBe(201);
+    expect(SubmitQuestResponseSchema.parse(res.body)).toMatchObject({
+      outcome: 'expired',
+      score: 0,
+      passed: false,
+      xpAwarded: 0,
+    });
+    const replay = await submit(session.id, correct());
+    expect(replay.body.resultId).toBe(res.body.resultId);
+
+    // the next start is a fresh session, not the expired one
+    const next = await start();
+    expect(next.id).not.toBe(session.id);
+    await submit(next.id, correct());
+  });
+
+  it('closes an abandoned expired session when the learner starts again', async () => {
+    const abandoned = await start();
+    await db
+      .update(questSessions)
+      .set({ expiresAt: new Date(Date.now() - 1000) })
+      .where(eq(questSessions.id, abandoned.id));
+
+    const next = await start();
+    expect(next.id).not.toBe(abandoned.id);
+    const row = await db.query.questSessions.findFirst({
+      where: eq(questSessions.id, abandoned.id),
+    });
+    expect(row).toMatchObject({ status: 'expired' });
+    expect(row!.resultId).not.toBeNull();
+    await submit(next.id, correct());
+  });
+
+  it('scores and reviews the snapshot the learner saw after the Quest is edited', async () => {
+    const session = await start();
+    await db
+      .update(questQuestions)
+      .set({ prompt: 'Edited prompt?' })
+      .where(eq(questQuestions.id, questionId));
+    await db
+      .update(questOptions)
+      .set({ isCorrect: false })
+      .where(eq(questOptions.id, correctOptionId));
+    try {
+      const res = await submit(session.id, correct());
+      const body = SubmitQuestResponseSchema.parse(res.body);
+      expect(body).toMatchObject({ score: 100, passed: true });
+
+      const review = QuestResultReviewResponseSchema.parse(
+        (
+          await request(app.getHttpServer())
+            .get(`/v1/api/quests/results/${body.resultId}`)
+            .set(as())
+        ).body,
+      );
+      expect(review.breakdown[0]).toMatchObject({
+        prompt: 'Original prompt?',
+        isCorrect: true,
+      });
+
+      // a new session sees the edit
+      const fresh = await start();
+      expect(fresh.questions[0]?.prompt).toBe('Edited prompt?');
+      await db
+        .update(questSessions)
+        .set({ status: 'expired' })
+        .where(and(eq(questSessions.id, fresh.id)));
+    } finally {
+      await db
+        .update(questQuestions)
+        .set({ prompt: 'Original prompt?' })
+        .where(eq(questQuestions.id, questionId));
+      await db
+        .update(questOptions)
+        .set({ isCorrect: true })
+        .where(eq(questOptions.id, correctOptionId));
+    }
+  });
+});

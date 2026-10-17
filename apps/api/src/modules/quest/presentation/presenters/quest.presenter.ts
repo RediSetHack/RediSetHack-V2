@@ -1,5 +1,5 @@
 import { QuestWithStatus } from '../../application/list-quests.use-case.js';
-import { QuestSession } from '../../application/start-quest.use-case.js';
+import { StartedQuestSession } from '../../application/start-quest.use-case.js';
 
 export class QuestPresenter {
   static toListItem({ quest, completed }: QuestWithStatus) {
@@ -16,14 +16,16 @@ export class QuestPresenter {
   }
 
   // Correct-answer keys are intentionally withheld while a session is active.
-  static toSession({ quest, questions, expiresAt }: QuestSession) {
+  static toSession({ quest, session }: StartedQuestSession) {
     return {
-      id: quest.id,
+      id: session.id,
+      questId: quest.id,
       title: quest.title,
       description: quest.description,
       timeLimitSeconds: quest.timeLimitSeconds,
-      expiresAt: expiresAt.toISOString(),
-      questions: questions.map((question) => ({
+      expiresAt: session.expiresAt.toISOString(),
+      serverTime: new Date().toISOString(),
+      questions: session.questions.map((question) => ({
         id: question.id,
         prompt: question.prompt,
         options: question.options.map((option) => ({

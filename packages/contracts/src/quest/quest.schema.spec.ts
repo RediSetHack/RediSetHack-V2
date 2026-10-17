@@ -70,10 +70,12 @@ describe("QuestSessionResponseSchema", () => {
   it("parses a started Quest Session with correct answers withheld", () => {
     const payload = {
       id: 1,
+      questId: 1,
       title: "Loop fundamentals",
       description: "Covers for and while loops.",
       timeLimitSeconds: 300,
       expiresAt: "2026-09-15T12:05:00.000Z",
+      serverTime: "2026-09-15T12:00:00.000Z",
       questions: [
         {
           id: 1,
@@ -92,10 +94,12 @@ describe("QuestSessionResponseSchema", () => {
   it("rejects an option carrying isCorrect", () => {
     const payload = {
       id: 1,
+      questId: 1,
       title: "Loop fundamentals",
       description: null,
       timeLimitSeconds: 300,
       expiresAt: "2026-09-15T12:05:00.000Z",
+      serverTime: "2026-09-15T12:00:00.000Z",
       questions: [
         { id: 1, prompt: "?", options: [{ id: 1, text: "A", isCorrect: true }] },
       ],
@@ -109,11 +113,25 @@ describe("QuestSessionResponseSchema", () => {
 });
 
 describe("SubmitQuestResponseSchema", () => {
+  it("parses an expired submission with no credit", () => {
+    const payload = {
+      resultId: 7,
+      score: 0,
+      passed: false,
+      outcome: "expired" as const,
+      xpAwarded: 0,
+      badgesEarned: [],
+    };
+    expect(SubmitQuestResponseSchema.parse(payload)).toEqual(payload);
+  });
+
+
   it("parses a passing submission with a Badge earned", () => {
     const payload = {
       resultId: 5,
       score: 100,
       passed: true,
+      outcome: "submitted" as const,
       xpAwarded: 50,
       badgesEarned: [
         {
@@ -134,6 +152,7 @@ describe("SubmitQuestResponseSchema", () => {
       resultId: 6,
       score: 100,
       passed: true,
+      outcome: "submitted" as const,
       xpAwarded: 0,
       badgesEarned: [],
     };

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { submitQuest, type QuestSession, type QuestSubmitResult } from "@/lib/api-client";
 import {
   accumulateAnswer,
+  clockSkewMs,
   formatCountdown,
   isExpired,
   secondsRemaining,
@@ -34,9 +35,17 @@ function SubmissionResult({
     <div className="space-y-6" aria-live="polite">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">
-          {result.passed ? "Quest passed!" : "Quest not passed"}
+          {result.outcome === "expired"
+            ? "Time expired"
+            : result.passed
+              ? "Quest passed!"
+              : "Quest not passed"}
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">Score: {result.score}%</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {result.outcome === "expired"
+            ? "The deadline passed before your answers were submitted, so no credit was given."
+            : `Score: ${result.score}%`}
+        </p>
       </div>
 
       <div className="rounded-xl border border-border bg-card p-4">
@@ -89,8 +98,11 @@ export function QuestSessionRunner({
   const router = useRouter();
   const [answers, setAnswers] = useState<AnswerMap>({});
   const [index, setIndex] = useState(0);
+  // ponytail: skew includes the start-to-hydrate latency; the server's
+  // persisted deadline is what actually decides credit.
+  const [skewMs] = useState(() => clockSkewMs(session.serverTime, Date.now()));
   const [remaining, setRemaining] = useState(() =>
-    secondsRemaining(session.expiresAt, Date.now()),
+    secondsRemaining(session.expiresAt, Date.now(), skewMs),
   );
   const [announcedSeconds, setAnnouncedSeconds] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -125,6 +137,7 @@ export function QuestSessionRunner({
         apiUrl,
         token,
         questId,
+        session.id,
         toSubmission(answersRef.current),
       );
       // Re-run the app shell's Server Component so a passing result's new
@@ -142,18 +155,18 @@ export function QuestSessionRunner({
     } finally {
       setIsSubmitting(false);
     }
-  }, [apiUrl, getToken, questId, router]);
+  }, [apiUrl, getToken, questId, router, session.id]);
 
   useEffect(() => {
     if (result) return;
 
     const tick = () => {
-      const secs = secondsRemaining(session.expiresAt, Date.now());
+      const secs = secondsRemaining(session.expiresAt, Date.now(), skewMs);
       setRemaining(secs);
       if (secs === 60 || secs === 30 || (secs <= 10 && secs > 0)) {
         setAnnouncedSeconds(secs);
       }
-      if (isExpired(session.expiresAt, Date.now()) && !autoSubmitTriggeredRef.current) {
+      if (isExpired(session.expiresAt, Date.now(), skewMs) && !autoSubmitTriggeredRef.current) {
         autoSubmitTriggeredRef.current = true;
         void doSubmit();
       }
@@ -162,7 +175,7 @@ export function QuestSessionRunner({
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [session.expiresAt, doSubmit, result]);
+  }, [session.expiresAt, skewMs, doSubmit, result]);
 
   if (result) {
     return <SubmissionResult result={result} questId={questId} />;

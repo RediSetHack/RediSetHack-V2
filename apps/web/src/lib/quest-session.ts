@@ -2,7 +2,7 @@ import type { QuestSubmission } from "./api-client.js";
 
 /**
  * Pure Quest Session answer bookkeeping. The server scores the submission and
- * enforces nothing about timing here — this only turns learner input into
+ * owns the deadline — this only turns learner input into
  * the state a countdown/answer UI needs, so it can be unit tested without a
  * DOM or a running timer.
  */
@@ -27,14 +27,24 @@ export function toSubmission(answers: AnswerMap): QuestSubmission[] {
   }));
 }
 
+/**
+ * Milliseconds to add to the local clock to approximate the server's, taken
+ * from the `serverTime` the session was issued with. The server's persisted
+ * deadline is the authority; this only keeps the displayed countdown honest on
+ * a skewed device clock.
+ */
+export function clockSkewMs(serverTime: string, localNow: number): number {
+  return new Date(serverTime).getTime() - localNow;
+}
+
 /** True once `now` has reached or passed the session's deadline. */
-export function isExpired(expiresAt: string, now: number): boolean {
-  return now >= new Date(expiresAt).getTime();
+export function isExpired(expiresAt: string, now: number, skewMs = 0): boolean {
+  return now + skewMs >= new Date(expiresAt).getTime();
 }
 
 /** Whole seconds remaining until the deadline, floored at 0 (never negative). */
-export function secondsRemaining(expiresAt: string, now: number): number {
-  return Math.max(0, Math.ceil((new Date(expiresAt).getTime() - now) / 1000));
+export function secondsRemaining(expiresAt: string, now: number, skewMs = 0): number {
+  return Math.max(0, Math.ceil((new Date(expiresAt).getTime() - (now + skewMs)) / 1000));
 }
 
 /** Formats whole seconds as `M:SS` for the visible countdown. */

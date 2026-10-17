@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   accumulateAnswer,
+  clockSkewMs,
   formatCountdown,
   isExpired,
   secondsRemaining,
@@ -83,5 +84,27 @@ describe("formatCountdown", () => {
 
   it("formats a duration under a minute", () => {
     expect(formatCountdown(9)).toBe("0:09");
+  });
+});
+
+describe("clockSkewMs", () => {
+  it("is the server clock minus the local clock", () => {
+    expect(clockSkewMs("2026-09-15T12:00:10.000Z", Date.parse("2026-09-15T12:00:00.000Z"))).toBe(
+      10_000,
+    );
+  });
+
+  it("keeps the countdown on the server deadline when the device clock is fast", () => {
+    // Device is 30s ahead of the server; the server says 60s remain.
+    const deviceNow = Date.parse("2026-09-15T12:00:30.000Z");
+    const skew = clockSkewMs("2026-09-15T12:00:00.000Z", deviceNow);
+    expect(secondsRemaining("2026-09-15T12:01:00.000Z", deviceNow, skew)).toBe(60);
+    expect(isExpired("2026-09-15T12:01:00.000Z", deviceNow, skew)).toBe(false);
+  });
+
+  it("expires on the server deadline when the device clock is slow", () => {
+    const deviceNow = Date.parse("2026-09-15T11:59:30.000Z");
+    const skew = clockSkewMs("2026-09-15T12:01:00.000Z", deviceNow);
+    expect(isExpired("2026-09-15T12:01:00.000Z", deviceNow, skew)).toBe(true);
   });
 });
