@@ -43,6 +43,13 @@
       "when": 1792153437900,
       "tag": "0005_sad_blink",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792219758672,
+      "tag": "0006_wild_radioactive_man",
+      "breakpoints": true
     }
   ]
 }

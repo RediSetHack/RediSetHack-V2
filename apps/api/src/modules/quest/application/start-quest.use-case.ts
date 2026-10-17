@@ -1,30 +1,49 @@
 import { Injectable } from '@nestjs/common';
 
-import { Quest, QuestQuestion } from '../domain/entities/quest.entity.js';
+import { Quest } from '../domain/entities/quest.entity.js';
+import { QuestSession } from '../domain/entities/quest-session.entity.js';
 import { QuestNotFoundError } from '../domain/errors.js';
 import { QuestRepository } from '../domain/ports/quest.repository.js';
 
-export type QuestSession = {
-  quest: Quest;
-  questions: QuestQuestion[];
-  expiresAt: Date;
-};
+export type StartedQuestSession = { quest: Quest; session: QuestSession };
 
 @Injectable()
 export class StartQuestUseCase {
   constructor(private readonly quests: QuestRepository) {}
 
-  async execute(questId: number): Promise<QuestSession> {
+  // Resumes the learner's unexpired session for this Quest, otherwise starts
+  // a new one: a retake is simply starting again once the last session is
+  // submitted or expired. The deadline is fixed at start by the server clock.
+  async execute(userId: string, questId: number): Promise<StartedQuestSession> {
     const quest = await this.quests.findById(questId);
     if (!quest) {
       throw new QuestNotFoundError(questId);
     }
+
+    const active = await this.quests.findActiveSession(userId, questId);
+    if (active) {
+      if (active.expiresAt.getTime() > Date.now()) {
+        return { quest, session: active };
+      }
+      // Abandoned past its deadline: close it with no credit so the new
+      // session can take its place.
+      await this.quests.finalizeSession({
+        sessionId: active.id,
+        status: 'expired',
+        score: 0,
+        passed: false,
+        responses: [],
+      });
+    }
+
     const questions = await this.quests.findQuestions(questId);
-    // ponytail: the deadline is computed, not persisted — nothing stops a
-    // learner from calling submit after it passes, since the server trusts
-    // the client's countdown. Upgrade to a persisted Quest Session row (with
-    // submit checking elapsed time server-side) if timer-tampering matters.
-    const expiresAt = new Date(Date.now() + quest.timeLimitSeconds * 1000);
-    return { quest, questions, expiresAt };
+    const session = await this.quests.createSession({
+      userId,
+      questId,
+      questions,
+      passingScore: quest.passingScore,
+      expiresAt: new Date(Date.now() + quest.timeLimitSeconds * 1000),
+    });
+    return { quest, session };
   }
 }

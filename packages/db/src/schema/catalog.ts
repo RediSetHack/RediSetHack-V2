@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { boolean, index, integer, jsonb, pgTable, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { users } from "./identity.js";
 
@@ -128,6 +129,38 @@ export const results = pgTable(
   (table) => [
     index("results_user_id_index").on(table.userId),
     index("results_quest_id_index").on(table.questId),
+  ],
+);
+
+// A Quest Session is the server-owned record of one timed attempt: who is
+// playing, the question snapshot being assessed, and the server-set deadline.
+// `status` leaves 'active' exactly once (the conditional UPDATE is the
+// single-submission gate); 'submitted' and 'expired' sessions point at their
+// Result. The partial unique index allows one resumable session per learner
+// and Quest while still permitting any number of explicit retakes after it.
+export const questSessions = pgTable(
+  "quest_sessions",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    questId: integer("quest_id")
+      .notNull()
+      .references(() => quests.id, { onDelete: "cascade" }),
+    questionsJson: jsonb("questions_json").notNull(),
+    passingScore: integer("passing_score").notNull(),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    status: text("status").notNull().default("active"),
+    resultId: integer("result_id").references(() => results.id, { onDelete: "set null" }),
+    xpAwarded: integer("xp_awarded").notNull().default(0),
+  },
+  (table) => [
+    index("quest_sessions_user_quest_index").on(table.userId, table.questId),
+    uniqueIndex("quest_sessions_one_active_unique")
+      .on(table.userId, table.questId)
+      .where(sql`${table.status} = 'active'`),
   ],
 );
 

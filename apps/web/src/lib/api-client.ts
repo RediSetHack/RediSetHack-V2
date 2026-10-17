@@ -324,12 +324,13 @@ export async function submitQuest(
   apiBaseUrl: string,
   token: string,
   questId: number,
+  sessionId: number,
   responses: QuestSubmission[],
   fetchFn: typeof fetch = fetch,
 ): Promise<QuestSubmitResult> {
   const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/quests/${questId}/submit`;
   return SubmitQuestResponseSchema.parse(
-    await postAuthedJson<unknown>(endpoint, token, { responses }, fetchFn),
+    await postAuthedJson<unknown>(endpoint, token, { sessionId, responses }, fetchFn),
   );
 }
 

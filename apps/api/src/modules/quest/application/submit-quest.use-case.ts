@@ -11,12 +11,19 @@ import {
   QuestResult,
   type QuestResponse,
 } from '../domain/entities/quest-result.entity.js';
-import { QuestNotFoundError } from '../domain/errors.js';
+import { QuestSession } from '../domain/entities/quest-session.entity.js';
+import {
+  InvalidQuestResponsesError,
+  QuestNotFoundError,
+  QuestSessionAlreadySubmittedError,
+  QuestSessionNotFoundError,
+} from '../domain/errors.js';
 import { QuestRepository } from '../domain/ports/quest.repository.js';
 
 export type SubmitQuestInput = {
   userId: string;
   questId: number;
+  sessionId: number;
   responses: QuestResponse[];
 };
 
@@ -24,7 +31,42 @@ export type SubmitQuestOutput = {
   result: QuestResult;
   xpAwarded: number;
   badgesEarned: BadgeAwardResult[];
+  outcome: 'submitted' | 'expired';
 };
+
+function validateResponses(
+  questions: QuestQuestion[],
+  responses: QuestResponse[],
+): void {
+  const seen = new Set<number>();
+  for (const response of responses) {
+    const question = questions.find((q) => q.id === response.questionId);
+    if (!question) {
+      throw new InvalidQuestResponsesError(
+        `question ${response.questionId} is not part of this session`,
+      );
+    }
+    if (seen.has(response.questionId)) {
+      throw new InvalidQuestResponsesError(
+        `question ${response.questionId} was answered more than once`,
+      );
+    }
+    seen.add(response.questionId);
+    if (!question.options.some((o) => o.id === response.optionId)) {
+      throw new InvalidQuestResponsesError(
+        `option ${response.optionId} does not belong to question ${response.questionId}`,
+      );
+    }
+  }
+}
+
+function canonical(responses: QuestResponse[]): string {
+  return JSON.stringify(
+    responses
+      .map((r) => [r.questionId, r.optionId])
+      .sort((a, b) => a[0]! - b[0]!),
+  );
+}
 
 function scorePercent(
   questions: QuestQuestion[],
@@ -61,18 +103,38 @@ export class SubmitQuestUseCase {
       throw new QuestNotFoundError(input.questId);
     }
 
-    const questions = await this.quests.findQuestions(input.questId);
-    const score = scorePercent(questions, input.responses);
-    const passed = score >= quest.passingScore;
+    // Not found, not-owned, and wrong-Quest are indistinguishable to the
+    // requester, matching Result review.
+    const session = await this.quests.findSessionById(input.sessionId);
+    if (
+      session?.userId !== input.userId ||
+      session.questId !== input.questId
+    ) {
+      throw new QuestSessionNotFoundError(input.sessionId);
+    }
+    if (session.status !== 'active') {
+      return this.replay(session, input.responses);
+    }
 
-    const result = await this.quests.createResult({
-      userId: input.userId,
-      questId: input.questId,
+    // Expiry is judged on the server clock against the persisted deadline:
+    // a late submission is recorded with no credit and no grace period.
+    const expired = Date.now() >= session.expiresAt.getTime();
+    if (!expired) validateResponses(session.questions, input.responses);
+
+    const score = expired ? 0 : scorePercent(session.questions, input.responses);
+    const passed = !expired && score >= session.passingScore;
+    const result = await this.quests.finalizeSession({
+      sessionId: session.id,
+      status: expired ? 'expired' : 'submitted',
       score,
       passed,
-      responses: input.responses,
-      questionSnapshot: questions,
+      responses: expired ? [] : input.responses,
     });
+    if (!result) {
+      // Lost a race with a concurrent submission of the same session.
+      const settled = await this.quests.findSessionById(session.id);
+      return this.replay(settled!, input.responses);
+    }
 
     let xpAwarded = 0;
     if (passed && quest.xpReward > 0) {
@@ -87,6 +149,7 @@ export class SubmitQuestUseCase {
         const event = await this.getTodayEvent.execute();
         xpAwarded = quest.xpReward * event.xpMultiplier;
         await this.users.awardXp(input.userId, xpAwarded);
+        await this.quests.recordSessionXp(session.id, xpAwarded);
       }
     }
 
@@ -105,6 +168,33 @@ export class SubmitQuestUseCase {
       }
     }
 
-    return { result, xpAwarded, badgesEarned };
+    return {
+      result,
+      xpAwarded,
+      badgesEarned,
+      outcome: expired ? 'expired' : 'submitted',
+    };
+  }
+
+  // A terminal session's Result is immutable: an identical resubmission
+  // returns it (a transport retry), a different one is a conflict. Badges
+  // were announced on the first response, so they are not repeated.
+  private async replay(
+    session: QuestSession,
+    responses: QuestResponse[],
+  ): Promise<SubmitQuestOutput> {
+    const result = await this.quests.findResultById(session.resultId!);
+    if (session.status === 'expired') {
+      return { result: result!, xpAwarded: 0, badgesEarned: [], outcome: 'expired' };
+    }
+    if (canonical(responses) !== canonical(result!.responses)) {
+      throw new QuestSessionAlreadySubmittedError(session.id);
+    }
+    return {
+      result: result!,
+      xpAwarded: session.xpAwarded,
+      badgesEarned: [],
+      outcome: 'submitted',
+    };
   }
 }

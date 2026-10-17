@@ -41,11 +41,15 @@ export type QuestSessionQuestion = z.infer<typeof QuestSessionQuestionSchema>;
 
 /** A started Quest Session, `POST /v1/api/quests/:questId/start`. */
 export const QuestSessionResponseSchema = z.object({
+  /** The Quest Session's id, sent back on submission. */
   id: z.number().int().positive(),
+  questId: z.number().int().positive(),
   title: z.string(),
   description: z.string().nullable(),
   timeLimitSeconds: z.number().int().positive(),
   expiresAt: z.string(),
+  /** Server clock at response time, so clients can correct countdown skew. */
+  serverTime: z.string(),
   questions: z.array(QuestSessionQuestionSchema),
 });
 export type QuestSessionResponse = z.infer<typeof QuestSessionResponseSchema>;
@@ -57,11 +61,16 @@ export const QuestResponseSchema = z.object({
 });
 export type QuestResponse = z.infer<typeof QuestResponseSchema>;
 
-/** The outcome of submitting a Quest, `POST /v1/api/quests/:questId/submit`. */
+/**
+ * The outcome of submitting a Quest, `POST /v1/api/quests/:questId/submit`.
+ * `outcome` is `expired` when the server deadline had passed: no credit.
+ * An identical resubmission returns the same recorded Result.
+ */
 export const SubmitQuestResponseSchema = z.object({
   resultId: z.number().int().positive(),
   score: z.number().int().nonnegative(),
   passed: z.boolean(),
+  outcome: z.enum(["submitted", "expired"]),
   xpAwarded: z.number().int().nonnegative(),
   badgesEarned: z.array(BadgeAwardSchema),
 });

@@ -15,7 +15,7 @@ import { SubmitQuestUseCase } from '../quest/application/submit-quest.use-case.j
 import { ViewQuestResultUseCase } from '../quest/application/view-quest-result.use-case.js';
 import { DrizzleQuestRepository } from '../quest/infrastructure/drizzle-quest.repository.js';
 
-const databaseUrl = process.env.QUEST_TEST_DATABASE_URL;
+const databaseUrl = process.env.QUEST_TEST_DATABASE_URL ?? process.env.DATABASE_URL;
 const database = databaseUrl ? createDb(databaseUrl) : null;
 
 describe.skipIf(!database)('authored Quest PostgreSQL flow', () => {
@@ -96,9 +96,9 @@ describe.skipIf(!database)('authored Quest PostgreSQL flow', () => {
       ],
     });
     questId = quest.id;
-    const initialSession = await new StartQuestUseCase(learnerQuests).execute(
-      questId,
-    );
+    const start = new StartQuestUseCase(learnerQuests);
+    const initial = await start.execute(userId, questId);
+    const initialSession = initial.session;
     const firstQuestionId = initialSession.questions[0]!.id;
     const submit = new SubmitQuestUseCase(
       learnerQuests,
@@ -109,6 +109,7 @@ describe.skipIf(!database)('authored Quest PostgreSQL flow', () => {
     const historicalResult = await submit.execute({
       userId,
       questId,
+      sessionId: initialSession.id,
       responses: initialSession.questions.map((question) => ({
         questionId: question.id,
         optionId: question.options[0]!.id,
@@ -134,13 +135,14 @@ describe.skipIf(!database)('authored Quest PostgreSQL flow', () => {
     expect(historicalReview.breakdown).toHaveLength(2);
     expect(historicalReview.breakdown[0]?.prompt).toBe('Before edit?');
 
-    const session = await new StartQuestUseCase(learnerQuests).execute(questId);
+    const { session } = await start.execute(userId, questId);
     expect(session.questions[0]?.id).toBe(firstQuestionId);
     expect(session.questions[0]?.prompt).toBe('After edit?');
 
     const submission = await submit.execute({
       userId,
       questId,
+      sessionId: session.id,
       responses: [
         {
           questionId: firstQuestionId,
@@ -155,7 +157,10 @@ describe.skipIf(!database)('authored Quest PostgreSQL flow', () => {
     expect(review.breakdown[0]).toMatchObject({
       prompt: 'After edit?',
       isCorrect: true,
-      options: [{ text: 'Correct', isCorrect: true }],
+      options: [
+        { text: 'Correct', isCorrect: true },
+        { text: 'Wrong', isCorrect: false },
+      ],
     });
   });
 

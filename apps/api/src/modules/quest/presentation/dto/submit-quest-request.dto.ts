@@ -16,6 +16,14 @@ export class QuestResponseDto {
 
 export class SubmitQuestRequestDto {
   @ApiProperty({
+    example: 1,
+    description: 'The id of the Quest Session returned by start.',
+  })
+  @IsInt()
+  @Min(1)
+  sessionId!: number;
+
+  @ApiProperty({
     type: () => QuestResponseDto,
     isArray: true,
     description: "The learner's answer to every question in the Quest.",
