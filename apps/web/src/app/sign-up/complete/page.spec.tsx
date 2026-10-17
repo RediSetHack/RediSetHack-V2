@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockAuth, mockSyncUser, mockRedirect } = vi.hoisted(() => ({
   mockAuth: vi.fn(),
@@ -18,7 +18,10 @@ vi.mock("next/navigation", () => ({
 import SignUpCompletePage from "./page";
 
 describe("sign-up completion", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
   beforeEach(() => {
+    vi.stubEnv("NEXT_PUBLIC_API_URL", "http://localhost:3001");
     vi.clearAllMocks();
     mockAuth.mockResolvedValue({ userId: "user_123", getToken: vi.fn().mockResolvedValue("token") });
     mockSyncUser.mockResolvedValue({});
