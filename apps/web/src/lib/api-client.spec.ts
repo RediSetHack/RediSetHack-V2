@@ -157,7 +157,7 @@ describe("api-client", () => {
       const result = await syncUser(
         "http://localhost:3001",
         "test-token",
-        { email: "test@example.com", name: "Test User" },
+        { name: "Test User" },
         mockFetch as unknown as typeof fetch,
       );
 
@@ -167,7 +167,7 @@ describe("api-client", () => {
           "Content-Type": "application/json",
           Authorization: "Bearer test-token",
         },
-        body: JSON.stringify({ email: "test@example.com", name: "Test User" }),
+        body: JSON.stringify({ name: "Test User" }),
       });
       expect(result.id).toBe("user_123");
     });

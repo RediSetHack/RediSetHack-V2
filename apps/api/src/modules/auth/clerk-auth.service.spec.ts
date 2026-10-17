@@ -112,4 +112,22 @@ describe("ClerkAuthService", () => {
 
     expect(result).toBeNull();
   });
+
+  it("looks up verified provider identity when optional email claims are absent", async () => {
+    const authenticateRequest = vi.fn().mockResolvedValue(signedInState({ name: "Ada" }));
+    const getUser = vi.fn().mockResolvedValue({
+      emailAddresses: [{ id: "email_1", emailAddress: "verified@example.com" }],
+      primaryEmailAddressId: "email_1",
+      firstName: "Ada",
+      lastName: "Lovelace",
+    });
+    const service = new ClerkAuthService({ authenticateRequest, users: { getUser } } as unknown as ClerkRequestClient);
+
+    await expect(service.authenticate(makeRequest())).resolves.toMatchObject({
+      id: "user_123",
+      email: "verified@example.com",
+      name: "Ada",
+    });
+    expect(getUser).toHaveBeenCalledWith("user_123");
+  });
 });
