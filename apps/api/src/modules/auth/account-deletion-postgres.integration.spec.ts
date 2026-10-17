@@ -79,7 +79,7 @@ describe.skipIf(!dbUrl)('Clerk account deletion with PostgreSQL', () => {
       .overrideProvider(CLERK_WEBHOOK_SECRET)
       .useValue(signingSecret)
       .compile();
-    app = moduleRef.createNestApplication();
+    app = moduleRef.createNestApplication({ rawBody: true });
     app.useGlobalPipes(
       new ValidationPipe({ transform: true, whitelist: true }),
     );
@@ -149,6 +149,13 @@ describe.skipIf(!dbUrl)('Clerk account deletion with PostgreSQL', () => {
     expect(
       await db.select().from(deletedUsers).where(eq(deletedUsers.id, userId)),
     ).toHaveLength(1);
+    expect(
+      (
+        await request(app.getHttpServer())
+          .get('/v1/api/users/profile')
+          .set('authorization', 'Bearer old-session')
+      ).status,
+    ).toBe(401);
 
     const duplicate = signedEvent(
       'user.deleted',

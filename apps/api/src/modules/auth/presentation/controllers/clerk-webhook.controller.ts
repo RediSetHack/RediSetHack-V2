@@ -120,7 +120,11 @@ export class ClerkWebhookController {
 
     if (event.type === "user.deleted") {
       const id = extractId(event.data?.["id"]);
-      if (id) await this.deleteUser.execute(id);
+      if (id) {
+        await this.deleteUser.execute(id);
+      } else {
+        this.logger.warn("Ignoring user.deleted webhook without a valid user ID");
+      }
     } else if (event.type === "user.created" || event.type === "user.updated") {
       const identity = toClerkAuthenticatedUser(event.data ?? {});
       if (identity.id) {
