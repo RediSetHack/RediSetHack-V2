@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, eq, isNull } from 'drizzle-orm';
+import { and, asc, eq, isNotNull, isNull, or } from 'drizzle-orm';
 import { regions, stages, userProgress, zones, type Database } from '@repo/db';
 
 import { DB } from '../../../database/database.module.js';
@@ -32,10 +32,40 @@ export class DrizzleStageRepository implements StageRepository {
     return row ? toDomain(row) : null;
   }
 
+  async hasArchivedAncestor(stageId: number): Promise<boolean> {
+    const rows = await this.database
+      .select({ id: stages.id })
+      .from(stages)
+      .innerJoin(zones, eq(stages.zoneId, zones.id))
+      .innerJoin(regions, eq(zones.regionId, regions.id))
+      .where(
+        and(
+          eq(stages.id, stageId),
+          or(
+            isNotNull(stages.archivedAt),
+            isNotNull(zones.archivedAt),
+            isNotNull(regions.archivedAt),
+          ),
+        ),
+      )
+      .limit(1);
+    return rows.length > 0;
+  }
+
   async findByZoneId(zoneId: number): Promise<Stage[]> {
-    const rows = await this.database.select({ stage: stages }).from(stages)
-      .innerJoin(zones, eq(stages.zoneId, zones.id)).innerJoin(regions, eq(zones.regionId, regions.id))
-      .where(and(eq(stages.zoneId, zoneId), isNull(stages.archivedAt), isNull(zones.archivedAt), isNull(regions.archivedAt)))
+    const rows = await this.database
+      .select({ stage: stages })
+      .from(stages)
+      .innerJoin(zones, eq(stages.zoneId, zones.id))
+      .innerJoin(regions, eq(zones.regionId, regions.id))
+      .where(
+        and(
+          eq(stages.zoneId, zoneId),
+          isNull(stages.archivedAt),
+          isNull(zones.archivedAt),
+          isNull(regions.archivedAt),
+        ),
+      )
       .orderBy(asc(stages.sortOrder));
     return rows.map(({ stage }) => toDomain(stage));
   }

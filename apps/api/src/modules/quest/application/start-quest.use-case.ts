@@ -25,12 +25,12 @@ export class StartQuestUseCase {
     if (!quest) {
       throw new QuestNotFoundError(questId);
     }
-    if (quest.archivedAt) throw new QuestNotFoundError(questId);
-
-    await assertStageAccess(this.stages, userId, quest.stageId);
-    if ((await this.stages.findById(quest.stageId))?.archivedAt) {
+    if (
+      quest.archivedAt ||
+      (await this.stages.hasArchivedAncestor(quest.stageId))
+    )
       throw new QuestNotFoundError(questId);
-    }
+    await assertStageAccess(this.stages, userId, quest.stageId);
 
     const active = await this.quests.findActiveSession(userId, questId);
     if (active) {

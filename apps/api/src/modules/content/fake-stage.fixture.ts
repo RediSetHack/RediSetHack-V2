@@ -19,6 +19,9 @@ export function makeFakeStageRepository(
     async findByZoneId(zoneId) {
       return stagesByZone.get(zoneId) ?? [];
     },
+    async hasArchivedAncestor(stageId) {
+      return (await this.findById(stageId))?.archivedAt != null;
+    },
     async findCompletedStageIds(_userId, zoneId) {
       const stages = stagesByZone.get(zoneId) ?? [];
       return stages.filter((s) => completedStageIds.has(s.id)).map((s) => s.id);

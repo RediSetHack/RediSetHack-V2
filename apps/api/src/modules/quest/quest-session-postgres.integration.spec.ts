@@ -63,9 +63,14 @@ describe.skipIf(!dbUrl)('Quest Sessions over HTTP with PostgreSQL', () => {
             ? otherId
             : auth === 'Bearer admin'
               ? 'qs-admin'
-            : null;
+              : null;
       return id
-        ? { id, email: `${id}@example.test`, name: id, role: id === 'qs-admin' ? 'admin' : 'user' }
+        ? {
+            id,
+            email: `${id}@example.test`,
+            name: id,
+            role: id === 'qs-admin' ? 'admin' : 'user',
+          }
         : null;
     },
   };
@@ -315,7 +320,8 @@ describe.skipIf(!dbUrl)('Quest Sessions over HTTP with PostgreSQL', () => {
     await resetOther();
     const session = await start('other');
     const completion = await request(app.getHttpServer())
-      .post(`/v1/api/stages/${stageId}/complete`).set(as('other'));
+      .post(`/v1/api/stages/${stageId}/complete`)
+      .set(as('other'));
     expect(completion.status).toBe(201);
     const badges = vi
       .spyOn(app.get(EvaluateBadgesUseCase), 'execute')
@@ -541,26 +547,214 @@ describe.skipIf(!dbUrl)('Quest Sessions over HTTP with PostgreSQL', () => {
     }
   });
 
-  it('retires an in-flight Stage without hiding its saved Result or losing XP', async () => {
+  it.each(['stages', 'zones', 'regions', 'quests'] as const)(
+    'retires an in-flight session when its %s is archived without losing XP or review',
+    async (level) => {
+      await resetOther();
+      await db
+        .update(stages)
+        .set({ archivedAt: null })
+        .where(eq(stages.id, stageId));
+      await db
+        .update(zones)
+        .set({ archivedAt: null })
+        .where(eq(zones.id, zoneId));
+      await db
+        .update(regions)
+        .set({ archivedAt: null })
+        .where(eq(regions.id, regionId));
+      await db
+        .update(quests)
+        .set({ archivedAt: null })
+        .where(eq(quests.id, questId));
+      const session = await start('other');
+      const retired = await request(app.getHttpServer())
+        .delete(
+          `/v1/api/admin/${level}/${level === 'stages' ? stageId : level === 'zones' ? zoneId : level === 'regions' ? regionId : questId}`,
+        )
+        .set({ authorization: 'Bearer admin' });
+      expect(retired.status).toBe(204);
+      const archivedAt =
+        level === 'stages'
+          ? (await db.query.stages.findFirst({ where: eq(stages.id, stageId) }))
+              ?.archivedAt
+          : level === 'zones'
+            ? (await db.query.zones.findFirst({ where: eq(zones.id, zoneId) }))
+                ?.archivedAt
+            : level === 'regions'
+              ? (
+                  await db.query.regions.findFirst({
+                    where: eq(regions.id, regionId),
+                  })
+                )?.archivedAt
+              : (
+                  await db.query.quests.findFirst({
+                    where: eq(quests.id, questId),
+                  })
+                )?.archivedAt;
+      expect(archivedAt).not.toBeNull();
+
+      const catalog = await request(app.getHttpServer())
+        .get(
+          level === 'quests'
+            ? '/v1/api/quests'
+            : `/v1/api/zones/${zoneId}/stages`,
+        )
+        .set(as());
+      expect(catalog.status).toBe(200);
+      if (level === 'quests')
+        expect(
+          catalog.body.find((item: { id: number }) => item.id === questId),
+        ).toBeUndefined();
+      else expect(catalog.body).toEqual([]);
+      if (level === 'regions') {
+        const regionsCatalog = await request(app.getHttpServer()).get(
+          '/v1/api/regions',
+        );
+        expect(
+          regionsCatalog.body.find(
+            (item: { id: number }) => item.id === regionId,
+          ),
+        ).toBeUndefined();
+      }
+      expect(
+        (
+          await request(app.getHttpServer())
+            .post(`/v1/api/quests/${questId}/start`)
+            .set(as())
+        ).status,
+      ).toBe(404);
+
+      const submitted = await submit(session.id, correct(), 'other');
+      expect(submitted.status, JSON.stringify(submitted.body)).toBe(201);
+      expect(SubmitQuestResponseSchema.parse(submitted.body)).toMatchObject({
+        passed: true,
+        xpAwarded: 10,
+      });
+      const review = await request(app.getHttpServer())
+        .get(`/v1/api/quests/results/${submitted.body.resultId}`)
+        .set(as('other'));
+      expect(review.status, JSON.stringify(review.body)).toBe(200);
+      expect(
+        QuestResultReviewResponseSchema.parse(review.body).breakdown[0]?.prompt,
+      ).toBe('Original prompt?');
+      expect(await balance('other')).toBe(10);
+    },
+  );
+
+  it('archives completed content while preserving its Result and XP claim', async () => {
     await resetOther();
+    await db
+      .update(stages)
+      .set({ archivedAt: null })
+      .where(eq(stages.id, stageId));
+    await db
+      .update(zones)
+      .set({ archivedAt: null })
+      .where(eq(zones.id, zoneId));
+    await db
+      .update(regions)
+      .set({ archivedAt: null })
+      .where(eq(regions.id, regionId));
+    await db
+      .update(quests)
+      .set({ archivedAt: null })
+      .where(eq(quests.id, questId));
     const session = await start('other');
-    const retired = await request(app.getHttpServer())
-      .delete(`/v1/api/admin/stages/${stageId}`)
-      .set({ authorization: 'Bearer admin' });
-    expect(retired.status).toBe(204);
-    expect((await db.query.stages.findFirst({ where: eq(stages.id, stageId) }))?.archivedAt).not.toBeNull();
-
-    const catalog = await request(app.getHttpServer())
-      .get(`/v1/api/zones/${zoneId}/stages`).set(as());
-    expect(catalog.status).toBe(200);
-    expect(catalog.body).toEqual([]);
-    expect((await request(app.getHttpServer()).post(`/v1/api/quests/${questId}/start`).set(as())).status).not.toBe(201);
-
     const submitted = await submit(session.id, correct(), 'other');
-    expect(SubmitQuestResponseSchema.parse(submitted.body)).toMatchObject({ passed: true, xpAwarded: 10 });
-    const review = await request(app.getHttpServer())
-      .get(`/v1/api/quests/results/${submitted.body.resultId}`).set(as());
-    expect(QuestResultReviewResponseSchema.parse(review.body).breakdown[0]?.prompt).toBe('Original prompt?');
+    expect(SubmitQuestResponseSchema.parse(submitted.body)).toMatchObject({
+      passed: true,
+      xpAwarded: 10,
+    });
+
+    expect(
+      (
+        await request(app.getHttpServer())
+          .delete(`/v1/api/admin/stages/${stageId}`)
+          .set({ authorization: 'Bearer admin' })
+      ).status,
+    ).toBe(204);
+    expect(
+      await db.query.results.findFirst({
+        where: eq(results.id, submitted.body.resultId),
+      }),
+    ).toBeDefined();
+    expect(
+      await db.query.questXpAwards.findFirst({
+        where: and(
+          eq(questXpAwards.userId, otherId),
+          eq(questXpAwards.questId, questId),
+        ),
+      }),
+    ).toBeDefined();
     expect(await balance('other')).toBe(10);
+    expect(
+      (
+        await request(app.getHttpServer())
+          .get(`/v1/api/quests/results/${submitted.body.resultId}`)
+          .set(as('other'))
+      ).status,
+    ).toBe(200);
+  });
+
+  it('hard deletes unused Region content with its descendants', async () => {
+    const [region] = await db
+      .insert(regions)
+      .values({ name: 'Unused', slug: `unused-${suffix}` })
+      .returning();
+    const [zone] = await db
+      .insert(zones)
+      .values({
+        regionId: region!.id,
+        name: 'Unused',
+        slug: `unused-${suffix}`,
+      })
+      .returning();
+    const [stage] = await db
+      .insert(stages)
+      .values({ zoneId: zone!.id, title: 'Unused', slug: `unused-${suffix}` })
+      .returning();
+    const [quest] = await db
+      .insert(quests)
+      .values({ stageId: stage!.id, title: 'Unused' })
+      .returning();
+    const [question] = await db
+      .insert(questQuestions)
+      .values({ questId: quest!.id, prompt: 'Unused?' })
+      .returning();
+    const [option] = await db
+      .insert(questOptions)
+      .values({ questionId: question!.id, text: 'Unused' })
+      .returning();
+
+    expect(
+      (
+        await request(app.getHttpServer())
+          .delete(`/v1/api/admin/regions/${region!.id}`)
+          .set({ authorization: 'Bearer admin' })
+      ).status,
+    ).toBe(204);
+    expect(
+      await db.query.regions.findFirst({ where: eq(regions.id, region!.id) }),
+    ).toBeUndefined();
+    expect(
+      await db.query.zones.findFirst({ where: eq(zones.id, zone!.id) }),
+    ).toBeUndefined();
+    expect(
+      await db.query.stages.findFirst({ where: eq(stages.id, stage!.id) }),
+    ).toBeUndefined();
+    expect(
+      await db.query.quests.findFirst({ where: eq(quests.id, quest!.id) }),
+    ).toBeUndefined();
+    expect(
+      await db.query.questQuestions.findFirst({
+        where: eq(questQuestions.id, question!.id),
+      }),
+    ).toBeUndefined();
+    expect(
+      await db.query.questOptions.findFirst({
+        where: eq(questOptions.id, option!.id),
+      }),
+    ).toBeUndefined();
   });
 });
