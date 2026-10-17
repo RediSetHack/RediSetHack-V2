@@ -12,6 +12,8 @@ const okResult: ExecutionResult = {
   stderr: '',
   exitCode: 0,
   executionTimeMs: 42,
+  requestDurationMs: 50,
+  failureType: 'none',
 };
 
 describe('ExecuteCodeUseCase', () => {
@@ -21,11 +23,14 @@ describe('ExecuteCodeUseCase', () => {
     };
     const useCase = new ExecuteCodeUseCase(codeExecution);
 
-    const result = await useCase.execute({
-      language: 'python',
-      code: "print('hi')",
-      stdin: '',
-    });
+    const result = await useCase.execute(
+      {
+        language: 'python',
+        code: "print('hi')",
+        stdin: '',
+      },
+      'learner-1',
+    );
 
     expect(codeExecution.execute).toHaveBeenCalledWith({
       language: 'python',
@@ -41,7 +46,10 @@ describe('ExecuteCodeUseCase', () => {
     };
     const useCase = new ExecuteCodeUseCase(codeExecution);
 
-    await useCase.execute({ language: 'javascript', code: 'console.log(1)' });
+    await useCase.execute(
+      { language: 'javascript', code: 'console.log(1)' },
+      'learner-1',
+    );
 
     expect(codeExecution.execute).toHaveBeenCalledWith(
       expect.objectContaining({ stdin: '' }),
@@ -56,9 +64,9 @@ describe('ExecuteCodeUseCase', () => {
       };
       const useCase = new ExecuteCodeUseCase(codeExecution);
 
-      await expect(useCase.execute({ language, code: 'x' })).resolves.toEqual(
-        okResult,
-      );
+      await expect(
+        useCase.execute({ language, code: 'x' }, 'learner-1'),
+      ).resolves.toEqual(okResult);
     },
   );
 
@@ -67,7 +75,7 @@ describe('ExecuteCodeUseCase', () => {
     const useCase = new ExecuteCodeUseCase(codeExecution);
 
     await expect(
-      useCase.execute({ language: 'ruby', code: 'puts 1' }),
+      useCase.execute({ language: 'ruby', code: 'puts 1' }, 'learner-1'),
     ).rejects.toBeInstanceOf(UnsupportedLanguageError);
     expect(codeExecution.execute).not.toHaveBeenCalled();
   });
@@ -79,7 +87,50 @@ describe('ExecuteCodeUseCase', () => {
     const useCase = new ExecuteCodeUseCase(codeExecution);
 
     await expect(
-      useCase.execute({ language: 'c', code: 'int main(){}' }),
+      useCase.execute({ language: 'c', code: 'int main(){}' }, 'learner-1'),
     ).rejects.toThrow('provider unavailable');
+  });
+
+  it('limits concurrent executions per learner while allowing another learner', async () => {
+    const finishes: ((result: ExecutionResult) => void)[] = [];
+    const codeExecution: CodeExecutionPort = {
+      execute: vi.fn().mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            finishes.push(resolve);
+          }),
+      ),
+    };
+    const useCase = new ExecuteCodeUseCase(codeExecution);
+    const first = useCase.execute(
+      { language: 'python', code: 'x' },
+      'learner-1',
+    );
+    await expect(
+      useCase.execute({ language: 'python', code: 'x' }, 'learner-1'),
+    ).rejects.toThrow('limit');
+    const other = useCase.execute(
+      { language: 'python', code: 'x' },
+      'learner-2',
+    );
+    finishes[0](okResult);
+    await first;
+    finishes[1](okResult);
+    await other;
+  });
+
+  it('limits each learner to ten requests per minute', async () => {
+    const codeExecution: CodeExecutionPort = {
+      execute: vi.fn().mockResolvedValue(okResult),
+    };
+    const useCase = new ExecuteCodeUseCase(codeExecution);
+    for (let i = 0; i < 10; i++)
+      await useCase.execute({ language: 'python', code: 'x' }, 'learner-1');
+    await expect(
+      useCase.execute({ language: 'python', code: 'x' }, 'learner-1'),
+    ).rejects.toThrow('limit');
+    await expect(
+      useCase.execute({ language: 'python', code: 'x' }, 'learner-2'),
+    ).resolves.toEqual(okResult);
   });
 });

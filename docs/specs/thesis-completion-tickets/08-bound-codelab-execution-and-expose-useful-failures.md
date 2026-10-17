@@ -27,3 +27,12 @@ None (can start immediately).
 ## Further notes
 
 Traceability: G11; Interactive Programming Environment.
+
+## Provider isolation gate
+
+The API fails closed unless `CODE_EXECUTION_SANDBOX_VERIFIED=true`. Set it only
+after verifying the configured Piston deployment in an authorized disposable
+environment: confirm per-process CPU and memory limits, execution timeout, no
+network access from learner programs, and cleanup of the execution container
+after both success and timeout. The public default endpoint has not been
+verified by this repository; keep the gate false when using it.

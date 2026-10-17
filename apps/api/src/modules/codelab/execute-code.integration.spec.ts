@@ -16,6 +16,10 @@ import { ClerkAuthGuard } from '../auth/presentation/guards/clerk-auth.guard.js'
 import { CodeExecutionPort } from './domain/ports/code-execution.port.js';
 import { ExecuteCodeUseCase } from './application/execute-code.use-case.js';
 import { ExecuteCodeController } from './presentation/controllers/execute-code.controller.js';
+import {
+  CodeExecutionTimeoutError,
+  CodeExecutionUnavailableError,
+} from './domain/errors.js';
 
 describe('POST /v1/api/codelab/execute integration', () => {
   let app: INestApplication;
@@ -26,6 +30,8 @@ describe('POST /v1/api/codelab/execute integration', () => {
       stderr: '',
       exitCode: 0,
       executionTimeMs: 12,
+      requestDurationMs: 20,
+      failureType: 'none',
     }),
   };
 
@@ -50,6 +56,8 @@ describe('POST /v1/api/codelab/execute integration', () => {
       stderr: '',
       exitCode: 0,
       executionTimeMs: 12,
+      requestDurationMs: 20,
+      failureType: 'none',
     });
 
     const moduleRef = await Test.createTestingModule({
@@ -97,6 +105,8 @@ describe('POST /v1/api/codelab/execute integration', () => {
       stderr: '',
       exitCode: 0,
       executionTimeMs: 12,
+      requestDurationMs: 20,
+      failureType: 'none',
     });
     expect(fakeCodeExecution.execute).toHaveBeenCalledWith({
       language: 'python',
@@ -105,12 +115,25 @@ describe('POST /v1/api/codelab/execute integration', () => {
     });
   });
 
+  it.each(['cpp', 'c', 'python', 'javascript', 'java'])(
+    'accepts supported language %s through HTTP',
+    async (language) => {
+      const res = await request(app.getHttpServer())
+        .post('/v1/api/codelab/execute')
+        .set(asLearner())
+        .send({ language, code: 'x', stdin: '' });
+      expect(res.status).toBe(201);
+    },
+  );
+
   it('surfaces compile and runtime errors as first-class output', async () => {
     vi.mocked(fakeCodeExecution.execute).mockResolvedValue({
       stdout: '',
       stderr: "NameError: name 'x' is not defined",
       exitCode: 1,
       executionTimeMs: 4,
+      requestDurationMs: 8,
+      failureType: 'runtime',
     });
 
     const res = await request(app.getHttpServer())
@@ -124,6 +147,27 @@ describe('POST /v1/api/codelab/execute integration', () => {
     expect(body.exitCode).toBe(1);
   });
 
+  it('returns compile-only failures through the learner endpoint', async () => {
+    vi.mocked(fakeCodeExecution.execute).mockResolvedValue({
+      stdout: '',
+      stderr: 'cannot compile: missing main',
+      exitCode: 1,
+      executionTimeMs: 0,
+      requestDurationMs: 17,
+      failureType: 'compile',
+    });
+    const res = await request(app.getHttpServer())
+      .post('/v1/api/codelab/execute')
+      .set(asLearner())
+      .send({ language: 'java', code: 'broken', stdin: '' });
+    expect(res.status).toBe(201);
+    expect(ExecuteCodeResponseSchema.parse(res.body)).toMatchObject({
+      stderr: 'cannot compile: missing main',
+      exitCode: 1,
+      executionTimeMs: 0,
+    });
+  });
+
   it('rejects an unsupported language with 400 and a clear message', async () => {
     const res = await request(app.getHttpServer())
       .post('/v1/api/codelab/execute')
@@ -131,5 +175,24 @@ describe('POST /v1/api/codelab/execute integration', () => {
       .send({ language: 'cobol', code: 'DISPLAY 1.', stdin: '' });
 
     expect(res.status).toBe(400);
+  });
+
+  it('maps execution timeout and provider outage to HTTP error statuses', async () => {
+    vi.mocked(fakeCodeExecution.execute).mockRejectedValueOnce(
+      new CodeExecutionTimeoutError(),
+    );
+    const timeout = await request(app.getHttpServer())
+      .post('/v1/api/codelab/execute')
+      .set(asLearner())
+      .send({ language: 'python', code: 'while True: pass', stdin: '' });
+    expect(timeout.status).toBe(504);
+    vi.mocked(fakeCodeExecution.execute).mockRejectedValueOnce(
+      new CodeExecutionUnavailableError(),
+    );
+    const unavailable = await request(app.getHttpServer())
+      .post('/v1/api/codelab/execute')
+      .set(asLearner())
+      .send({ language: 'python', code: 'print(1)', stdin: '' });
+    expect(unavailable.status).toBe(503);
   });
 });
