@@ -18,7 +18,11 @@ export type ExecutionResult = {
   stdout: string;
   stderr: string;
   exitCode: number;
+  /** Time spent executing learner code inside the provider sandbox. */
   executionTimeMs: number;
+  /** End-to-end duration of the API request to the provider. */
+  requestDurationMs: number;
+  failureType: 'none' | 'compile' | 'runtime';
 };
 
 export abstract class CodeExecutionPort {

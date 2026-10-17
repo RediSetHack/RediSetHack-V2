@@ -23,6 +23,7 @@ export type {
   LessonBlock,
 } from "@repo/contracts";
 import {
+  ExecuteCodeResponseSchema,
   QuestListResponseSchema,
   QuestResultReviewResponseSchema,
   QuestSessionResponseSchema,
@@ -330,7 +331,12 @@ export async function submitQuest(
 ): Promise<QuestSubmitResult> {
   const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/quests/${questId}/submit`;
   return SubmitQuestResponseSchema.parse(
-    await postAuthedJson<unknown>(endpoint, token, { sessionId, responses }, fetchFn),
+    await postAuthedJson<unknown>(
+      endpoint,
+      token,
+      { sessionId, responses },
+      fetchFn,
+    ),
   );
 }
 
@@ -366,7 +372,9 @@ export async function executeCode(
   fetchFn: typeof fetch = fetch,
 ): Promise<CodeExecutionResult> {
   const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/codelab/execute`;
-  return postAuthedJson<CodeExecutionResult>(endpoint, token, input, fetchFn);
+  return ExecuteCodeResponseSchema.parse(
+    await postAuthedJson<unknown>(endpoint, token, input, fetchFn),
+  );
 }
 
 /** Evaluates and awards pending or missed Badges for the learner, `POST /v1/api/badges/evaluate`. */

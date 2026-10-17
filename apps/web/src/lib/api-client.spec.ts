@@ -805,6 +805,8 @@ describe("api-client", () => {
           stderr: "",
           exitCode: 0,
           executionTimeMs: 9,
+          requestDurationMs: 14,
+          failureType: "none",
         }),
       });
 
@@ -835,6 +837,8 @@ describe("api-client", () => {
           stderr: "NameError: name 'x' is not defined",
           exitCode: 1,
           executionTimeMs: 4,
+          requestDurationMs: 8,
+          failureType: "runtime",
         }),
       });
 

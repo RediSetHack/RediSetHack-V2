@@ -6,13 +6,14 @@ import type { Language } from "@repo/contracts";
 import { Button } from "@/components/ui/button";
 import { executeCode, type CodeExecutionResult } from "@/lib/api-client";
 
-const LANGUAGES: readonly { readonly id: Language; readonly label: string }[] = [
-  { id: "python", label: "Python" },
-  { id: "javascript", label: "JavaScript" },
-  { id: "cpp", label: "C++" },
-  { id: "c", label: "C" },
-  { id: "java", label: "Java" },
-];
+const LANGUAGES: readonly { readonly id: Language; readonly label: string }[] =
+  [
+    { id: "python", label: "Python" },
+    { id: "javascript", label: "JavaScript" },
+    { id: "cpp", label: "C++" },
+    { id: "c", label: "C" },
+    { id: "java", label: "Java" },
+  ];
 
 const LANGUAGE_IDS = LANGUAGES.map((l) => l.id);
 
@@ -25,19 +26,28 @@ const STARTER_EXAMPLES: Record<Language, string> = {
 };
 
 function isLanguage(value: string | undefined): value is Language {
-  return value !== undefined && (LANGUAGE_IDS as readonly string[]).includes(value);
+  return (
+    value !== undefined && (LANGUAGE_IDS as readonly string[]).includes(value)
+  );
 }
 
-function OutputPanel({ result }: Readonly<{ result: CodeExecutionResult }>) {
+function OutputPanel({
+  result,
+  learnerElapsedTimeMs,
+}: Readonly<{ result: CodeExecutionResult; learnerElapsedTimeMs: number }>) {
   const hasOutput = result.stdout.length > 0 || result.stderr.length > 0;
-  const failed = result.exitCode !== 0;
+  const failed = result.failureType !== "none";
 
   return (
     <div className="rounded-md border border-border bg-card font-mono text-sm">
       <div className="border-b border-border/60 px-4 py-2 text-xs font-medium text-muted-foreground">
         {failed
-          ? `Program exited with code ${result.exitCode}`
-          : `Ran in ${result.executionTimeMs}ms`}
+          ? `${result.failureType === "compile" ? "Compilation failed" : "Program failed"} (exit code ${result.exitCode})`
+          : `Executed in ${result.executionTimeMs}ms`}
+        <span className="ml-3 font-normal">
+          Request: {result.requestDurationMs}ms · Total: {learnerElapsedTimeMs}
+          ms
+        </span>
       </div>
       {!hasOutput && (
         <p className="px-4 py-3 text-muted-foreground">
@@ -45,7 +55,9 @@ function OutputPanel({ result }: Readonly<{ result: CodeExecutionResult }>) {
         </p>
       )}
       {result.stdout.length > 0 && (
-        <pre className="overflow-x-auto whitespace-pre-wrap p-4">{result.stdout}</pre>
+        <pre className="overflow-x-auto whitespace-pre-wrap p-4">
+          {result.stdout}
+        </pre>
       )}
       {result.stderr.length > 0 && (
         <pre
@@ -71,8 +83,8 @@ export function CodelabEditor({
   initialCode,
 }: CodelabEditorProps) {
   const { getToken } = useAuth();
-  const [language, setLanguage] = useState<Language>(
-    () => (isLanguage(initialLanguage) ? initialLanguage : "python"),
+  const [language, setLanguage] = useState<Language>(() =>
+    isLanguage(initialLanguage) ? initialLanguage : "python",
   );
   const [code, setCode] = useState(
     () => initialCode ?? STARTER_EXAMPLES[language],
@@ -81,6 +93,7 @@ export function CodelabEditor({
   const [isRunning, setIsRunning] = useState(false);
   const [runError, setRunError] = useState<string | null>(null);
   const [result, setResult] = useState<CodeExecutionResult | null>(null);
+  const [learnerElapsedTimeMs, setLearnerElapsedTimeMs] = useState(0);
 
   function handleLanguageChange(next: Language) {
     setLanguage(next);
@@ -94,8 +107,11 @@ export function CodelabEditor({
   }
 
   async function handleRun() {
+    const startedAt = performance.now();
     setIsRunning(true);
     setRunError(null);
+    setResult(null);
+    setLearnerElapsedTimeMs(0);
     try {
       const token = await getToken();
       if (!token) {
@@ -107,6 +123,7 @@ export function CodelabEditor({
         stdin,
       });
       setResult(execution);
+      setLearnerElapsedTimeMs(Math.round(performance.now() - startedAt));
     } catch (err) {
       // The editor's inputs are left untouched — a failed run never discards
       // the learner's code.
@@ -128,7 +145,9 @@ export function CodelabEditor({
           <span className="text-muted-foreground">Language</span>
           <select
             value={language}
-            onChange={(event) => handleLanguageChange(event.target.value as Language)}
+            onChange={(event) =>
+              handleLanguageChange(event.target.value as Language)
+            }
             className="rounded-lg border border-input bg-background px-2.5 py-1.5 text-sm font-medium"
           >
             {LANGUAGES.map((languageOption) => (
@@ -185,7 +204,10 @@ export function CodelabEditor({
 
       {result && (
         <div aria-live="polite">
-          <OutputPanel result={result} />
+          <OutputPanel
+            result={result}
+            learnerElapsedTimeMs={learnerElapsedTimeMs}
+          />
         </div>
       )}
     </div>
