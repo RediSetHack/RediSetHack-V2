@@ -105,13 +105,16 @@ export class SubmitQuestUseCase {
       throw new QuestNotFoundError(input.questId);
     }
 
-    await assertStageAccess(this.stages, input.userId, quest.stageId);
-
     // Not found, not-owned, and wrong-Quest are indistinguishable to the
     // requester, matching Result review.
     const session = await this.quests.findSessionById(input.sessionId);
     if (session?.userId !== input.userId || session.questId !== input.questId) {
       throw new QuestSessionNotFoundError(input.sessionId);
+    }
+    if (session.status === 'active') {
+      const stage = await this.stages.findById(quest.stageId);
+      if (!stage) throw new QuestNotFoundError(input.questId);
+      if (!stage.archivedAt) await assertStageAccess(this.stages, input.userId, quest.stageId);
     }
     if (session.status !== 'active') {
       return this.replay(session, input.responses);

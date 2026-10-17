@@ -26,6 +26,7 @@ export class Region {
     public readonly slug: string,
     public readonly description: string | null,
     public readonly sortOrder: number,
+    public readonly archivedAt: Date | null = null,
   ) {}
 }
 
@@ -37,6 +38,7 @@ export class Zone {
     public readonly slug: string,
     public readonly description: string | null,
     public readonly sortOrder: number,
+    public readonly archivedAt: Date | null = null,
   ) {}
 }
 
@@ -49,6 +51,7 @@ export class Stage {
     public readonly lessonContent: LessonBlock[] | null,
     public readonly xpReward: number,
     public readonly sortOrder: number,
+    public readonly archivedAt: Date | null = null,
   ) {}
 }
 
@@ -62,6 +65,7 @@ export class Quest {
     public readonly passingScore: number,
     public readonly xpReward: number,
     public readonly questions: QuestQuestion[],
+    public readonly archivedAt: Date | null = null,
   ) {}
 }
 

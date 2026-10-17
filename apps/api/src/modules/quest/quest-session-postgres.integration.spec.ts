@@ -43,6 +43,8 @@ describe.skipIf(!dbUrl)('Quest Sessions over HTTP with PostgreSQL', () => {
   let app: INestApplication;
   let db: Database;
   let regionId: number;
+  let zoneId: number;
+  let stageId: number;
   let questId: number;
   let questionId: number;
   let correctOptionId: number;
@@ -59,9 +61,11 @@ describe.skipIf(!dbUrl)('Quest Sessions over HTTP with PostgreSQL', () => {
           ? learnerId
           : auth === 'Bearer other'
             ? otherId
+            : auth === 'Bearer admin'
+              ? 'qs-admin'
             : null;
       return id
-        ? { id, email: `${id}@example.test`, name: id, role: 'user' }
+        ? { id, email: `${id}@example.test`, name: id, role: id === 'qs-admin' ? 'admin' : 'user' }
         : null;
     },
   };
@@ -122,10 +126,12 @@ describe.skipIf(!dbUrl)('Quest Sessions over HTTP with PostgreSQL', () => {
       .insert(zones)
       .values({ regionId, name: 'Sessions', slug: `qs-${suffix}` })
       .returning();
+    zoneId = zone!.id;
     const [stage] = await db
       .insert(stages)
       .values({ zoneId: zone!.id, title: 'Sessions', slug: `qs-${suffix}` })
       .returning();
+    stageId = stage!.id;
     const [quest] = await db
       .insert(quests)
       .values({
@@ -308,6 +314,9 @@ describe.skipIf(!dbUrl)('Quest Sessions over HTTP with PostgreSQL', () => {
   it('keeps the accepted Result and credit when badge evaluation fails', async () => {
     await resetOther();
     const session = await start('other');
+    const completion = await request(app.getHttpServer())
+      .post(`/v1/api/stages/${stageId}/complete`).set(as('other'));
+    expect(completion.status).toBe(201);
     const badges = vi
       .spyOn(app.get(EvaluateBadgesUseCase), 'execute')
       .mockRejectedValueOnce(new Error('injected badge failure'));
@@ -530,5 +539,28 @@ describe.skipIf(!dbUrl)('Quest Sessions over HTTP with PostgreSQL', () => {
         .set({ isCorrect: true })
         .where(eq(questOptions.id, correctOptionId));
     }
+  });
+
+  it('retires an in-flight Stage without hiding its saved Result or losing XP', async () => {
+    await resetOther();
+    const session = await start('other');
+    const retired = await request(app.getHttpServer())
+      .delete(`/v1/api/admin/stages/${stageId}`)
+      .set({ authorization: 'Bearer admin' });
+    expect(retired.status).toBe(204);
+    expect((await db.query.stages.findFirst({ where: eq(stages.id, stageId) }))?.archivedAt).not.toBeNull();
+
+    const catalog = await request(app.getHttpServer())
+      .get(`/v1/api/zones/${zoneId}/stages`).set(as());
+    expect(catalog.status).toBe(200);
+    expect(catalog.body).toEqual([]);
+    expect((await request(app.getHttpServer()).post(`/v1/api/quests/${questId}/start`).set(as())).status).not.toBe(201);
+
+    const submitted = await submit(session.id, correct(), 'other');
+    expect(SubmitQuestResponseSchema.parse(submitted.body)).toMatchObject({ passed: true, xpAwarded: 10 });
+    const review = await request(app.getHttpServer())
+      .get(`/v1/api/quests/results/${submitted.body.resultId}`).set(as());
+    expect(QuestResultReviewResponseSchema.parse(review.body).breakdown[0]?.prompt).toBe('Original prompt?');
+    expect(await balance('other')).toBe(10);
   });
 });

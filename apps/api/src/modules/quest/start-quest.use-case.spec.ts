@@ -34,6 +34,15 @@ describe('StartQuestUseCase', () => {
     );
   });
 
+  it('does not start an archived Quest', async () => {
+    const archived = new Quest(1, 10, 'Loops 101', null, 60, 70, 50, new Date());
+    const useCase = new StartQuestUseCase(
+      new FakeQuestRepository(archived, makeQuestions()),
+      makeAvailableStageRepository(),
+    );
+    await expect(useCase.execute('user_1', 1)).rejects.toBeInstanceOf(QuestNotFoundError);
+  });
+
   it('persists an owned session with a snapshot and a server deadline', async () => {
     vi.useFakeTimers({ now: new Date('2026-09-15T12:00:00.000Z') });
     const repo = new FakeQuestRepository(quest, makeQuestions());

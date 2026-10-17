@@ -15,6 +15,7 @@ export const regions = pgTable(
     description: text("description"),
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
   },
   (table) => [uniqueIndex("regions_slug_unique").on(table.slug)],
 );
@@ -31,6 +32,7 @@ export const zones = pgTable(
     description: text("description"),
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
   },
   (table) => [
     uniqueIndex("zones_region_slug_unique").on(table.regionId, table.slug),
@@ -52,6 +54,7 @@ export const stages = pgTable(
     xpReward: integer("xp_reward").notNull().default(0),
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
   },
   (table) => [
     uniqueIndex("stages_zone_slug_unique").on(table.zoneId, table.slug),
@@ -72,6 +75,7 @@ export const quests = pgTable(
     passingScore: integer("passing_score").notNull().default(70),
     xpReward: integer("xp_reward").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
   },
   (table) => [index("quests_stage_id_index").on(table.stageId)],
 );

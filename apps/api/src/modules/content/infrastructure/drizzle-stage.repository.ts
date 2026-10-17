@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, eq } from 'drizzle-orm';
-import { stages, userProgress, type Database } from '@repo/db';
+import { and, asc, eq, isNull } from 'drizzle-orm';
+import { regions, stages, userProgress, zones, type Database } from '@repo/db';
 
 import { DB } from '../../../database/database.module.js';
 import { Stage } from '../domain/entities/stage.entity.js';
@@ -17,6 +17,7 @@ function toDomain(row: StageRow): Stage {
     row.lessonContent,
     row.xpReward,
     row.sortOrder,
+    row.archivedAt,
   );
 }
 
@@ -32,12 +33,11 @@ export class DrizzleStageRepository implements StageRepository {
   }
 
   async findByZoneId(zoneId: number): Promise<Stage[]> {
-    const rows = await this.database
-      .select()
-      .from(stages)
-      .where(eq(stages.zoneId, zoneId))
+    const rows = await this.database.select({ stage: stages }).from(stages)
+      .innerJoin(zones, eq(stages.zoneId, zones.id)).innerJoin(regions, eq(zones.regionId, regions.id))
+      .where(and(eq(stages.zoneId, zoneId), isNull(stages.archivedAt), isNull(zones.archivedAt), isNull(regions.archivedAt)))
       .orderBy(asc(stages.sortOrder));
-    return rows.map(toDomain);
+    return rows.map(({ stage }) => toDomain(stage));
   }
 
   async findCompletedStageIds(

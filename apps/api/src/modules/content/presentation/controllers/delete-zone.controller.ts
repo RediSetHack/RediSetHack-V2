@@ -17,7 +17,7 @@ export class DeleteZoneController {
   @Delete(':id')
   @HttpCode(204)
   @AdminOnly()
-  @ApiOperation({ summary: 'Delete a Zone.' })
+  @ApiOperation({ summary: 'Retire a Zone with history or delete an unused Zone.' })
   @ApiIdParam('Zone')
   @ApiEntityNotFound('Zone')
   async handle(@Param('id', ParseIntPipe) id: number) {

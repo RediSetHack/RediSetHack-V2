@@ -17,7 +17,7 @@ export class DeleteQuestController {
   @Delete(':id')
   @HttpCode(204)
   @AdminOnly()
-  @ApiOperation({ summary: 'Delete a Quest.' })
+  @ApiOperation({ summary: 'Retire a Quest with history or delete an unused Quest.' })
   @ApiIdParam('Quest')
   @ApiEntityNotFound('Quest')
   async handle(@Param('id', ParseIntPipe) id: number) {

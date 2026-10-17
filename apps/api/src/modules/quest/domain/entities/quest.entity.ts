@@ -7,6 +7,7 @@ export class Quest {
     public readonly timeLimitSeconds: number,
     public readonly passingScore: number,
     public readonly xpReward: number,
+    public readonly archivedAt: Date | null = null,
   ) {}
 }
 
