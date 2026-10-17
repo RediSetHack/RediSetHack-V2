@@ -352,7 +352,24 @@ describe("api-client", () => {
     });
   });
 
+
+  it("preserves the server eligibility explanation on direct Lesson and Quest routes", async () => {
+    const message = "Stage with id 2 is locked until its predecessor is completed";
+    const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 403, json: async () => ({ message }) });
+    await expect(getLesson("http://localhost:3001", "token", 2, mockFetch)).rejects.toMatchObject({ status: 403, message });
+    await expect(startQuestSession("http://localhost:3001", "token", 3, mockFetch)).rejects.toMatchObject({ status: 403, message });
+    await expect(submitQuest("http://localhost:3001", "token", 3, 1, [], mockFetch)).rejects.toMatchObject({ status: 403, message });
+  });
+
   describe("getStages", () => {
+    it("preserves server lock reasons and omitted Lesson bodies for the locked catalog", async () => {
+      const locked = { id: 2, zoneId: 1, title: "Locked", slug: "locked", xpReward: 20, sortOrder: 2, status: "locked", lockReason: "Complete the predecessor first" };
+      const mockFetch = vi.fn().mockResolvedValue({ ok: true, json: async () => [locked] });
+      const result = await getStages("http://localhost:3001", "token", 1, mockFetch);
+      expect(result[0]).toEqual(locked);
+      expect(result[0]?.lessonContent).toBeUndefined();
+    });
+
     it("throws ApiError 401 when token is missing", async () => {
       await expect(getStages("http://localhost:3001", "", 1)).rejects.toThrowError(ApiError);
     });
@@ -468,6 +485,7 @@ describe("api-client", () => {
             passingScore: 70,
             xpReward: 100,
             completed: false,
+            lockReason: null,
           },
         ],
       });

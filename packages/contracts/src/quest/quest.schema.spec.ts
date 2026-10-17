@@ -18,6 +18,7 @@ describe("QuestSchema", () => {
       passingScore: 70,
       xpReward: 100,
       completed: false,
+      lockReason: null,
     };
 
     expect(QuestSchema.parse(payload)).toEqual(payload);
@@ -33,6 +34,7 @@ describe("QuestSchema", () => {
       passingScore: 70,
       xpReward: 100,
       completed: true,
+      lockReason: null,
     };
 
     expect(QuestSchema.parse(payload)).toEqual(payload);
@@ -55,6 +57,7 @@ describe("QuestListResponseSchema", () => {
         passingScore: 70,
         xpReward: 100,
         completed: false,
+      lockReason: null,
       },
     ];
 

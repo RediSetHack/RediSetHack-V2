@@ -96,7 +96,7 @@ describe.skipIf(!database)('authored Quest PostgreSQL flow', () => {
       ],
     });
     questId = quest.id;
-    const start = new StartQuestUseCase(learnerQuests);
+    const start = new StartQuestUseCase(learnerQuests, new DrizzleStageRepository(database!));
     const initial = await start.execute(userId, questId);
     const initialSession = initial.session;
     const firstQuestionId = initialSession.questions[0]!.id;
@@ -104,6 +104,7 @@ describe.skipIf(!database)('authored Quest PostgreSQL flow', () => {
       learnerQuests,
       {} as never,
       { execute: async () => [] } as never,
+      new DrizzleStageRepository(database!),
     );
     const historicalResult = await submit.execute({
       userId,

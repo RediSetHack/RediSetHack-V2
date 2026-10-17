@@ -11,6 +11,7 @@ export class StagePresenter {
       xpReward: stage.xpReward,
       sortOrder: stage.sortOrder,
       status: stage.status,
+      lockReason: stage.lockReason,
     };
   }
 }

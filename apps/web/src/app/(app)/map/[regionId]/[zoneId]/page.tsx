@@ -47,6 +47,7 @@ function StageCard({
         className="block cursor-not-allowed rounded-md border border-border/60 p-4 opacity-60"
       >
         {body}
+        <p className="mt-2 text-sm text-muted-foreground">{stage.lockReason}</p>
       </div>
     );
   }

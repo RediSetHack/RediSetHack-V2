@@ -52,7 +52,7 @@ describe('ListStagesUseCase', () => {
     expect(result[2]!.status).toBe('completed');
   });
 
-  it('marks non-sequential completed stages correctly', async () => {
+  it('keeps a completed Stage locked when its predecessor is missing', async () => {
     const repo = makeRepo([1, 3]);
     const useCase = new ListStagesUseCase(repo);
 
@@ -60,7 +60,7 @@ describe('ListStagesUseCase', () => {
 
     expect(result[0]!.status).toBe('completed');
     expect(result[1]!.status).toBe('available');
-    expect(result[2]!.status).toBe('completed');
+    expect(result[2]!.status).toBe('locked');
   });
 
   it('sorts stages by sortOrder regardless of id order', async () => {

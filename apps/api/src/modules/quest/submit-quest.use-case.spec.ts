@@ -1,3 +1,4 @@
+import { makeAvailableStageRepository } from '../content/fake-stage.fixture.js';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { UserRepository } from '../auth/domain/ports/user.repository.js';
@@ -108,6 +109,7 @@ function makeUseCase(
     quests,
     makeGetTodayEvent(multiplier),
     badges,
+    makeAvailableStageRepository(),
   );
 }
 

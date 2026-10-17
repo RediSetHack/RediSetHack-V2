@@ -25,3 +25,10 @@ export function makeFakeStageRepository(
     },
   };
 }
+
+export function makeAvailableStageRepository(): StageRepository {
+  return makeFakeStageRepository(
+    new Map([[1, [new Stage(10, 1, 'Intro', 'intro', [], 0, 0)]]]),
+    new Set(),
+  );
+}

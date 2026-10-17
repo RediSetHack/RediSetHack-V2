@@ -1,3 +1,5 @@
+import { ContentModule } from '../content/content.module.js';
+
 import { Module } from '@nestjs/common';
 
 import { BadgeModule } from '../badge/badge.module.js';
@@ -14,7 +16,7 @@ import { SubmitQuestController } from './presentation/controllers/submit-quest.c
 import { ViewQuestResultController } from './presentation/controllers/view-quest-result.controller.js';
 
 @Module({
-  imports: [BadgeModule, DailyEventModule],
+  imports: [BadgeModule, DailyEventModule, ContentModule],
   controllers: [
     ListQuestsController,
     StartQuestController,

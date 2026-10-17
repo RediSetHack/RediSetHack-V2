@@ -1,3 +1,5 @@
+import { makeAvailableStageRepository } from '../content/fake-stage.fixture.js';
+import { StageRepository } from '../content/domain/ports/stage.repository.js';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import type { IncomingMessage } from 'node:http';
@@ -135,6 +137,7 @@ describe('Quest Session integration (start, submit, review)', () => {
         ViewQuestResultController,
       ],
       providers: [
+        { provide: StageRepository, useValue: makeAvailableStageRepository() },
         { provide: QuestRepository, useValue: fakeQuests },
         { provide: UserRepository, useValue: fakeUsers },
         { provide: BadgeRepository, useValue: fakeBadges },

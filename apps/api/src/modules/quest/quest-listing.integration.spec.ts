@@ -1,3 +1,5 @@
+import { makeAvailableStageRepository } from '../content/fake-stage.fixture.js';
+import { StageRepository } from '../content/domain/ports/stage.repository.js';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import type { IncomingMessage } from 'node:http';
@@ -75,6 +77,7 @@ describe('Quest listing integration (GET /v1/api/quests)', () => {
     const moduleRef = await Test.createTestingModule({
       controllers: [ListQuestsController],
       providers: [
+        { provide: StageRepository, useValue: makeAvailableStageRepository() },
         { provide: QuestRepository, useValue: fakeQuests },
         { provide: ClerkAuthPort, useValue: fakeClerk },
         { provide: UserRepository, useValue: fakeUsers },
@@ -134,6 +137,7 @@ describe('Quest listing integration (GET /v1/api/quests)', () => {
         passingScore: 70,
         xpReward: 100,
         completed: true,
+        lockReason: null,
       },
       {
         id: 2,
@@ -144,6 +148,7 @@ describe('Quest listing integration (GET /v1/api/quests)', () => {
         passingScore: 60,
         xpReward: 50,
         completed: false,
+        lockReason: null,
       },
     ]);
   });

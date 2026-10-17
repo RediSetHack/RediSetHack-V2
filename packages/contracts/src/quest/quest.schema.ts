@@ -18,6 +18,7 @@ export const QuestSchema = z.object({
   passingScore: z.number().int().min(0).max(100),
   xpReward: z.number().int().nonnegative(),
   completed: z.boolean(),
+  lockReason: z.string().nullable(),
 });
 export type Quest = z.infer<typeof QuestSchema>;
 

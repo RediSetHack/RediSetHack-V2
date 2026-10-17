@@ -31,7 +31,7 @@ export default async function StagePage({
     if (error instanceof ApiError && error.status === 403) {
       return (
         <output className="block p-6 text-muted-foreground">
-          This Stage is locked — finish the Stage before it to unlock the Lesson.
+          {error.message}
         </output>
       );
     }
