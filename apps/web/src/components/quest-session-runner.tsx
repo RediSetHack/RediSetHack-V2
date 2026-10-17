@@ -208,7 +208,7 @@ export function QuestSessionRunner({
       {question && (
         <fieldset className="rounded-xl border border-border bg-card p-4">
           <legend className="px-1 font-medium text-foreground">{question.prompt}</legend>
-          {(question.difficulty || question.competencies?.length) && (
+          {(Boolean(question.difficulty) || (question.competencies?.length ?? 0) > 0) && (
             <div className="mb-3 text-sm text-muted-foreground">
               {question.difficulty && <p>Difficulty: {question.difficulty}</p>}
               {question.competencies?.map((competency) => <p key={competency.id}>{competency.objective}</p>)}
