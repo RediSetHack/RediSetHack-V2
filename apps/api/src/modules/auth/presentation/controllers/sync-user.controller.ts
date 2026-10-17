@@ -19,7 +19,7 @@ import type { IncomingMessage } from "node:http";
 
 import { ClerkAuthPort, type ClerkAuthenticatedUser } from "../../domain/ports/clerk-auth.port.js";
 import { EnsureUserUseCase } from "../../application/ensure-user.use-case.js";
-import { InvalidUserEmailError } from "../../domain/errors.js";
+import { InvalidUserEmailError, UserDeletedError } from "../../domain/errors.js";
 import { UserPresenter } from "../presenters/user.presenter.js";
 
 export class SyncUserRequestDto {
@@ -47,7 +47,7 @@ export class SyncUserController {
     summary: 'Create or update the authenticated User from the Clerk session.',
   })
   @ApiUnauthorizedResponse({
-    description: 'Missing or invalid authentication token.',
+    description: 'Missing or invalid authentication token, or account was deleted.',
   })
   @ApiServiceUnavailableResponse({
     description: 'Verified email is temporarily unavailable; retry onboarding.',
@@ -70,6 +70,9 @@ export class SyncUserController {
       const user = await this.ensureUser.execute(identity);
       return UserPresenter.toResponse(user);
     } catch (error) {
+      if (error instanceof UserDeletedError) {
+        throw new UnauthorizedException("This account has been deleted");
+      }
       if (error instanceof InvalidUserEmailError) {
         throw new ServiceUnavailableException(
           "Verified email is not available yet. Retry onboarding shortly.",

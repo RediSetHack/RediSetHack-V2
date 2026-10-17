@@ -20,6 +20,8 @@ import type { Request } from "express";
 import { Webhook } from "svix";
 
 import { EnsureUserUseCase } from "../../application/ensure-user.use-case.js";
+import { DeleteUserUseCase } from "../../application/delete-user.use-case.js";
+import { UserDeletedError } from "../../domain/errors.js";
 import type { ClerkAuthenticatedUser } from "../../domain/ports/clerk-auth.port.js";
 
 export const CLERK_WEBHOOK_SECRET = Symbol("CLERK_WEBHOOK_SECRET");
@@ -80,6 +82,7 @@ export class ClerkWebhookController {
 
   constructor(
     private readonly ensureUser: EnsureUserUseCase,
+    private readonly deleteUser: DeleteUserUseCase,
     @Inject(CLERK_WEBHOOK_SECRET) webhookSecret: string,
   ) {
     this.webhook = webhookSecret && webhookSecret.length > 0 ? new Webhook(webhookSecret) : null;
@@ -87,10 +90,10 @@ export class ClerkWebhookController {
 
   @Post("webhook")
   @ApiOperation({
-    summary: 'Sync a User from a Clerk webhook event.',
+    summary: 'Apply a Clerk user lifecycle event.',
     description:
       'Called by Clerk, not by clients. Authenticated by a svix signature ' +
-      'over the raw body, not a bearer token. Payload shape is Clerk’s own.',
+      'over the raw body, not a bearer token. Deletion is terminal for that immutable Clerk ID; delayed create/update events are acknowledged and ignored.',
   })
   @ApiUnauthorizedResponse({ description: 'Invalid webhook signature.' })
   @ApiServiceUnavailableResponse({
@@ -115,10 +118,18 @@ export class ClerkWebhookController {
     }
     event = JSON.parse(payload) as WebhookEvent;
 
-    if (event.type === "user.created" || event.type === "user.updated") {
+    if (event.type === "user.deleted") {
+      const id = extractId(event.data?.["id"]);
+      if (id) await this.deleteUser.execute(id);
+    } else if (event.type === "user.created" || event.type === "user.updated") {
       const identity = toClerkAuthenticatedUser(event.data ?? {});
       if (identity.id) {
-        await this.ensureUser.execute(identity);
+        try {
+          await this.ensureUser.execute(identity);
+        } catch (error) {
+          if (!(error instanceof UserDeletedError)) throw error;
+          this.logger.debug(`Ignoring provisioning event for deleted user ${identity.id}`);
+        }
       }
     }
 

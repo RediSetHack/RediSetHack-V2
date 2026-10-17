@@ -18,3 +18,10 @@ export class InvalidUserEmailError extends Error {
     this.name = "InvalidUserEmailError";
   }
 }
+
+export class UserDeletedError extends Error {
+  constructor(userId: string) {
+    super(`User ${userId} has been deleted`);
+    this.name = "UserDeletedError";
+  }
+}

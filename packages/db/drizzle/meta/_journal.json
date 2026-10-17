@@ -64,6 +64,13 @@
       "when": 1792242386976,
       "tag": "0008_sour_black_panther",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792247323857,
+      "tag": "0009_illegal_gargoyle",
+      "breakpoints": true
     }
   ]
 }

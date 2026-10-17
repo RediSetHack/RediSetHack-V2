@@ -2,6 +2,7 @@ import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from
 import type { IncomingMessage } from "node:http";
 
 import { EnsureUserUseCase } from "../../application/ensure-user.use-case.js";
+import { UserDeletedError } from "../../domain/errors.js";
 import { ClerkAuthPort } from "../../domain/ports/clerk-auth.port.js";
 import type { AuthContext } from "../../auth.types.js";
 
@@ -18,7 +19,15 @@ export class ClerkAuthGuard implements CanActivate {
     if (!session) {
       throw new UnauthorizedException("Missing or invalid authentication token");
     }
-    const user = await this.ensureUser.execute(session);
+    let user;
+    try {
+      user = await this.ensureUser.execute(session);
+    } catch (error) {
+      if (error instanceof UserDeletedError) {
+        throw new UnauthorizedException("This account has been deleted");
+      }
+      throw error;
+    }
     const authContext: AuthContext = { session, user };
     request.authContext = authContext;
     return true;
