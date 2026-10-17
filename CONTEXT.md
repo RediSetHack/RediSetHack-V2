@@ -5,10 +5,13 @@ RediSetHack is a programming learning platform with lessons, quizzes, code pract
 ## Language
 
 **Region**:
-A top-level grouping in the learning catalog containing Zones.
+A top-level grouping in the learning catalog containing Zones. A Region with a story introduction is designated as a **Novel**; existing Regions without one remain ordinary catalog groupings.
+
+**Novel**:
+A story-driven journey represented by a designated Region. Its story introduction provides context; a learner resumes at the first available Stage using the existing Stage Completion records.
 
 **Zone**:
-A subdivision of a Region containing Stages.
+A subdivision of a Region containing Stages. Within a Novel, a Zone is a **chapter**.
 
 **Stage**:
 A numbered learning unit within a Zone, with lesson content and an XP reward for completion.

@@ -8,6 +8,7 @@ export class RegionPresenter {
       slug: region.slug,
       description: region.description,
       sortOrder: region.sortOrder,
+      storyIntro: region.storyIntro,
     };
   }
 }

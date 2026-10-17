@@ -6,5 +6,6 @@ export class Region {
     public readonly description: string | null,
     public readonly sortOrder: number,
     public readonly archivedAt: Date | null = null,
+    public readonly storyIntro: string | null = null,
   ) {}
 }

@@ -107,7 +107,7 @@ describe('content browsing integration (Region → Zone → Stage)', () => {
   const asLearner = () => ({ authorization: 'Bearer valid-token' });
 
   it('lists Regions without authentication', async () => {
-    regions.set(1, new Region(1, 'Foundations', 'foundations', null, 1));
+    regions.set(1, new Region(1, 'Foundations', 'foundations', null, 1, null, 'A story introduction.'));
 
     const res = await request(app.getHttpServer()).get('/v1/api/regions');
 
@@ -120,6 +120,7 @@ describe('content browsing integration (Region → Zone → Stage)', () => {
         slug: 'foundations',
         description: null,
         sortOrder: 1,
+        storyIntro: 'A story introduction.',
       },
     ]);
   });

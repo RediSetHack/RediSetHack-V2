@@ -91,9 +91,9 @@ These are source-traced findings, not runtime reproductions. Resolve them before
 
 ### Accounts, onboarding, and story learning
 
-- [ ] Resolve the meaning of Novel/chapter/activity relative to Region/Zone/Stage before migrating schema, URLs, or contracts. Preserve the ADR-defined architecture and existing learner progress.
+- [x] Resolve Novel/chapter/encounter as Region/Zone/Stage, preserving existing URLs and progress; see [ADR 0007](adr/0007-novel-catalog-mapping.md).
 - [ ] Add an initial assessment tied to named competencies, persist the baseline and completion state, and connect it to onboarding.
-- [ ] Add the Novel narrative/content structure and completion tracking required by the approved terminology mapping; reuse current catalog primitives where they fit.
+- [x] Add story introductions, seed one two-chapter Novel, and display chapter completion/resume from existing Stage Completion records. Broader assessed coding/security activities remain separate thesis work.
 - [ ] Provide a usable programming-and-security learning path with reviewed teaching materials. The committed seed currently creates characters only; test fixtures are not a curriculum.
 - [ ] Support graded coding activities with activity IDs, expected behavior/test cases, submissions, attempts, and feedback.
 - [ ] Add secure-programming scenarios and assessments that teach and evaluate specific security objectives alongside programming.

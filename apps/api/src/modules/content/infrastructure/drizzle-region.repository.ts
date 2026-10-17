@@ -9,7 +9,15 @@ import { RegionRepository } from '../domain/ports/region.repository.js';
 type RegionRow = typeof regions.$inferSelect;
 
 function toDomain(row: RegionRow): Region {
-  return new Region(row.id, row.name, row.slug, row.description, row.sortOrder, row.archivedAt);
+  return new Region(
+    row.id,
+    row.name,
+    row.slug,
+    row.description,
+    row.sortOrder,
+    row.archivedAt,
+    row.storyIntro,
+  );
 }
 
 @Injectable()

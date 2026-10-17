@@ -7,6 +7,7 @@ export const RegionSchema = z.object({
   slug: z.string(),
   description: z.string().nullable(),
   sortOrder: z.number().int(),
+  storyIntro: z.string().nullable(),
 });
 export type Region = z.infer<typeof RegionSchema>;
 

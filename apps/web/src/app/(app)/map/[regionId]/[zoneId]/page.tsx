@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getStages, type Stage } from "@/lib/api-client";
+import { getRegions, getStages, getZones, type Stage } from "@/lib/api-client";
 
 const STATUS_LABEL: Record<Stage["status"], string> = {
   locked: "Locked",
@@ -25,10 +25,7 @@ function StatusBadge({ status }: Readonly<{ status: Stage["status"] }>) {
   );
 }
 
-function StageCard({
-  stage,
-  href,
-}: Readonly<{ stage: Stage; href: string }>) {
+function StageCard({ stage, href }: Readonly<{ stage: Stage; href: string }>) {
   const body = (
     <>
       <div className="flex items-center justify-between gap-2">
@@ -78,8 +75,18 @@ export default async function ZoneStagesPage({
   const token = await getToken();
 
   let stages: Stage[];
+  let chapterName: string | undefined;
+  let storyIntro: string | null = null;
   try {
-    stages = await getStages(apiUrl, token ?? "", zoneIdNumber);
+    const [stageList, regions, zones] = await Promise.all([
+      getStages(apiUrl, token ?? "", zoneIdNumber),
+      getRegions(apiUrl),
+      getZones(apiUrl, regionIdNumber),
+    ]);
+    stages = stageList;
+    chapterName = zones.find(({ id }) => id === zoneIdNumber)?.name;
+    storyIntro =
+      regions.find(({ id }) => id === regionIdNumber)?.storyIntro ?? null;
   } catch {
     return (
       <p role="alert" className="p-6 text-destructive">
@@ -98,7 +105,12 @@ export default async function ZoneStagesPage({
 
   return (
     <div className="mx-auto w-full max-w-3xl p-6">
-      <h1 className="text-2xl font-bold tracking-tight">Stages</h1>
+      <h1 className="text-2xl font-bold tracking-tight">
+        {storyIntro && chapterName ? `Chapter: ${chapterName}` : "Stages"}
+      </h1>
+      {storyIntro && (
+        <p className="mt-2 text-sm text-muted-foreground">{storyIntro}</p>
+      )}
       <ol className="mt-4 flex flex-col gap-2">
         {stages.map((stage) => (
           <li key={stage.id}>
