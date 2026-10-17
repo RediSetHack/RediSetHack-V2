@@ -4,6 +4,7 @@ export interface CatalogListItem {
   readonly id: number;
   readonly name: string;
   readonly description: string | null;
+  readonly storyIntro?: string | null;
 }
 
 /** A list of catalog cards (Regions or Zones), each linking to its children. */
@@ -27,6 +28,9 @@ export function CatalogList<T extends CatalogListItem>({
               <p className="text-sm text-muted-foreground">
                 {item.description}
               </p>
+            )}
+            {item.storyIntro && (
+              <p className="mt-2 text-sm">Novel · {item.storyIntro}</p>
             )}
           </Link>
         </li>

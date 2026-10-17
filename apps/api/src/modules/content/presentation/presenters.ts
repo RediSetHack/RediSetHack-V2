@@ -15,6 +15,7 @@ export class RegionPresenter {
       slug: entity.slug,
       description: entity.description,
       sortOrder: entity.sortOrder,
+      storyIntro: entity.storyIntro,
     };
   }
 }

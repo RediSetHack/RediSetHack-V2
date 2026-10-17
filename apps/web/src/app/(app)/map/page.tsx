@@ -25,7 +25,7 @@ export default async function MapPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl p-6">
-      <h1 className="text-2xl font-bold tracking-tight">Regions</h1>
+      <h1 className="text-2xl font-bold tracking-tight">Novels and Regions</h1>
       <CatalogList items={regions} hrefFor={(region) => `/map/${region.id}`} />
     </div>
   );

@@ -7,6 +7,7 @@ export abstract class RegionRepository {
     slug: string;
     description: string | null;
     sortOrder: number;
+    storyIntro: string | null;
   }): Promise<Region>;
   abstract update(
     id: number,
@@ -15,6 +16,7 @@ export abstract class RegionRepository {
       slug: string;
       description: string | null;
       sortOrder: number;
+      storyIntro: string | null;
     }>,
   ): Promise<Region | null>;
   abstract delete(id: number): Promise<boolean>;

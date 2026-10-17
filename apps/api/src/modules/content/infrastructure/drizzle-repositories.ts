@@ -47,6 +47,7 @@ export class DrizzleRegionRepository implements RegionRepository {
     slug: string;
     description: string | null;
     sortOrder: number;
+    storyIntro: string | null;
   }): Promise<Region> {
     const rows = await this.database.insert(regions).values(input).returning();
     return toRegion(rows[0]!);
@@ -59,6 +60,7 @@ export class DrizzleRegionRepository implements RegionRepository {
       slug: string;
       description: string | null;
       sortOrder: number;
+      storyIntro: string | null;
     }>,
   ): Promise<Region | null> {
     const rows = await this.database
@@ -369,7 +371,7 @@ export class DrizzleBadgeDefinitionRepository implements BadgeDefinitionReposito
 // --- row -> domain mappers ---------------------------------------------
 
 function toRegion(row: typeof regions.$inferSelect): Region {
-  return new Region(row.id, row.name, row.slug, row.description, row.sortOrder, row.archivedAt);
+  return new Region(row.id, row.name, row.slug, row.description, row.sortOrder, row.archivedAt, row.storyIntro);
 }
 
 function toZone(row: typeof zones.$inferSelect): Zone {

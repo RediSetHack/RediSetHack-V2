@@ -6,6 +6,7 @@ export type CreateRegionInput = {
   slug: string;
   description?: string | null;
   sortOrder?: number;
+  storyIntro?: string | null;
 };
 
 export class CreateRegionUseCase {
@@ -16,6 +17,7 @@ export class CreateRegionUseCase {
       slug: input.slug,
       description: input.description ?? null,
       sortOrder: input.sortOrder ?? 0,
+      storyIntro: input.storyIntro ?? null,
     });
   }
 }
