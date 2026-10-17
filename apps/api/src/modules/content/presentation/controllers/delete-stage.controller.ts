@@ -17,7 +17,7 @@ export class DeleteStageController {
   @Delete(':id')
   @HttpCode(204)
   @AdminOnly()
-  @ApiOperation({ summary: 'Delete a Stage.' })
+  @ApiOperation({ summary: 'Retire a Stage with history or delete an unused Stage.' })
   @ApiIdParam('Stage')
   @ApiEntityNotFound('Stage')
   async handle(@Param('id', ParseIntPipe) id: number) {

@@ -31,6 +31,7 @@ function makeRepo(overrides: Partial<StageRepository> = {}): StageRepository {
   return {
     findById: vi.fn(),
     findByZoneId: vi.fn().mockResolvedValue(stages),
+    hasArchivedAncestor: vi.fn().mockResolvedValue(false),
     findCompletedStageIds: vi.fn().mockResolvedValue([]),
     ...overrides,
   };

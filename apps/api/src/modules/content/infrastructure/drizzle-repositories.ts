@@ -1,12 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { asc, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
 import {
   badgeDefinitions,
   quests,
+  questSessions,
+  questXpAwards,
   questQuestions,
   questOptions,
+  results,
   regions,
   stages,
+  userProgress,
   zones,
   type Database,
 } from '@repo/db';
@@ -67,11 +71,16 @@ export class DrizzleRegionRepository implements RegionRepository {
   }
 
   async delete(id: number): Promise<boolean> {
-    const rows = await this.database
-      .delete(regions)
-      .where(eq(regions.id, id))
-      .returning({ id: regions.id });
-    return rows.length > 0;
+    return this.database.transaction(async (tx) => {
+      const history = await tx.select({ id: userProgress.id }).from(userProgress).innerJoin(stages, eq(userProgress.stageId, stages.id)).innerJoin(zones, eq(stages.zoneId, zones.id)).where(eq(zones.regionId, id)).limit(1);
+      const resultHistory = await tx.select({ id: results.id }).from(results).innerJoin(quests, eq(results.questId, quests.id)).innerJoin(stages, eq(quests.stageId, stages.id)).innerJoin(zones, eq(stages.zoneId, zones.id)).where(eq(zones.regionId, id)).limit(1);
+      const sessionHistory = await tx.select({ id: questSessions.id }).from(questSessions).innerJoin(quests, eq(questSessions.questId, quests.id)).innerJoin(stages, eq(quests.stageId, stages.id)).innerJoin(zones, eq(stages.zoneId, zones.id)).where(eq(zones.regionId, id)).limit(1);
+      const xpHistory = await tx.select({ id: questXpAwards.id }).from(questXpAwards).innerJoin(quests, eq(questXpAwards.questId, quests.id)).innerJoin(stages, eq(quests.stageId, stages.id)).innerJoin(zones, eq(stages.zoneId, zones.id)).where(eq(zones.regionId, id)).limit(1);
+      const rows = history.length || resultHistory.length || sessionHistory.length || xpHistory.length
+        ? await tx.update(regions).set({ archivedAt: new Date() }).where(and(eq(regions.id, id), isNull(regions.archivedAt))).returning({ id: regions.id })
+        : await tx.delete(regions).where(eq(regions.id, id)).returning({ id: regions.id });
+      return rows.length > 0;
+    });
   }
 }
 
@@ -116,11 +125,16 @@ export class DrizzleZoneRepository implements ZoneRepository {
   }
 
   async delete(id: number): Promise<boolean> {
-    const rows = await this.database
-      .delete(zones)
-      .where(eq(zones.id, id))
-      .returning({ id: zones.id });
-    return rows.length > 0;
+    return this.database.transaction(async (tx) => {
+      const history = await tx.select({ id: userProgress.id }).from(userProgress).innerJoin(stages, eq(userProgress.stageId, stages.id)).where(eq(stages.zoneId, id)).limit(1);
+      const resultHistory = await tx.select({ id: results.id }).from(results).innerJoin(quests, eq(results.questId, quests.id)).innerJoin(stages, eq(quests.stageId, stages.id)).where(eq(stages.zoneId, id)).limit(1);
+      const sessionHistory = await tx.select({ id: questSessions.id }).from(questSessions).innerJoin(quests, eq(questSessions.questId, quests.id)).innerJoin(stages, eq(quests.stageId, stages.id)).where(eq(stages.zoneId, id)).limit(1);
+      const xpHistory = await tx.select({ id: questXpAwards.id }).from(questXpAwards).innerJoin(quests, eq(questXpAwards.questId, quests.id)).innerJoin(stages, eq(quests.stageId, stages.id)).where(eq(stages.zoneId, id)).limit(1);
+      const rows = history.length || resultHistory.length || sessionHistory.length || xpHistory.length
+        ? await tx.update(zones).set({ archivedAt: new Date() }).where(and(eq(zones.id, id), isNull(zones.archivedAt))).returning({ id: zones.id })
+        : await tx.delete(zones).where(eq(zones.id, id)).returning({ id: zones.id });
+      return rows.length > 0;
+    });
   }
 }
 
@@ -167,11 +181,16 @@ export class DrizzleStageRepository implements StageRepository {
   }
 
   async delete(id: number): Promise<boolean> {
-    const rows = await this.database
-      .delete(stages)
-      .where(eq(stages.id, id))
-      .returning({ id: stages.id });
-    return rows.length > 0;
+    return this.database.transaction(async (tx) => {
+      const progress = await tx.query.userProgress.findFirst({ where: eq(userProgress.stageId, id) });
+      const pastResults = await tx.select({ id: results.id }).from(results).innerJoin(quests, eq(results.questId, quests.id)).where(eq(quests.stageId, id)).limit(1);
+      const sessions = await tx.select({ id: questSessions.id }).from(questSessions).innerJoin(quests, eq(questSessions.questId, quests.id)).where(eq(quests.stageId, id)).limit(1);
+      const claims = await tx.select({ id: questXpAwards.id }).from(questXpAwards).innerJoin(quests, eq(questXpAwards.questId, quests.id)).where(eq(quests.stageId, id)).limit(1);
+      const rows = progress || pastResults.length || sessions.length || claims.length
+        ? await tx.update(stages).set({ archivedAt: new Date() }).where(and(eq(stages.id, id), isNull(stages.archivedAt))).returning({ id: stages.id })
+        : await tx.delete(stages).where(eq(stages.id, id)).returning({ id: stages.id });
+      return rows.length > 0;
+    });
   }
 }
 
@@ -279,11 +298,15 @@ export class DrizzleQuestRepository implements QuestRepository {
   }
 
   async delete(id: number): Promise<boolean> {
-    const rows = await this.database
-      .delete(quests)
-      .where(eq(quests.id, id))
-      .returning({ id: quests.id });
-    return rows.length > 0;
+    return this.database.transaction(async (tx) => {
+      const history = await tx.query.results.findFirst({ where: eq(results.questId, id) });
+      const session = await tx.query.questSessions.findFirst({ where: eq(questSessions.questId, id) });
+      const claim = await tx.query.questXpAwards.findFirst({ where: eq(questXpAwards.questId, id) });
+      const rows = history || session || claim
+        ? await tx.update(quests).set({ archivedAt: new Date() }).where(and(eq(quests.id, id), isNull(quests.archivedAt))).returning({ id: quests.id })
+        : await tx.delete(quests).where(eq(quests.id, id)).returning({ id: quests.id });
+      return rows.length > 0;
+    });
   }
 }
 
@@ -346,7 +369,7 @@ export class DrizzleBadgeDefinitionRepository implements BadgeDefinitionReposito
 // --- row -> domain mappers ---------------------------------------------
 
 function toRegion(row: typeof regions.$inferSelect): Region {
-  return new Region(row.id, row.name, row.slug, row.description, row.sortOrder);
+  return new Region(row.id, row.name, row.slug, row.description, row.sortOrder, row.archivedAt);
 }
 
 function toZone(row: typeof zones.$inferSelect): Zone {
@@ -357,6 +380,7 @@ function toZone(row: typeof zones.$inferSelect): Zone {
     row.slug,
     row.description,
     row.sortOrder,
+    row.archivedAt,
   );
 }
 
@@ -369,6 +393,7 @@ function toStage(row: typeof stages.$inferSelect): Stage {
     row.lessonContent as Stage['lessonContent'],
     row.xpReward,
     row.sortOrder,
+    row.archivedAt,
   );
 }
 
@@ -382,6 +407,7 @@ function toQuest(row: typeof quests.$inferSelect, questions: Quest['questions'])
     row.passingScore,
     row.xpReward,
     questions,
+    row.archivedAt,
   );
 }
 

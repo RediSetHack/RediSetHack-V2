@@ -17,7 +17,7 @@ export class DeleteRegionController {
   @Delete(':id')
   @HttpCode(204)
   @AdminOnly()
-  @ApiOperation({ summary: 'Delete a Region.' })
+  @ApiOperation({ summary: 'Retire a Region with history or delete an unused Region.' })
   @ApiIdParam('Region')
   @ApiEntityNotFound('Region')
   async handle(@Param('id', ParseIntPipe) id: number) {

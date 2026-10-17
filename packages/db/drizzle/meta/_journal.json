@@ -50,6 +50,20 @@
       "when": 1792219758672,
       "tag": "0006_wild_radioactive_man",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792242259503,
+      "tag": "0007_fresh_leader",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792242386976,
+      "tag": "0008_sour_black_panther",
+      "breakpoints": true
     }
   ]
 }

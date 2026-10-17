@@ -10,5 +10,6 @@ export class Stage {
     public readonly lessonContent: unknown,
     public readonly xpReward: number,
     public readonly sortOrder: number,
+    public readonly archivedAt: Date | null = null,
   ) {}
 }

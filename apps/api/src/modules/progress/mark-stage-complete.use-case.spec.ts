@@ -25,6 +25,7 @@ function makeStageRepo(
   return {
     findById: vi.fn(),
     findByZoneId: vi.fn().mockResolvedValue(stages),
+    hasArchivedAncestor: vi.fn().mockResolvedValue(false),
     findCompletedStageIds: vi.fn().mockResolvedValue([]),
     ...overrides,
   };

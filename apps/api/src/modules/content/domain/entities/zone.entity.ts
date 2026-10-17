@@ -6,5 +6,6 @@ export class Zone {
     public readonly slug: string,
     public readonly description: string | null,
     public readonly sortOrder: number,
+    public readonly archivedAt: Date | null = null,
   ) {}
 }

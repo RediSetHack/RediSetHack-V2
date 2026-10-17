@@ -105,7 +105,11 @@ export class SubmitQuestUseCase {
       throw new QuestNotFoundError(input.questId);
     }
 
-    await assertStageAccess(this.stages, input.userId, quest.stageId);
+    const archived =
+      quest.archivedAt != null ||
+      (await this.stages.hasArchivedAncestor(quest.stageId));
+    if (!archived)
+      await assertStageAccess(this.stages, input.userId, quest.stageId);
 
     // Not found, not-owned, and wrong-Quest are indistinguishable to the
     // requester, matching Result review.
@@ -113,6 +117,8 @@ export class SubmitQuestUseCase {
     if (session?.userId !== input.userId || session.questId !== input.questId) {
       throw new QuestSessionNotFoundError(input.sessionId);
     }
+    if (archived && session.status !== 'active')
+      await assertStageAccess(this.stages, input.userId, quest.stageId);
     if (session.status !== 'active') {
       return this.replay(session, input.responses);
     }

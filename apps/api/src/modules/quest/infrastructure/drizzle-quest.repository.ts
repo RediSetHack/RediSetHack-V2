@@ -1,11 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import {
   quests,
   questQuestions,
   questOptions,
   questSessions,
   questXpAwards,
+  stages,
+  zones,
+  regions,
   results,
   users,
   type Database,
@@ -44,6 +47,7 @@ function toQuest(row: QuestRow): Quest {
     row.timeLimitSeconds,
     row.passingScore,
     row.xpReward,
+    row.archivedAt,
   );
 }
 
@@ -80,10 +84,12 @@ export class DrizzleQuestRepository implements QuestRepository {
   constructor(@Inject(DB) private readonly database: Database) {}
 
   async findAll(): Promise<Quest[]> {
-    const rows = await this.database.query.quests.findMany({
-      orderBy: asc(quests.id),
-    });
-    return rows.map(toQuest);
+    const rows = await this.database.select({ quest: quests }).from(quests)
+      .innerJoin(stages, eq(quests.stageId, stages.id))
+      .innerJoin(zones, eq(stages.zoneId, zones.id)).innerJoin(regions, eq(zones.regionId, regions.id))
+      .where(and(isNull(quests.archivedAt), isNull(stages.archivedAt), isNull(zones.archivedAt), isNull(regions.archivedAt)))
+      .orderBy(asc(quests.id));
+    return rows.map(({ quest }) => toQuest(quest));
   }
 
   async findById(questId: number): Promise<Quest | null> {
