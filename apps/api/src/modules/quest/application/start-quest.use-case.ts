@@ -1,3 +1,6 @@
+import { StageRepository } from '../../content/domain/ports/stage.repository.js';
+import { assertStageAccess } from '../../progress/application/stage-access.js';
+
 import { Injectable } from '@nestjs/common';
 
 import { Quest } from '../domain/entities/quest.entity.js';
@@ -9,7 +12,10 @@ export type StartedQuestSession = { quest: Quest; session: QuestSession };
 
 @Injectable()
 export class StartQuestUseCase {
-  constructor(private readonly quests: QuestRepository) {}
+  constructor(
+    private readonly quests: QuestRepository,
+    private readonly stages: StageRepository,
+  ) {}
 
   // Resumes the learner's unexpired session for this Quest, otherwise starts
   // a new one: a retake is simply starting again once the last session is
@@ -19,6 +25,8 @@ export class StartQuestUseCase {
     if (!quest) {
       throw new QuestNotFoundError(questId);
     }
+
+    await assertStageAccess(this.stages, userId, quest.stageId);
 
     const active = await this.quests.findActiveSession(userId, questId);
     if (active) {

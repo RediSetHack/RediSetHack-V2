@@ -60,7 +60,11 @@ function QuestCard({ quest }: Readonly<{ quest: Quest }>) {
           {quest.xpReward} XP
         </p>
       </div>
-      <StartQuestDialog quest={quest} />
+      {quest.lockReason ? (
+        <p role="status" className="text-sm text-muted-foreground">{quest.lockReason}</p>
+      ) : (
+        <StartQuestDialog quest={quest} />
+      )}
     </li>
   );
 }

@@ -34,7 +34,9 @@ export default async function QuestSessionPage({
     return (
       <div className="flex-1 mx-auto w-full max-w-2xl p-6 sm:p-10">
         <p role="alert" className="text-sm text-destructive">
-          This Quest could not be started. Please try again later.
+          {error instanceof ApiError && error.status === 403
+            ? error.message
+            : "This Quest could not be started. Please try again later."}
         </p>
       </div>
     );

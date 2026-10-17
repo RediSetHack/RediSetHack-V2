@@ -1,3 +1,4 @@
+import { makeAvailableStageRepository } from '../content/fake-stage.fixture.js';
 import { describe, expect, it, vi } from 'vitest';
 
 import { Quest } from './domain/entities/quest.entity.js';
@@ -29,13 +30,13 @@ describe('ListQuestsUseCase', () => {
       findAll: vi.fn().mockResolvedValue(quests),
       findPassedQuestIds: vi.fn().mockResolvedValue(new Set([1])),
     });
-    const useCase = new ListQuestsUseCase(repo);
+    const useCase = new ListQuestsUseCase(repo, makeAvailableStageRepository());
 
     const result = await useCase.execute('user_1');
 
     expect(result).toEqual([
-      { quest: quests[0], completed: true },
-      { quest: quests[1], completed: false },
+      { quest: quests[0], completed: true, lockReason: null },
+      { quest: quests[1], completed: false, lockReason: null },
     ]);
   });
 
@@ -45,10 +46,10 @@ describe('ListQuestsUseCase', () => {
       findAll: vi.fn().mockResolvedValue(quests),
       findPassedQuestIds: vi.fn().mockResolvedValue(new Set()),
     });
-    const useCase = new ListQuestsUseCase(repo);
+    const useCase = new ListQuestsUseCase(repo, makeAvailableStageRepository());
 
     const result = await useCase.execute('user_1');
 
-    expect(result).toEqual([{ quest: quests[0], completed: false }]);
+    expect(result).toEqual([{ quest: quests[0], completed: false, lockReason: null }]);
   });
 });

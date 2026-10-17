@@ -1,5 +1,6 @@
-import { BadRequestException, Body, ConflictException, Controller, NotFoundException, Param, ParseIntPipe, Post, UseGuards } from "@nestjs/common";
-import { ApiBadRequestResponse, ApiBearerAuth, ApiConflictResponse, ApiNotFoundResponse, ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
+import { StageLockedError, StageNotFoundError } from '../../../progress/domain/errors.js';
+import { ForbiddenException, BadRequestException, Body, ConflictException, Controller, NotFoundException, Param, ParseIntPipe, Post, UseGuards } from "@nestjs/common";
+import { ApiBadRequestResponse, ApiBearerAuth, ApiForbiddenResponse, ApiConflictResponse, ApiNotFoundResponse, ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
 import { SubmitQuestResponseSchema } from "@repo/contracts";
 
 import { ClerkAuthGuard } from "../../../auth/presentation/guards/clerk-auth.guard.js";
@@ -27,6 +28,7 @@ export class SubmitQuestController {
   @ApiOperation({ summary: "Submit the User's answers for a Quest Session." })
   @ApiParam({ name: 'questId', description: "The Quest's id." })
   @ApiZodResponse(SubmitQuestResponseSchema, { status: 201 })
+  @ApiForbiddenResponse({ description: 'The parent Stage is locked for this User.' })
   @ApiNotFoundResponse({ description: 'Quest or owned Quest Session not found.' })
   @ApiBadRequestResponse({ description: 'Responses reference unknown or duplicate questions or options.' })
   @ApiConflictResponse({ description: 'The Session was already submitted with different responses.' })
@@ -44,6 +46,8 @@ export class SubmitQuestController {
       });
       return QuestResultPresenter.toSubmitResponse(output);
     } catch (error) {
+      if (error instanceof StageLockedError) throw new ForbiddenException(error.message);
+      if (error instanceof StageNotFoundError) throw new NotFoundException(error.message);
       if (
         error instanceof QuestNotFoundError ||
         error instanceof QuestSessionNotFoundError

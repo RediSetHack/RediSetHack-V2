@@ -1,9 +1,14 @@
 import { Injectable } from '@nestjs/common';
 
 import { StageRepository } from '../domain/ports/stage.repository.js';
+import { isUnlocked } from '../../progress/application/stage-access.js';
+import { StageLockedError } from '../../progress/domain/errors.js';
 import { Stage, StageStatus } from '../domain/entities/stage.entity.js';
 
-export type StageWithStatus = Stage & { status: StageStatus };
+export type StageWithStatus = Stage & {
+  status: StageStatus;
+  lockReason: string | null;
+};
 
 @Injectable()
 export class ListStagesUseCase {
@@ -20,18 +25,22 @@ export class ListStagesUseCase {
     const sorted = [...allStages].sort((a, b) => a.sortOrder - b.sortOrder);
 
     return sorted.map((stage, index) => {
-      let status: StageStatus;
-
-      if (completedSet.has(stage.id)) {
-        status = 'completed';
-      } else if (index === 0) {
-        status = 'available';
-      } else {
-        const prevStage = sorted[index - 1]!;
-        status = completedSet.has(prevStage.id) ? 'available' : 'locked';
-      }
-
-      return { ...stage, status };
+      const unlocked = isUnlocked({
+        sorted,
+        index,
+        completedIds: completedSet,
+      });
+      const status: StageStatus = !unlocked
+        ? 'locked'
+        : completedSet.has(stage.id)
+          ? 'completed'
+          : 'available';
+      return {
+        ...stage,
+        lessonContent: unlocked ? stage.lessonContent : undefined,
+        status,
+        lockReason: unlocked ? null : new StageLockedError(stage.id).message,
+      };
     });
   }
 }

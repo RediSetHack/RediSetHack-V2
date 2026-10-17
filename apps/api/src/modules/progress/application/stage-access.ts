@@ -1,5 +1,6 @@
-import { Stage } from "../../content/domain/entities/stage.entity.js";
-import type { StageRepository } from "../../content/domain/ports/stage.repository.js";
+import { Stage } from '../../content/domain/entities/stage.entity.js';
+import { StageLockedError, StageNotFoundError } from '../domain/errors.js';
+import type { StageRepository } from '../../content/domain/ports/stage.repository.js';
 
 export type StageAccess = {
   sorted: Stage[];
@@ -30,4 +31,15 @@ export function isUnlocked(access: StageAccess): boolean {
   if (access.index === 0) return true;
   const predecessor = access.sorted[access.index - 1];
   return predecessor !== undefined && access.completedIds.has(predecessor.id);
+}
+export async function assertStageAccess(
+  repo: StageRepository,
+  userId: string,
+  stageId: number,
+): Promise<void> {
+  const stage = await repo.findById(stageId);
+  if (!stage) throw new StageNotFoundError(stageId);
+  if (!isUnlocked(await getStageAccess(repo, userId, stage))) {
+    throw new StageLockedError(stageId);
+  }
 }

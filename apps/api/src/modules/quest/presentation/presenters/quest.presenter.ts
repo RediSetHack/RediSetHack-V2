@@ -2,7 +2,7 @@ import { QuestWithStatus } from '../../application/list-quests.use-case.js';
 import { StartedQuestSession } from '../../application/start-quest.use-case.js';
 
 export class QuestPresenter {
-  static toListItem({ quest, completed }: QuestWithStatus) {
+  static toListItem({ quest, completed, lockReason }: QuestWithStatus) {
     return {
       id: quest.id,
       stageId: quest.stageId,
@@ -12,6 +12,7 @@ export class QuestPresenter {
       passingScore: quest.passingScore,
       xpReward: quest.xpReward,
       completed,
+      lockReason,
     };
   }
 

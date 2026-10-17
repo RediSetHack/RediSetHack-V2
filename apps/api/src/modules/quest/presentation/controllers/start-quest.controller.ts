@@ -1,5 +1,6 @@
-import { Controller, NotFoundException, Param, ParseIntPipe, Post, UseGuards } from "@nestjs/common";
-import { ApiBearerAuth, ApiNotFoundResponse, ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
+import { StageLockedError, StageNotFoundError } from '../../../progress/domain/errors.js';
+import { ForbiddenException, Controller, NotFoundException, Param, ParseIntPipe, Post, UseGuards } from "@nestjs/common";
+import { ApiBearerAuth, ApiForbiddenResponse, ApiNotFoundResponse, ApiOperation, ApiParam, ApiTags } from "@nestjs/swagger";
 import { QuestSessionResponseSchema } from "@repo/contracts";
 
 import { CurrentUser } from "../../../auth/presentation/decorators/current-user.decorator.js";
@@ -21,6 +22,7 @@ export class StartQuestController {
   @ApiOperation({ summary: 'Start a Quest Session, or resume the learner\'s unexpired one.' })
   @ApiParam({ name: 'questId', description: "The Quest's id." })
   @ApiZodResponse(QuestSessionResponseSchema, { status: 201 })
+  @ApiForbiddenResponse({ description: 'The parent Stage is locked for this User.' })
   @ApiNotFoundResponse({ description: 'Quest not found.' })
   async handle(
     @Param("questId", ParseIntPipe) questId: number,
@@ -30,6 +32,8 @@ export class StartQuestController {
       const session = await this.startQuest.execute(user.id, questId);
       return QuestPresenter.toSession(session);
     } catch (error) {
+      if (error instanceof StageLockedError) throw new ForbiddenException(error.message);
+      if (error instanceof StageNotFoundError) throw new NotFoundException(error.message);
       if (error instanceof QuestNotFoundError) {
         throw new NotFoundException(error.message);
       }

@@ -6,7 +6,8 @@ export type StageStatus = z.infer<typeof StageStatusSchema>;
 
 /**
  * A single Stage, as returned by `StagePresenter` in `apps/api`. `status` is
- * computed server-side by `ListStagesUseCase`. `lessonContent` is the raw
+ * computed server-side by `ListStagesUseCase`. Locked Stages omit `lessonContent` and provide `lockReason`. Otherwise,
+ * `lessonContent` is the raw
  * structured block array; its schema belongs to the ticket that renders it.
  */
 export const StageSchema = z.object({
@@ -14,10 +15,11 @@ export const StageSchema = z.object({
   zoneId: z.number().int().positive(),
   title: z.string(),
   slug: z.string(),
-  lessonContent: z.unknown(),
+  lessonContent: z.unknown().optional(),
   xpReward: z.number().int().nonnegative(),
   sortOrder: z.number().int(),
   status: StageStatusSchema,
+  lockReason: z.string().nullable(),
 });
 export type Stage = z.infer<typeof StageSchema>;
 

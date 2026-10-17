@@ -1,3 +1,4 @@
+import { makeAvailableStageRepository } from '../content/fake-stage.fixture.js';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -26,6 +27,7 @@ describe('StartQuestUseCase', () => {
   it('throws QuestNotFoundError for a missing quest', async () => {
     const useCase = new StartQuestUseCase(
       new FakeQuestRepository(quest, makeQuestions()),
+      makeAvailableStageRepository(),
     );
     await expect(useCase.execute('user_1', 999)).rejects.toBeInstanceOf(
       QuestNotFoundError,
@@ -35,7 +37,7 @@ describe('StartQuestUseCase', () => {
   it('persists an owned session with a snapshot and a server deadline', async () => {
     vi.useFakeTimers({ now: new Date('2026-09-15T12:00:00.000Z') });
     const repo = new FakeQuestRepository(quest, makeQuestions());
-    const { session } = await new StartQuestUseCase(repo).execute('user_1', 1);
+    const { session } = await new StartQuestUseCase(repo, makeAvailableStageRepository()).execute('user_1', 1);
 
     expect(session.userId).toBe('user_1');
     expect(session.status).toBe('active');
@@ -48,6 +50,7 @@ describe('StartQuestUseCase', () => {
     vi.useFakeTimers({ now: new Date('2026-09-15T12:00:00.000Z') });
     const useCase = new StartQuestUseCase(
       new FakeQuestRepository(quest, makeQuestions()),
+      makeAvailableStageRepository(),
     );
     const first = await useCase.execute('user_1', 1);
     vi.setSystemTime(new Date('2026-09-15T12:00:30.000Z'));
@@ -60,6 +63,7 @@ describe('StartQuestUseCase', () => {
   it('keeps sessions separate per learner', async () => {
     const useCase = new StartQuestUseCase(
       new FakeQuestRepository(quest, makeQuestions()),
+      makeAvailableStageRepository(),
     );
     const a = await useCase.execute('user_1', 1);
     const b = await useCase.execute('user_2', 1);
@@ -69,7 +73,7 @@ describe('StartQuestUseCase', () => {
   it('closes an abandoned expired session with no credit and starts a fresh one', async () => {
     vi.useFakeTimers({ now: new Date('2026-09-15T12:00:00.000Z') });
     const repo = new FakeQuestRepository(quest, makeQuestions());
-    const useCase = new StartQuestUseCase(repo);
+    const useCase = new StartQuestUseCase(repo, makeAvailableStageRepository());
     const first = await useCase.execute('user_1', 1);
     vi.setSystemTime(new Date('2026-09-15T12:05:00.000Z'));
     const second = await useCase.execute('user_1', 1);
@@ -85,7 +89,7 @@ describe('StartQuestUseCase', () => {
 
   it('starts a new session (retake) once the last one is submitted', async () => {
     const repo = new FakeQuestRepository(quest, makeQuestions());
-    const useCase = new StartQuestUseCase(repo);
+    const useCase = new StartQuestUseCase(repo, makeAvailableStageRepository());
     const first = await useCase.execute('user_1', 1);
     await repo.finalizeSession({
       sessionId: first.session.id,
@@ -100,7 +104,7 @@ describe('StartQuestUseCase', () => {
 
   it('snapshots questions at start, unaffected by later edits', async () => {
     const repo = new FakeQuestRepository(quest, makeQuestions());
-    const { session } = await new StartQuestUseCase(repo).execute('user_1', 1);
+    const { session } = await new StartQuestUseCase(repo, makeAvailableStageRepository()).execute('user_1', 1);
     repo.questions = [];
     expect(session.questions).toHaveLength(1);
   });
@@ -109,7 +113,7 @@ describe('StartQuestUseCase', () => {
 describe('QuestPresenter.toSession (answer concealment)', () => {
   const started = async () => {
     const repo = new FakeQuestRepository(quest, makeQuestions());
-    return new StartQuestUseCase(repo).execute('user_1', 1);
+    return new StartQuestUseCase(repo, makeAvailableStageRepository()).execute('user_1', 1);
   };
 
   it('withholds isCorrect from every option', async () => {

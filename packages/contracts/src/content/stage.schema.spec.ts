@@ -24,6 +24,7 @@ describe("StageSchema", () => {
       xpReward: 50,
       sortOrder: 1,
       status: "available" as const,
+      lockReason: null,
     };
 
     expect(StageSchema.parse(payload)).toEqual(payload);
@@ -46,6 +47,7 @@ describe("StageListResponseSchema", () => {
         xpReward: 50,
         sortOrder: 1,
         status: "available" as const,
+      lockReason: null,
       },
     ];
 

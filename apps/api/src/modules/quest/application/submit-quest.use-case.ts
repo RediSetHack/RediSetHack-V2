@@ -1,3 +1,6 @@
+import { StageRepository } from '../../content/domain/ports/stage.repository.js';
+import { assertStageAccess } from '../../progress/application/stage-access.js';
+
 import { Injectable, Logger } from '@nestjs/common';
 
 import {
@@ -93,6 +96,7 @@ export class SubmitQuestUseCase {
     private readonly quests: QuestRepository,
     private readonly getTodayEvent: GetTodayEventUseCase,
     private readonly evaluateBadges: EvaluateBadgesUseCase,
+    private readonly stages: StageRepository,
   ) {}
 
   async execute(input: SubmitQuestInput): Promise<SubmitQuestOutput> {
@@ -100,6 +104,8 @@ export class SubmitQuestUseCase {
     if (!quest) {
       throw new QuestNotFoundError(input.questId);
     }
+
+    await assertStageAccess(this.stages, input.userId, quest.stageId);
 
     // Not found, not-owned, and wrong-Quest are indistinguishable to the
     // requester, matching Result review.
