@@ -1,6 +1,6 @@
 import { CreateHierarchyNodeRequestDto } from './create-hierarchy-node.dto.js';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateRegionRequestDto extends CreateHierarchyNodeRequestDto {
   @ApiPropertyOptional({
@@ -9,5 +9,6 @@ export class CreateRegionRequestDto extends CreateHierarchyNodeRequestDto {
   })
   @IsOptional()
   @IsString()
+  @IsNotEmpty()
   storyIntro?: string;
 }

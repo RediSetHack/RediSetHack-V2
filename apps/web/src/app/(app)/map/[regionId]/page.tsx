@@ -1,6 +1,8 @@
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CatalogList } from "@/components/catalog-list";
+import { findNovelResume } from "@/lib/novel-resume";
 import { getRegions, getStages, getZones, type Stage } from "@/lib/api-client";
 
 async function loadChapterStages(
@@ -27,15 +29,17 @@ export default async function RegionZonesPage({
   const { getToken } = await auth();
   const token = await getToken();
   let region: Awaited<ReturnType<typeof getRegions>>[number] | undefined;
+  let zones: Awaited<ReturnType<typeof getZones>> = [];
   let chapterStages: Awaited<ReturnType<typeof loadChapterStages>> = [];
   let loadError = false;
   try {
-    const [regions, zones] = await Promise.all([
+    const [regions, loadedZones] = await Promise.all([
       getRegions(apiUrl),
       getZones(apiUrl, regionIdNumber),
     ]);
+    zones = loadedZones;
     region = regions.find(({ id }) => id === regionIdNumber);
-    if (region && zones.length)
+    if (region?.storyIntro && zones.length)
       chapterStages = await loadChapterStages(zones, apiUrl, token ?? "");
   } catch {
     loadError = true;
@@ -47,9 +51,21 @@ export default async function RegionZonesPage({
       </p>
     );
   if (!region) notFound();
-  const resume = chapterStages
-    .flatMap(({ zone, stages }) => stages.map((stage) => ({ zone, stage })))
-    .find(({ stage }) => stage.status === "available");
+  if (!region.storyIntro) {
+    if (zones.length === 0)
+      return (
+        <p className="p-6 text-muted-foreground">
+          This Region has no Zones yet — check back soon.
+        </p>
+      );
+    return (
+      <div className="mx-auto w-full max-w-3xl p-6">
+        <h1 className="text-2xl font-bold tracking-tight">Zones</h1>
+        <CatalogList items={zones} hrefFor={(zone) => `/map/${regionIdNumber}/${zone.id}`} />
+      </div>
+    );
+  }
+  const resume = findNovelResume(chapterStages);
 
   return (
     <div className="mx-auto w-full max-w-3xl p-6">
