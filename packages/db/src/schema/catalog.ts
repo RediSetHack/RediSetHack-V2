@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, index, integer, jsonb, pgTable, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, check, index, integer, jsonb, pgTable, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { users } from "./identity.js";
 
 // ---------------------------------------------------------------------------
@@ -52,6 +52,8 @@ export const stages = pgTable(
     slug: text("slug").notNull(),
     // Structured lesson blocks, e.g. [{ type: "text", content: "..." }, { type: "code", ... }]
     lessonContent: jsonb("lesson_content"),
+    competencyIds: jsonb("competency_ids").$type<string[]>().notNull().default([]),
+    difficulty: text("difficulty"),
     xpReward: integer("xp_reward").notNull().default(0),
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -60,6 +62,7 @@ export const stages = pgTable(
   (table) => [
     uniqueIndex("stages_zone_slug_unique").on(table.zoneId, table.slug),
     index("stages_zone_id_index").on(table.zoneId),
+    check("stages_difficulty_check", sql`${table.difficulty} is null or ${table.difficulty} in ('beginner', 'intermediate', 'advanced')`),
   ],
 );
 
@@ -91,10 +94,15 @@ export const questQuestions = pgTable(
       .references(() => quests.id, { onDelete: "cascade" }),
     prompt: text("prompt").notNull(),
     authoringId: text("authoring_id"),
+    competencyIds: jsonb("competency_ids").$type<string[]>().notNull().default([]),
+    difficulty: text("difficulty"),
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index("quest_questions_quest_id_index").on(table.questId)],
+  (table) => [
+    index("quest_questions_quest_id_index").on(table.questId),
+    check("quest_questions_difficulty_check", sql`${table.difficulty} is null or ${table.difficulty} in ('beginner', 'intermediate', 'advanced')`),
+  ],
 );
 
 // A selectable answer for a quest question; `isCorrect` is withheld from

@@ -52,6 +52,8 @@ export abstract class StageRepository {
     lessonContent: Stage['lessonContent'];
     xpReward: number;
     sortOrder: number;
+    competencyIds?: Stage['competencyIds'];
+    difficulty?: Stage['difficulty'];
   }): Promise<Stage>;
   abstract update(
     id: number,
@@ -61,6 +63,8 @@ export abstract class StageRepository {
       lessonContent: Stage['lessonContent'];
       xpReward: number;
       sortOrder: number;
+      competencyIds: Stage['competencyIds'];
+      difficulty: Stage['difficulty'];
     }>,
   ): Promise<Stage | null>;
   abstract delete(id: number): Promise<boolean>;

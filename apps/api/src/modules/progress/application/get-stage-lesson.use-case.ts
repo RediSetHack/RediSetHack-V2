@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { StageRepository } from '../../content/domain/ports/stage.repository.js';
 import { normalizeLessonContent } from '../../content/domain/normalize-lesson-content.js';
 import { StageLockedError, StageNotFoundError } from '../domain/errors.js';
+import { resolveCompetencies } from '@repo/contracts';
 import type { LessonBlock } from '../domain/entities/lesson.entity.js';
 import { getStageAccess, isUnlocked } from './stage-access.js';
 
@@ -13,6 +14,8 @@ export type StageLesson = {
   slug: string;
   xpReward: number;
   sortOrder: number;
+  competencies: ReturnType<typeof resolveCompetencies>;
+  difficulty: 'beginner' | 'intermediate' | 'advanced' | null;
   status: 'available' | 'completed';
   blocks: LessonBlock[];
 };
@@ -40,6 +43,8 @@ export class GetStageLessonUseCase {
       slug: stage.slug,
       xpReward: stage.xpReward,
       sortOrder: stage.sortOrder,
+      competencies: resolveCompetencies(stage.competencyIds),
+      difficulty: stage.difficulty,
       status: access.completedIds.has(stage.id) ? 'completed' : 'available',
       blocks: parseLessonBlocks(stage.lessonContent),
     };

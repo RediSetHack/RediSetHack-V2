@@ -3,6 +3,9 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsArray,
+  ArrayUnique,
+  IsIn,
   Matches,
   Min,
 } from 'class-validator';
@@ -10,6 +13,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 
 import type { LessonBlock } from '../../domain/entities.js';
+import { COMPETENCIES } from '@repo/contracts';
 import { normalizeLessonContent } from '../../domain/normalize-lesson-content.js';
 import { IsLessonContent } from '../validators.js';
 import { SLUG_PATTERN } from './slug-pattern.js';
@@ -81,4 +85,16 @@ export class CreateStageRequestDto {
   @IsOptional()
   @IsInt()
   sortOrder?: number;
+
+  @ApiPropertyOptional({ enum: COMPETENCIES.map(({ id }) => id), isArray: true })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsIn(COMPETENCIES.map(({ id }) => id), { each: true })
+  competencyIds?: string[];
+
+  @ApiPropertyOptional({ enum: ['beginner', 'intermediate', 'advanced'], nullable: true })
+  @IsOptional()
+  @IsIn(['beginner', 'intermediate', 'advanced'])
+  difficulty?: 'beginner' | 'intermediate' | 'advanced' | null;
 }

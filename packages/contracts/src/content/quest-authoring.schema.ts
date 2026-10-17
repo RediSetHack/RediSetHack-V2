@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CompetencyIdSchema, DifficultySchema } from "./competency.schema.js";
 
 export const QuestQuestionAuthoringSchema = z
   .object({
@@ -13,6 +14,8 @@ export const QuestQuestionAuthoringSchema = z
       )
       .min(2),
     correctOptionId: z.string().refine((value) => value.trim().length > 0),
+    competencyIds: z.array(CompetencyIdSchema).refine((ids) => new Set(ids).size === ids.length).optional(),
+    difficulty: DifficultySchema.nullable().optional(),
   })
   .refine(
     (question) =>

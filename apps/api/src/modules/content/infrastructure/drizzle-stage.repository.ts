@@ -18,6 +18,8 @@ function toDomain(row: StageRow): Stage {
     row.xpReward,
     row.sortOrder,
     row.archivedAt,
+    row.competencyIds,
+    row.difficulty as Stage['difficulty'],
   );
 }
 

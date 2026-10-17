@@ -41,6 +41,8 @@ export class StagePresenter {
       title: entity.title,
       slug: entity.slug,
       lessonContent: entity.lessonContent,
+      competencyIds: entity.competencyIds,
+      difficulty: entity.difficulty,
       xpReward: entity.xpReward,
       sortOrder: entity.sortOrder,
     };

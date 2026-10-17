@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CompetencySchema, DifficultySchema } from "./competency.schema.js";
 
 /** Server-computed progression status for a Stage; never recomputed client-side. */
 export const StageStatusSchema = z.enum(["locked", "available", "completed"]);
@@ -18,6 +19,8 @@ export const StageSchema = z.object({
   lessonContent: z.unknown().optional(),
   xpReward: z.number().int().nonnegative(),
   sortOrder: z.number().int(),
+  competencies: z.array(CompetencySchema).optional(),
+  difficulty: DifficultySchema.nullable().optional(),
   status: StageStatusSchema,
   lockReason: z.string().nullable(),
 });

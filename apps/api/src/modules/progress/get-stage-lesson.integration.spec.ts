@@ -129,6 +129,8 @@ describe('GET /v1/api/stages/:stageId/lesson integration', () => {
       slug: 'for-loops',
       xpReward: 50,
       sortOrder: 1,
+      competencies: [],
+      difficulty: null,
       status: 'available',
       blocks: [
         { type: 'text', content: 'Loops repeat code.' },

@@ -24,5 +24,7 @@ export class QuestQuestion {
     public readonly id: number,
     public readonly prompt: string,
     public readonly options: QuestOption[],
+    public readonly competencyIds: string[] = [],
+    public readonly difficulty: 'beginner' | 'intermediate' | 'advanced' | null = null,
   ) {}
 }

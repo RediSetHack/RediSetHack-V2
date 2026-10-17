@@ -158,6 +158,8 @@ export class DrizzleStageRepository implements StageRepository {
     lessonContent: Stage['lessonContent'];
     xpReward: number;
     sortOrder: number;
+    competencyIds?: Stage['competencyIds'];
+    difficulty?: Stage['difficulty'];
   }): Promise<Stage> {
     const rows = await this.database.insert(stages).values(input).returning();
     return toStage(rows[0]!);
@@ -171,6 +173,8 @@ export class DrizzleStageRepository implements StageRepository {
       lessonContent: Stage['lessonContent'];
       xpReward: number;
       sortOrder: number;
+      competencyIds: Stage['competencyIds'];
+      difficulty: Stage['difficulty'];
     }>,
   ): Promise<Stage | null> {
     const rows = await this.database
@@ -222,6 +226,8 @@ export class DrizzleQuestRepository implements QuestRepository {
       return {
         id: question.authoringId ?? String(question.id),
         prompt: question.prompt,
+        competencyIds: question.competencyIds,
+        difficulty: question.difficulty as Quest['questions'][number]['difficulty'],
         options: questionOptions.map((option) => ({ id: option.authoringId ?? String(option.id), text: option.text })),
         correctOptionId: correct?.authoringId ?? String(correct?.id ?? ''),
       };
@@ -275,9 +281,9 @@ export class DrizzleQuestRepository implements QuestRepository {
       if (question) {
         questionId = question.id;
         usedQuestionIds.add(question.id);
-        await tx.update(questQuestions).set({ prompt: definition.prompt, sortOrder: index, authoringId: definition.id }).where(eq(questQuestions.id, questionId));
+        await tx.update(questQuestions).set({ prompt: definition.prompt, sortOrder: index, authoringId: definition.id, competencyIds: definition.competencyIds ?? [], difficulty: definition.difficulty ?? null }).where(eq(questQuestions.id, questionId));
       } else {
-        const [inserted] = await tx.insert(questQuestions).values({ questId, prompt: definition.prompt, sortOrder: index, authoringId: definition.id }).returning({ id: questQuestions.id });
+        const [inserted] = await tx.insert(questQuestions).values({ questId, prompt: definition.prompt, sortOrder: index, authoringId: definition.id, competencyIds: definition.competencyIds ?? [], difficulty: definition.difficulty ?? null }).returning({ id: questQuestions.id });
         questionId = inserted!.id;
         usedQuestionIds.add(questionId);
       }
@@ -396,6 +402,8 @@ function toStage(row: typeof stages.$inferSelect): Stage {
     row.xpReward,
     row.sortOrder,
     row.archivedAt,
+    row.competencyIds,
+    row.difficulty as Stage['difficulty'],
   );
 }
 

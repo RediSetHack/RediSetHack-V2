@@ -48,6 +48,16 @@ export default async function StagePage({
     <div className="mx-auto w-full max-w-3xl p-6">
       <h1 className="text-2xl font-bold tracking-tight">{lesson.title}</h1>
       <p className="text-sm text-muted-foreground">{lesson.xpReward} XP</p>
+      {(lesson.competencies?.length || lesson.difficulty) && (
+        <section aria-label="Learning objectives" className="mt-4 rounded-lg border border-border p-4">
+          {lesson.difficulty && <p className="text-sm font-medium">Difficulty: {lesson.difficulty}</p>}
+          {lesson.competencies && lesson.competencies.length > 0 && (
+            <ul className="mt-2 list-disc pl-5 text-sm text-muted-foreground">
+              {lesson.competencies.map((competency) => <li key={competency.id}>{competency.objective}</li>)}
+            </ul>
+          )}
+        </section>
+      )}
       <div className="mt-6 flex flex-col gap-6">
         {blocks.map((block) => (
           // Blocks carry no id of their own; content is stable within a

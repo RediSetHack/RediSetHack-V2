@@ -23,6 +23,8 @@ describe("StageSchema", () => {
       lessonContent: [{ type: "text", content: "Loops repeat code." }],
       xpReward: 50,
       sortOrder: 1,
+      competencies: [{ id: "programming.control-flow", title: "Control flow", objective: "Use conditions and loops to control program behavior." }],
+      difficulty: "beginner",
       status: "available" as const,
       lockReason: null,
     };
@@ -32,6 +34,11 @@ describe("StageSchema", () => {
 
   it("throws ZodError on an invalid payload", () => {
     expect(() => StageSchema.parse({ id: 1, status: "bogus" })).toThrow();
+  });
+
+  it("rejects unknown competency identifiers and difficulty values", () => {
+    const payload = { id: 1, zoneId: 1, title: "Loops", slug: "loops", xpReward: 0, sortOrder: 0, status: "available", lockReason: null, competencies: [{ id: "foreign.skill", title: "Foreign", objective: "?" }], difficulty: "expert" };
+    expect(() => StageSchema.parse(payload)).toThrow();
   });
 });
 

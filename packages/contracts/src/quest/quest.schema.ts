@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { BadgeAwardSchema } from "../badges/badge-award.schema.js";
+import { CompetencySchema, DifficultySchema } from "../content/competency.schema.js";
 
 export type { BadgeAward } from "../badges/badge-award.schema.js";
 
@@ -36,6 +37,8 @@ export type QuestSessionOption = z.infer<typeof QuestSessionOptionSchema>;
 export const QuestSessionQuestionSchema = z.object({
   id: z.number().int().positive(),
   prompt: z.string(),
+  competencies: z.array(CompetencySchema).optional(),
+  difficulty: DifficultySchema.nullable().optional(),
   options: z.array(QuestSessionOptionSchema),
 });
 export type QuestSessionQuestion = z.infer<typeof QuestSessionQuestionSchema>;

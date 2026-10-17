@@ -70,6 +70,8 @@ describe("LessonResponseSchema", () => {
       slug: "for-loops",
       xpReward: 50,
       sortOrder: 1,
+      competencies: [{ id: "programming.control-flow", title: "Control flow", objective: "Use conditions and loops to control program behavior." }],
+      difficulty: "beginner",
       status: "available" as const,
       blocks: [{ type: "text", content: "Loops repeat code." }],
     };
@@ -105,5 +107,9 @@ describe("LessonResponseSchema", () => {
     };
 
     expect(LessonResponseSchema.parse(payload)).toEqual(payload);
+  });
+
+  it("keeps an existing untagged lesson valid", () => {
+    expect(LessonResponseSchema.parse({ id: 1, zoneId: 1, title: "Old", slug: "old", xpReward: 0, sortOrder: 0, status: "available", blocks: [] }).competencies).toBeUndefined();
   });
 });
