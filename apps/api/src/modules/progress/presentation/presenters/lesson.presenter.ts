@@ -9,6 +9,8 @@ export class LessonPresenter {
       slug: lesson.slug,
       xpReward: lesson.xpReward,
       sortOrder: lesson.sortOrder,
+      competencies: lesson.competencies,
+      difficulty: lesson.difficulty,
       status: lesson.status,
       blocks: lesson.blocks,
     };

@@ -213,6 +213,9 @@ function makeStageRepository(): StageRepository {
         input.lessonContent,
         input.xpReward,
         input.sortOrder,
+        null,
+        input.competencyIds,
+        input.difficulty,
       );
       store.set(stage.id, stage);
       return stage;
@@ -230,6 +233,9 @@ function makeStageRepository(): StageRepository {
           : existing.lessonContent,
         input.xpReward ?? existing.xpReward,
         input.sortOrder ?? existing.sortOrder,
+        existing.archivedAt,
+        input.competencyIds ?? existing.competencyIds,
+        input.difficulty !== undefined ? input.difficulty : existing.difficulty,
       );
       store.set(id, updated);
       return updated;
@@ -663,6 +669,17 @@ describe('content admin CRUD', () => {
       });
     expect(invalid.status).toBe(400);
 
+    const foreignCompetency = await request(app.getHttpServer())
+      .post('/v1/api/admin/stages')
+      .set(admin())
+      .send({ zoneId: zone.body.id, title: 'Foreign skill', slug: 'foreign-skill', competencyIds: ['foreign.skill'] });
+    expect(foreignCompetency.status).toBe(400);
+    const invalidDifficulty = await request(app.getHttpServer())
+      .post('/v1/api/admin/stages')
+      .set(admin())
+      .send({ zoneId: zone.body.id, title: 'Invalid difficulty', slug: 'invalid-difficulty', difficulty: 'expert' });
+    expect(invalidDifficulty.status).toBe(400);
+
     const valid = await request(app.getHttpServer())
       .post('/v1/api/admin/stages')
       .set(admin())
@@ -676,6 +693,18 @@ describe('content admin CRUD', () => {
     expect(valid.body.lessonContent).toEqual([
       { type: 'text', content: 'Loops repeat code.' },
     ]);
+
+    const tagged = await request(app.getHttpServer())
+      .post('/v1/api/admin/stages')
+      .set(admin())
+      .send({ zoneId: zone.body.id, title: 'Tagged loops', slug: 'tagged-loops', competencyIds: ['programming.control-flow'], difficulty: 'beginner' });
+    expect(tagged.body).toMatchObject({ competencyIds: ['programming.control-flow'], difficulty: 'beginner' });
+
+    const revised = await request(app.getHttpServer())
+      .patch(`/v1/api/admin/stages/${tagged.body.id}`)
+      .set(admin())
+      .send({ competencyIds: ['programming.debugging'], difficulty: 'intermediate' });
+    expect(revised.body).toMatchObject({ competencyIds: ['programming.debugging'], difficulty: 'intermediate' });
 
     const authored = await request(app.getHttpServer())
       .post('/v1/api/admin/stages')
@@ -757,6 +786,17 @@ describe('content admin CRUD', () => {
       });
     expect(invalid.status).toBe(400);
 
+    const foreignCompetency = await request(app.getHttpServer())
+      .post('/v1/api/admin/quests')
+      .set(admin())
+      .send({ stageId: stage.body.id, title: 'Foreign competency', questions: [{ id: 'q1', prompt: '?', options: [{ id: 'a', text: 'A' }, { id: 'b', text: 'B' }], correctOptionId: 'a', competencyIds: ['foreign.skill'] }] });
+    expect(foreignCompetency.status).toBe(400);
+    const invalidDifficulty = await request(app.getHttpServer())
+      .post('/v1/api/admin/quests')
+      .set(admin())
+      .send({ stageId: stage.body.id, title: 'Invalid difficulty', questions: [{ id: 'q1', prompt: '?', options: [{ id: 'a', text: 'A' }, { id: 'b', text: 'B' }], correctOptionId: 'a', difficulty: 'expert' }] });
+    expect(invalidDifficulty.status).toBe(400);
+
     const empty = await request(app.getHttpServer())
       .post('/v1/api/admin/quests')
       .set(admin())
@@ -799,11 +839,14 @@ describe('content admin CRUD', () => {
               { id: 'b', text: 'A variable' },
             ],
             correctOptionId: 'a',
+            competencyIds: ['programming.control-flow'],
+            difficulty: 'beginner',
           },
         ],
       });
     expect(valid.status).toBe(201);
     expect(valid.body.questions).toHaveLength(1);
+    expect(valid.body.questions[0]).toMatchObject({ competencyIds: ['programming.control-flow'], difficulty: 'beginner' });
     expect(
       QuestAuthoringQuestionsSchema.parse(valid.body.questions),
     ).toHaveLength(1);

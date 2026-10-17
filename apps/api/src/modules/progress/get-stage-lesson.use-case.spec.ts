@@ -14,6 +14,9 @@ const stages: Stage[] = [
     [{ type: 'text', content: 'Hello' }],
     10,
     0,
+    null,
+    ['programming.control-flow'],
+    'beginner',
   ),
   new Stage(
     2,
@@ -46,6 +49,10 @@ describe('GetStageLessonUseCase', () => {
 
     expect(lesson.status).toBe('available');
     expect(lesson.blocks).toEqual([{ type: 'text', content: 'Hello' }]);
+    expect(lesson).toMatchObject({
+      competencies: [{ id: 'programming.control-flow' }],
+      difficulty: 'beginner',
+    });
   });
 
   it('returns lesson blocks for a stage whose predecessor is completed', async () => {

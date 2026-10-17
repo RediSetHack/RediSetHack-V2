@@ -10,6 +10,7 @@ import { QuestNotFoundError } from './domain/errors.js';
 import { FakeQuestRepository } from './fake-quest-repository.fixture.js';
 import { StartQuestUseCase } from './application/start-quest.use-case.js';
 import { QuestPresenter } from './presentation/presenters/quest.presenter.js';
+import { QuestSessionResponseSchema } from '@repo/contracts';
 
 const quest = new Quest(1, 10, 'Loops 101', null, 60, 70, 50);
 const makeQuestions = () => [
@@ -140,5 +141,23 @@ describe('QuestPresenter.toSession (answer concealment)', () => {
     expect(response.questId).toBe(1);
     expect(new Date(response.expiresAt).toISOString()).toBe(response.expiresAt);
     expect(new Date(response.serverTime).toISOString()).toBe(response.serverTime);
+  });
+
+  it('shows authored objectives and difficulty without exposing answers', async () => {
+    const repo = new FakeQuestRepository(quest, [
+      new QuestQuestion(1, 'Validate input?', [
+        new QuestOption(1, 'Yes', true),
+        new QuestOption(2, 'No', false),
+      ], ['security.input-validation'], 'intermediate'),
+    ]);
+    const response = QuestSessionResponseSchema.parse(QuestPresenter.toSession(
+      await new StartQuestUseCase(repo, makeAvailableStageRepository()).execute('user_1', 1),
+    ));
+
+    expect(response.questions[0]).toMatchObject({
+      competencies: [{ id: 'security.input-validation', objective: 'Validate untrusted input before using it.' }],
+      difficulty: 'intermediate',
+    });
+    expect(response.questions[0]?.options[0]).not.toHaveProperty('isCorrect');
   });
 });

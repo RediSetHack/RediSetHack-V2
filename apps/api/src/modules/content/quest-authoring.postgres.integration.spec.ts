@@ -10,6 +10,10 @@ import { DrizzleQuestRepository as ContentQuestRepository } from './infrastructu
 import { DrizzleStageRepository } from './infrastructure/drizzle-stage.repository.js';
 import { StageRepository } from './domain/ports.js';
 import { CreateQuestRequestDto } from './presentation/dto/create-quest.dto.js';
+import { GetStageLessonUseCase } from '../progress/application/get-stage-lesson.use-case.js';
+import { LessonPresenter } from '../progress/presentation/presenters/lesson.presenter.js';
+import { LessonResponseSchema, QuestSessionResponseSchema } from '@repo/contracts';
+import { QuestPresenter } from '../quest/presentation/presenters/quest.presenter.js';
 import { StartQuestUseCase } from '../quest/application/start-quest.use-case.js';
 import { SubmitQuestUseCase } from '../quest/application/submit-quest.use-case.js';
 import { ViewQuestResultUseCase } from '../quest/application/view-quest-result.use-case.js';
@@ -46,6 +50,11 @@ describe.skipIf(!database)('authored Quest PostgreSQL flow', () => {
       })
       .returning();
     stageId = stage!.id;
+    await database!.update(stages).set({
+      competencyIds: ['programming.control-flow'],
+      difficulty: 'beginner',
+      lessonContent: [{ type: 'text', content: 'Loops repeat code.' }],
+    }).where(eq(stages.id, stageId));
     await database!.insert(users).values({
       id: userId,
       email: `${userId}@example.test`,
@@ -66,9 +75,15 @@ describe.skipIf(!database)('authored Quest PostgreSQL flow', () => {
   });
 
   it('creates, edits, starts, submits, and reviews the same persisted questions', async () => {
+    const stageRepository = new DrizzleStageRepository(database!);
+    const lesson = await new GetStageLessonUseCase(stageRepository).execute(userId, stageId);
+    expect(LessonResponseSchema.parse(LessonPresenter.toResponse(lesson))).toMatchObject({
+      competencies: [{ id: 'programming.control-flow' }],
+      difficulty: 'beginner',
+    });
     const create = new CreateQuestUseCase(
       contentQuests,
-      new DrizzleStageRepository(database!) as unknown as StageRepository,
+      stageRepository as unknown as StageRepository,
     );
     const quest = await create.execute({
       stageId,
@@ -83,6 +98,8 @@ describe.skipIf(!database)('authored Quest PostgreSQL flow', () => {
             { id: 'b', text: 'No' },
           ],
           correctOptionId: 'a',
+          competencyIds: ['security.input-validation'],
+          difficulty: 'intermediate',
         },
         {
           id: 'q2',
@@ -98,6 +115,10 @@ describe.skipIf(!database)('authored Quest PostgreSQL flow', () => {
     questId = quest.id;
     const start = new StartQuestUseCase(learnerQuests, new DrizzleStageRepository(database!));
     const initial = await start.execute(userId, questId);
+    expect(QuestSessionResponseSchema.parse(QuestPresenter.toSession(initial)).questions[0]).toMatchObject({
+      competencies: [{ id: 'security.input-validation' }],
+      difficulty: 'intermediate',
+    });
     const initialSession = initial.session;
     const firstQuestionId = initialSession.questions[0]!.id;
     const submit = new SubmitQuestUseCase(

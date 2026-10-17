@@ -1,5 +1,6 @@
 import { QuestWithStatus } from '../../application/list-quests.use-case.js';
 import { StartedQuestSession } from '../../application/start-quest.use-case.js';
+import { resolveCompetencies } from '@repo/contracts';
 
 export class QuestPresenter {
   static toListItem({ quest, completed, lockReason }: QuestWithStatus) {
@@ -29,6 +30,8 @@ export class QuestPresenter {
       questions: session.questions.map((question) => ({
         id: question.id,
         prompt: question.prompt,
+        competencies: resolveCompetencies(question.competencyIds),
+        difficulty: question.difficulty,
         options: question.options.map((option) => ({
           id: option.id,
           text: option.text,

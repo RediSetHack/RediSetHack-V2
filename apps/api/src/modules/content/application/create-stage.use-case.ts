@@ -9,6 +9,8 @@ export type CreateStageInput = {
   lessonContent?: LessonBlock[] | null;
   xpReward?: number;
   sortOrder?: number;
+  competencyIds?: string[];
+  difficulty?: Stage['difficulty'];
 };
 
 export class CreateStageUseCase {
@@ -26,6 +28,8 @@ export class CreateStageUseCase {
       lessonContent: input.lessonContent ?? null,
       xpReward: input.xpReward ?? 0,
       sortOrder: input.sortOrder ?? 0,
+      competencyIds: input.competencyIds ?? [],
+      difficulty: input.difficulty ?? null,
     });
   }
 }

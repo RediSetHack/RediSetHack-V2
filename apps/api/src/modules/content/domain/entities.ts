@@ -5,11 +5,15 @@ export type LessonBlock = import('@repo/contracts').LessonBlock;
 
 export type QuestionOption = { id: string; text: string };
 
+export type Difficulty = 'beginner' | 'intermediate' | 'advanced';
+
 export type QuestQuestion = {
   id: string;
   prompt: string;
   options: QuestionOption[];
   correctOptionId: string;
+  competencyIds?: string[];
+  difficulty?: Difficulty | null;
 };
 
 export type BadgeTrigger = 'cumulative' | 'category' | 'activity';
@@ -53,6 +57,8 @@ export class Stage {
     public readonly xpReward: number,
     public readonly sortOrder: number,
     public readonly archivedAt: Date | null = null,
+    public readonly competencyIds: string[] = [],
+    public readonly difficulty: Difficulty | null = null,
   ) {}
 }
 

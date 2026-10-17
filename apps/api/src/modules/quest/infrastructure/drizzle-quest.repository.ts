@@ -127,6 +127,8 @@ export class DrizzleQuestRepository implements QuestRepository {
           row.id,
           row.prompt,
           optionsByQuestion.get(row.id) ?? [],
+          row.competencyIds,
+          row.difficulty as QuestQuestion['difficulty'],
         ),
     );
   }

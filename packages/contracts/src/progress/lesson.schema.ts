@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CompetencySchema, DifficultySchema } from "../content/competency.schema.js";
 
 /** A prose block, rendered as readable text. */
 export const TextBlockSchema = z.object({
@@ -64,6 +65,8 @@ export const LessonResponseSchema = z.object({
   slug: z.string(),
   xpReward: z.number().int().nonnegative(),
   sortOrder: z.number().int(),
+  competencies: z.array(CompetencySchema).optional(),
+  difficulty: DifficultySchema.nullable().optional(),
   status: z.enum(["available", "completed"]),
   blocks: z.array(LessonBlockSchema),
 });
