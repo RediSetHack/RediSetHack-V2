@@ -152,7 +152,7 @@ export async function selectUserCharacter(
 export async function syncUser(
   apiBaseUrl: string,
   token: string,
-  userData?: { email?: string | null; name?: string | null },
+  userData?: { name?: string | null },
   fetchFn: typeof fetch = fetch,
 ): Promise<UpdatedUserResponse> {
   if (!token) {

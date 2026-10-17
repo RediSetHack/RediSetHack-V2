@@ -1,19 +1,20 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Post,
   Req,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from "@nestjs/common";
 import {
-  ApiBadRequestResponse,
   ApiBearerAuth,
   ApiOperation,
   ApiPropertyOptional,
+  ApiServiceUnavailableResponse,
   ApiTags,
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
+import { IsOptional, IsString, MaxLength } from "class-validator";
 import type { IncomingMessage } from "node:http";
 
 import { ClerkAuthPort, type ClerkAuthenticatedUser } from "../../domain/ports/clerk-auth.port.js";
@@ -23,15 +24,12 @@ import { UserPresenter } from "../presenters/user.presenter.js";
 
 export class SyncUserRequestDto {
   @ApiPropertyOptional({
-    example: "ada@example.com",
-    description: "Overrides the email Clerk reports, if provided.",
-  })
-  email?: string;
-
-  @ApiPropertyOptional({
     example: "Ada",
-    description: "Overrides the display name Clerk reports, if provided.",
+    description: "Optional display name supplied during signup.",
   })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
   name?: string;
 }
 
@@ -51,7 +49,9 @@ export class SyncUserController {
   @ApiUnauthorizedResponse({
     description: 'Missing or invalid authentication token.',
   })
-  @ApiBadRequestResponse({ description: 'The resolved email is invalid.' })
+  @ApiServiceUnavailableResponse({
+    description: 'Verified email is temporarily unavailable; retry onboarding.',
+  })
   async handle(
     @Req() request: IncomingMessage,
     @Body() body?: SyncUserRequestDto,
@@ -63,7 +63,6 @@ export class SyncUserController {
 
     const identity: ClerkAuthenticatedUser = {
       ...session,
-      email: body?.email && body.email.length > 0 ? body.email : session.email,
       name: body?.name && body.name.length > 0 ? body.name : session.name,
     };
 
@@ -72,7 +71,9 @@ export class SyncUserController {
       return UserPresenter.toResponse(user);
     } catch (error) {
       if (error instanceof InvalidUserEmailError) {
-        throw new BadRequestException(error.message);
+        throw new ServiceUnavailableException(
+          "Verified email is not available yet. Retry onboarding shortly.",
+        );
       }
       throw error;
     }

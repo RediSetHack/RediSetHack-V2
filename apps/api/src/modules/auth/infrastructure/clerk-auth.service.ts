@@ -89,7 +89,9 @@ export class ClerkAuthService implements ClerkAuthPort {
     if (!authenticatedUser.email && this.clerk.users?.getUser) {
       try {
         const user = await this.clerk.users.getUser(auth.userId);
-        const addresses = user.emailAddresses ?? [];
+        const addresses = (user.emailAddresses ?? []).filter(
+          (address) => address.verification?.status === "verified",
+        );
         const primary =
           addresses.find((e) => e.id === user.primaryEmailAddressId) ?? addresses[0];
         const email = primary?.emailAddress ?? null;

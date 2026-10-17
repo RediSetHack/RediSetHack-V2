@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { BadRequestException, UnauthorizedException } from "@nestjs/common";
+import { UnauthorizedException } from "@nestjs/common";
 import type { IncomingMessage } from "node:http";
 
 import { User } from "./domain/entities/user.entity.js";
@@ -53,7 +53,7 @@ describe("SyncUserController", () => {
     });
   });
 
-  it("uses email and name provided in the request body when present", async () => {
+  it("uses the authenticated email and permits an optional display name", async () => {
     const session = {
       id: "user_1",
       email: null,
@@ -70,19 +70,18 @@ describe("SyncUserController", () => {
 
     const req = {} as IncomingMessage;
     await controller.handle(req, {
-      email: "learner@example.com",
       name: "Learner",
     });
 
     expect(ensureUser.execute).toHaveBeenCalledWith({
       id: "user_1",
-      email: "learner@example.com",
+      email: null,
       name: "Learner",
       role: "user",
     });
   });
 
-  it("throws BadRequestException when user has no valid email", async () => {
+  it("throws a retryable error when a new user has no verified email", async () => {
     const session = {
       id: "user_1",
       email: null,
@@ -98,6 +97,6 @@ describe("SyncUserController", () => {
     const controller = new SyncUserController(clerkAuth, ensureUser);
 
     const req = {} as IncomingMessage;
-    await expect(controller.handle(req)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(controller.handle(req)).rejects.toMatchObject({ status: 503 });
   });
 });

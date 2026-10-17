@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { Character } from './domain/entities/character.entity.js';
 import { User } from './domain/entities/user.entity.js';
+import { InvalidUserEmailError } from './domain/errors.js';
 import { CharacterRepository } from './domain/ports/character.repository.js';
 import {
   ClerkAuthPort,
@@ -69,7 +70,9 @@ describe('auth integration', () => {
       const isAdmin = request.headers['x-probe-role'] === 'admin';
       return {
         id: isAdmin ? 'user_admin' : 'user_learner',
-        email: isAdmin ? 'admin@example.com' : 'learner@example.com',
+        email: request.headers['x-probe-incomplete'] === 'true'
+          ? null
+          : isAdmin ? 'admin@example.com' : 'learner@example.com',
         name: isAdmin ? 'Admin' : 'Learner',
         role: isAdmin ? 'admin' : 'user',
       } satisfies ClerkAuthenticatedUser;
@@ -78,12 +81,14 @@ describe('auth integration', () => {
 
   const fakeUsers: UserRepository = {
     async upsert(identity) {
+      const existing = userStore.get(identity.id);
+      if (!identity.email && !existing) throw new InvalidUserEmailError(identity.id);
       const user = new User(
         identity.id,
-        identity.email ?? '',
-        identity.name,
-        null,
-        0,
+        identity.email ?? existing!.email,
+        identity.name ?? existing?.name ?? null,
+        existing?.characterId ?? null,
+        existing?.totalXp ?? 0,
       );
       userStore.set(user.id, user);
       return user;
@@ -303,6 +308,48 @@ describe('auth integration', () => {
       id: 'user_learner',
       email: 'learner@example.com',
     });
+  });
+
+  it('ignores forged fields under the global whitelist and preserves identity state on repeated sync', async () => {
+    const firstSync = await request(app.getHttpServer())
+      .post('/v1/api/user/sync')
+      .set('authorization', 'Bearer valid-token')
+      .send({ email: 'attacker@example.com', clerkId: 'forged' });
+    expect(firstSync.status).toBe(201);
+    expect(firstSync.body).toMatchObject({ id: 'user_learner', email: 'learner@example.com' });
+
+    const existing = new User('user_learner', 'verified@example.com', 'Learner', 1, 75);
+    userStore.set(existing.id, existing);
+    const res = await request(app.getHttpServer())
+      .post('/v1/api/user/sync')
+      .set('authorization', 'Bearer valid-token')
+      .set('x-probe-incomplete', 'true')
+      .send({ email: 'attacker@example.com', clerkId: 'forged', characterId: 99, totalXp: 999 });
+
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({ id: 'user_learner', email: 'verified@example.com', characterId: 1, totalXp: 75 });
+    expect(userStore.get(existing.id)).toEqual(existing);
+  });
+
+  it('returns a retryable response when trusted email is unavailable for a new account', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/v1/api/user/sync')
+      .set('authorization', 'Bearer valid-token')
+      .set('x-probe-incomplete', 'true')
+      .send({ email: 'forged@example.com' });
+
+    expect(res.status).toBe(503);
+    expect(res.body.message).toContain('Retry onboarding');
+    expect(userStore.size).toBe(0);
+  });
+
+  it('rejects a non-string sync name', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/v1/api/user/sync')
+      .set('authorization', 'Bearer valid-token')
+      .send({ name: 42 });
+
+    expect(res.status).toBe(400);
   });
 
   it('returns the profile shape the app shell renders, validated against the contract', async () => {
