@@ -17,7 +17,7 @@ export const ExecuteCodeResponseSchema = z.object({
   exitCode: z.number().int(),
   executionTimeMs: z.number().int().nonnegative(),
   requestDurationMs: z.number().int().nonnegative(),
-  failureType: z.enum(['none', 'compile', 'runtime']),
+  failureType: z.enum(['none', 'compile', 'runtime', 'timeout']),
 });
 export type ExecuteCodeResponse = z.infer<typeof ExecuteCodeResponseSchema>;
 

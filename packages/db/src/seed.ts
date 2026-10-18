@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
-import { sql } from "drizzle-orm";
-import { characters } from "./schema/index.js";
+import { eq, sql } from "drizzle-orm";
+import { characters, codingActivities, stages } from "./schema/index.js";
 import { createDb } from "./index.js";
 
 for (const rel of ["../../.env", "../../../.env", "./.env"]) {
@@ -77,7 +77,34 @@ export async function seed(databaseUrl?: string) {
     sql`SELECT setval(pg_get_serial_sequence('characters', 'id'), coalesce(max(id), 1)) FROM characters;`,
   );
 
-  console.log("Seeded 5 characters successfully!");
+  const [stage] = await db.select().from(stages).where(eq(stages.slug, "read-the-signal")).limit(1);
+  if (stage) {
+    const [activity] = await db.insert(codingActivities).values({
+      stageId: stage.id,
+      authoringId: "signal-uppercase",
+      title: "Uppercase the signal",
+      prompt: "Read a message and print it in uppercase.",
+      language: "python",
+      starterCode: "message = input()\n",
+      competencyIds: ["programming.control-flow"],
+      difficulty: "beginner",
+      visibleExamples: [{ input: "hello", expected: "HELLO" }],
+      hiddenChecks: [{ input: "signal received", expected: "SIGNAL RECEIVED" }],
+      passingScore: 100,
+      xpReward: 10,
+      contentVersion: "1",
+    }).onConflictDoUpdate({
+      target: codingActivities.authoringId,
+      set: { stageId: stage.id, title: "Uppercase the signal", prompt: "Read a message and print it in uppercase.", language: "python", starterCode: "message = input()\n", competencyIds: ["programming.control-flow"], difficulty: "beginner", visibleExamples: [{ input: "hello", expected: "HELLO" }], hiddenChecks: [{ input: "signal received", expected: "SIGNAL RECEIVED" }], passingScore: 100, xpReward: 10, contentVersion: "1", archivedAt: null },
+    }).returning();
+    await db.update(stages).set({
+      lessonContent: (stage.lessonContent as { type: string; [key: string]: unknown }[] ?? []).map((block) =>
+        block.type === "exercise" ? { ...block, activityId: activity!.id } : block,
+      ),
+    }).where(eq(stages.id, stage.id));
+  }
+
+  console.log("Seeded 5 characters and the sample coding activity when its Lesson exists!");
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

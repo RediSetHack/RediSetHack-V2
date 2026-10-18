@@ -69,8 +69,7 @@ export class GradeCodingActivityUseCase {
     return activity;
   }
 
-  // Provider unavailability propagates (no attempt recorded: not the learner's result);
-  // a timeout is the learner's code running too long, so it is graded and recorded.
+  // Provider unavailability propagates (no attempt recorded); sandbox timeouts are learner outcomes.
   private async grade(activity: CodingActivity, code: string) {
     const checks = [...activity.visibleExamples, ...activity.hiddenChecks];
     const visibleResults: CodingAttempt['visibleResults'] = [];
@@ -87,6 +86,10 @@ export class GradeCodingActivityUseCase {
         ok = result.failureType === 'none' && normalize(actual) === normalize(check.expected);
         if (!ok && errorCategory === 'none')
           errorCategory = result.failureType === 'none' ? 'wrong_answer' : result.failureType;
+        if (result.failureType === 'timeout') {
+          if (index < activity.visibleExamples.length) visibleResults.push({ ...check, actual: '', passed: false });
+          break;
+        }
         // A compile failure fails every check identically; don't spend the rest of the sandbox budget.
         if (result.failureType === 'compile') {
           if (index < activity.visibleExamples.length) visibleResults.push({ ...check, actual: '', passed: false });

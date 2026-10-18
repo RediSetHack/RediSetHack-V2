@@ -2,6 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { PistonCodeExecutionService } from './infrastructure/piston-code-execution.service.js';
+import { CodeExecutionUnavailableError } from './domain/errors.js';
 
 function jsonResponse(body: unknown, ok = true, status = 200) {
   return {
@@ -121,6 +122,17 @@ describe('PistonCodeExecutionService', () => {
     expect(result.requestDurationMs).toBeGreaterThanOrEqual(0);
   });
 
+  it('classifies Piston SIGKILL as a learner execution timeout', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({
+      run: { stdout: '', stderr: '', code: null, signal: 'SIGKILL', time: 5 },
+    })));
+    const config = {
+      get: vi.fn((key: string) => key === 'CODE_EXECUTION_SANDBOX_VERIFIED' ? 'true' : key === 'CODE_EXECUTION_API_URL' ? 'http://piston.test/api/v2/piston' : undefined),
+    } as unknown as ConfigService;
+    const result = await new PistonCodeExecutionService(config).execute({ language: 'python', code: 'while True: pass', stdin: '' });
+    expect(result).toMatchObject({ exitCode: 1, failureType: 'timeout' });
+  });
+
   it('returns compile-only failures when the provider omits run output', async () => {
     vi.stubGlobal(
       'fetch',
@@ -232,7 +244,7 @@ describe('PistonCodeExecutionService', () => {
     ).rejects.toThrow('unavailable');
   });
 
-  it('maps provider request timeouts to a learner-safe timeout error', async () => {
+  it('maps provider request timeouts to an unavailable error', async () => {
     vi.stubGlobal(
       'fetch',
       vi
@@ -251,8 +263,7 @@ describe('PistonCodeExecutionService', () => {
       ),
     } as unknown as ConfigService;
     const service = new PistonCodeExecutionService(config);
-    await expect(
-      service.execute({ language: 'python', code: 'x', stdin: '' }),
-    ).rejects.toThrow('timed out');
+    await expect(service.execute({ language: 'python', code: 'x', stdin: '' }))
+      .rejects.toBeInstanceOf(CodeExecutionUnavailableError);
   });
 });
