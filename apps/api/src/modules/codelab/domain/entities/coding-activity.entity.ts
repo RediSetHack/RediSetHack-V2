@@ -18,6 +18,8 @@ export type CodingActivity = {
   starterCode: string;
   competencyIds: string[];
   difficulty: 'beginner' | 'intermediate' | 'advanced' | null;
+  objectives: { programming: string[]; security: string[] };
+  provenance: Record<string, string> | null;
   visibleExamples: CodingCheck[];
   /** Server-only: must never be serialized to a learner. */
   hiddenChecks: CodingCheck[];
