@@ -104,6 +104,7 @@ export class DrizzleCodingActivityRepository implements CodingActivityRepository
           assessed: true,
           score: attempt.score,
           xpAwarded,
+          provenance: activity.provenance,
         },
         errors: attempt.errorCategory === 'none' ? null : [{ category: attempt.errorCategory }],
       });

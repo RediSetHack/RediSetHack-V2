@@ -224,6 +224,10 @@ export const codingActivities = pgTable(
     starterCode: text("starter_code").notNull().default(""),
     competencyIds: jsonb("competency_ids").$type<string[]>().notNull().default([]),
     difficulty: text("difficulty"),
+    // Programming and security learning objectives, shown with the activity.
+    objectives: jsonb("objectives").$type<{ programming: string[]; security: string[] }>().notNull().default({ programming: [], security: [] }),
+    // Where the reviewed content came from; copied onto each recorded interaction.
+    provenance: jsonb("provenance").$type<Record<string, string> | null>(),
     visibleExamples: jsonb("visible_examples").$type<{ input: string; expected: string }[]>().notNull().default([]),
     hiddenChecks: jsonb("hidden_checks").$type<{ input: string; expected: string }[]>().notNull().default([]),
     // Completion rule: percentage of all (visible + hidden) checks that must pass.

@@ -21,6 +21,9 @@ export const ExecuteCodeResponseSchema = z.object({
 });
 export type ExecuteCodeResponse = z.infer<typeof ExecuteCodeResponseSchema>;
 
+const ObjectivesSchema = z.object({ programming: z.array(z.string()), security: z.array(z.string()) });
+const ProvenanceSchema = z.record(z.string(), z.string()).nullable();
+
 const CheckSchema = z.object({ input: z.string(), expected: z.string() });
 
 /** Authoring shape of one graded coding activity; `hiddenChecks` never reach learners. */
@@ -33,6 +36,8 @@ export const CodingActivityAuthoringSchema = z.object({
   starterCode: z.string(),
   competencyIds: z.array(z.string()),
   difficulty: z.enum(["beginner", "intermediate", "advanced"]).nullable(),
+  objectives: ObjectivesSchema,
+  provenance: ProvenanceSchema,
   visibleExamples: z.array(CheckSchema).min(1),
   hiddenChecks: z.array(CheckSchema).min(1),
   passingScore: z.number().int().min(1).max(100),
@@ -50,6 +55,8 @@ export const CodingActivityResponseSchema = z.object({
   language: LanguageSchema,
   starterCode: z.string(),
   difficulty: z.enum(["beginner", "intermediate", "advanced"]).nullable(),
+  objectives: ObjectivesSchema,
+  provenance: ProvenanceSchema,
   visibleExamples: z.array(CheckSchema),
   passingScore: z.number().int(),
   xpReward: z.number().int().nonnegative(),

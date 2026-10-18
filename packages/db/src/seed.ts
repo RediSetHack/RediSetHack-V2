@@ -2,6 +2,7 @@ import { fileURLToPath } from "node:url";
 import { eq, sql } from "drizzle-orm";
 import { characters, codingActivities, stages } from "./schema/index.js";
 import { createDb } from "./index.js";
+import { SECURE_DEV_ACTIVITY, SECURE_DEV_LESSON, SECURE_DEV_STAGE_SLUG } from "./secure-dev-content.js";
 
 for (const rel of ["../../.env", "../../../.env", "./.env"]) {
   try {
@@ -102,6 +103,16 @@ export async function seed(databaseUrl?: string) {
         block.type === "exercise" ? { ...block, activityId: activity!.id } : block,
       ),
     }).where(eq(stages.id, stage.id));
+  }
+
+  const [secureStage] = await db.select().from(stages).where(eq(stages.slug, SECURE_DEV_STAGE_SLUG)).limit(1);
+  if (secureStage) {
+    const { authoringId: _id, ...mutable } = SECURE_DEV_ACTIVITY;
+    const [secure] = await db.insert(codingActivities).values({ stageId: secureStage.id, ...SECURE_DEV_ACTIVITY })
+      .onConflictDoUpdate({ target: codingActivities.authoringId, set: { stageId: secureStage.id, ...mutable, archivedAt: null } }).returning();
+    await db.update(stages).set({
+      lessonContent: SECURE_DEV_LESSON.map((block) => (block.type === "exercise" ? { ...block, activityId: secure!.id } : block)),
+    }).where(eq(stages.id, secureStage.id));
   }
 
   console.log("Seeded 5 characters and the sample coding activity when its Lesson exists!");
