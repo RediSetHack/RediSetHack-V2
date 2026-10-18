@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { boolean, date, index, integer, jsonb, pgTable, serial, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { users } from "./identity.js";
-import { stages } from "./catalog.js";
+import { codingActivities, stages } from "./catalog.js";
 
 // ---------------------------------------------------------------------------
 // Stage progression & daily events
@@ -49,7 +49,7 @@ export const learningInteractions = pgTable(
     id: uuid("id").defaultRandom().primaryKey(),
     learnerId: text("learner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
     sessionId: text("session_id"),
-    activityType: text("activity_type", { enum: ["quest", "reading"] }).notNull(),
+    activityType: text("activity_type", { enum: ["quest", "reading", "coding"] }).notNull(),
     activityId: integer("activity_id").notNull(),
     startedAt: timestamp("started_at", { withTimezone: true }),
     occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull().defaultNow(),
@@ -82,4 +82,44 @@ export const readingSessions = pgTable(
   (table) => [
     uniqueIndex("reading_sessions_active_unique").on(table.learnerId, table.stageId).where(sql`${table.completedAt} is null`),
   ],
+);
+
+// One graded submission of a coding activity. `code` is retained so the learner
+// can review their own attempt and for research under the project's learner-data
+// policy; it is only ever returned to its owner. `elapsedMs` is summed sandbox
+// execution time across checks (excludes network latency and learner think time).
+export const codingAttempts = pgTable(
+  "coding_attempts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    learnerId: text("learner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    activityId: integer("activity_id").notNull().references(() => codingActivities.id, { onDelete: "cascade" }),
+    code: text("code").notNull(),
+    score: integer("score").notNull(),
+    passed: boolean("passed").notNull(),
+    // none | wrong_answer | compile | runtime | timeout
+    errorCategory: text("error_category").notNull(),
+    checksPassed: integer("checks_passed").notNull(),
+    checksTotal: integer("checks_total").notNull(),
+    // Per visible example output only; hidden checks are never stored per-check.
+    visibleResults: jsonb("visible_results").$type<{ input: string; expected: string; actual: string; passed: boolean }[]>().notNull().default([]),
+    elapsedMs: integer("elapsed_ms").notNull(),
+    xpAwarded: integer("xp_awarded").notNull().default(0),
+    submittedAt: timestamp("submitted_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("coding_attempts_learner_activity_index").on(table.learnerId, table.activityId)],
+);
+
+// "First pass only" gate: the unique index makes XP for a coding activity
+// idempotent even under concurrent or repeated passing submissions.
+export const codingXpAwards = pgTable(
+  "coding_xp_awards",
+  {
+    id: serial("id").primaryKey(),
+    learnerId: text("learner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    activityId: integer("activity_id").notNull().references(() => codingActivities.id, { onDelete: "cascade" }),
+    attemptId: uuid("attempt_id").notNull().references(() => codingAttempts.id, { onDelete: "cascade" }),
+    awardedAt: timestamp("awarded_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("coding_xp_awards_learner_activity_unique").on(table.learnerId, table.activityId)],
 );

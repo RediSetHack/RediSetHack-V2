@@ -205,3 +205,37 @@ export const questXpAwards = pgTable(
   },
   (table) => [uniqueIndex("quest_xp_awards_user_quest_unique").on(table.userId, table.questId)],
 );
+
+// A graded coding exercise attached to a Stage. `authoringId` is the stable
+// identity across edits; `visibleExamples` are shown to learners, while
+// `hiddenChecks` are graded server-side and never leave the API. Each check
+// runs the code with `input` on stdin and compares trimmed stdout to `expected`.
+export const codingActivities = pgTable(
+  "coding_activities",
+  {
+    id: serial("id").primaryKey(),
+    stageId: integer("stage_id")
+      .notNull()
+      .references(() => stages.id, { onDelete: "cascade" }),
+    authoringId: text("authoring_id").notNull(),
+    title: text("title").notNull(),
+    prompt: text("prompt").notNull(),
+    language: text("language").notNull().default("python"),
+    starterCode: text("starter_code").notNull().default(""),
+    competencyIds: jsonb("competency_ids").$type<string[]>().notNull().default([]),
+    difficulty: text("difficulty"),
+    visibleExamples: jsonb("visible_examples").$type<{ input: string; expected: string }[]>().notNull().default([]),
+    hiddenChecks: jsonb("hidden_checks").$type<{ input: string; expected: string }[]>().notNull().default([]),
+    // Completion rule: percentage of all (visible + hidden) checks that must pass.
+    passingScore: integer("passing_score").notNull().default(100),
+    xpReward: integer("xp_reward").notNull().default(0),
+    contentVersion: text("content_version").notNull().default("1"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex("coding_activities_authoring_id_unique").on(table.authoringId),
+    index("coding_activities_stage_id_index").on(table.stageId),
+    check("coding_activities_difficulty_check", sql`${table.difficulty} is null or ${table.difficulty} in ('beginner', 'intermediate', 'advanced')`),
+  ],
+);

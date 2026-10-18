@@ -6,7 +6,7 @@ import { CodelabEditor } from "@/components/codelab-editor";
 export default async function CodelabPage({
   searchParams,
 }: Readonly<{
-  searchParams: Promise<{ language?: string; code?: string }>;
+  searchParams: Promise<{ language?: string; code?: string; activity?: string }>;
 }>) {
   const params = await searchParams;
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
@@ -17,6 +17,7 @@ export default async function CodelabPage({
         apiUrl={apiUrl}
         initialLanguage={params.language}
         initialCode={params.code}
+        activityId={Number(params.activity) > 0 ? Number(params.activity) : undefined}
       />
     </div>
   );

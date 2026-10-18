@@ -38,6 +38,16 @@ describe("normalizeLessonBlocks", () => {
     ]);
   });
 
+  it("keeps the activity id of a graded exercise", () => {
+    expect(
+      normalizeLessonBlocks([
+        { type: "exercise", prompt: "Sum.", language: "python", starterCode: "", activityId: 7 },
+      ]),
+    ).toEqual([
+      { kind: "exercise", prompt: "Sum.", language: "python", starterCode: "", activityId: 7 },
+    ]);
+  });
+
   it("normalizes images and preserves their accessible description", () => {
     expect(
       normalizeLessonBlocks([

@@ -22,7 +22,7 @@ export type ExecutionResult = {
   executionTimeMs: number;
   /** End-to-end duration of the API request to the provider. */
   requestDurationMs: number;
-  failureType: 'none' | 'compile' | 'runtime';
+  failureType: 'none' | 'compile' | 'runtime' | 'timeout';
 };
 
 export abstract class CodeExecutionPort {

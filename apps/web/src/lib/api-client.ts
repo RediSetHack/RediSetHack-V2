@@ -3,6 +3,8 @@ import type {
   Character,
   DailyEventResponse,
   ExecuteCodeResponse,
+  CodingActivityResponse,
+  CodingAttemptResponse,
   Language,
   LeaderboardResponse,
   LessonResponse,
@@ -24,6 +26,8 @@ export type {
 } from "@repo/contracts";
 import {
   ExecuteCodeResponseSchema,
+  CodingActivityResponseSchema,
+  CodingAttemptResponseSchema,
   QuestListResponseSchema,
   QuestResultReviewResponseSchema,
   QuestSessionResponseSchema,
@@ -41,6 +45,8 @@ export type QuestSubmitResult = SubmitQuestResponse;
 export type QuestResultReview = QuestResultReviewResponse;
 export type StageCompletion = StageCompletionResponse;
 export type CodeExecutionResult = ExecuteCodeResponse;
+export type CodingActivity = CodingActivityResponse;
+export type CodingAttempt = CodingAttemptResponse;
 export type { Region, Stage, Zone, Quest };
 
 export interface UpdatedUserResponse {
@@ -385,4 +391,31 @@ export async function evaluateBadges(
 ): Promise<BadgeAward[]> {
   const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/badges/evaluate`;
   return postAuthedJson<BadgeAward[]>(endpoint, token, {}, fetchFn);
+}
+
+/** Opens a graded coding activity, `GET /v1/api/codelab/activities/:activityId`. */
+export async function getCodingActivity(
+  apiBaseUrl: string,
+  token: string,
+  activityId: number,
+  fetchFn: typeof fetch = fetch,
+): Promise<CodingActivity> {
+  const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/codelab/activities/${activityId}`;
+  return CodingActivityResponseSchema.parse(
+    await fetchAuthedJson<unknown>(endpoint, token, fetchFn),
+  );
+}
+
+/** Submits code for grading, `POST /v1/api/codelab/activities/:activityId/attempts`. */
+export async function submitCodingAttempt(
+  apiBaseUrl: string,
+  token: string,
+  activityId: number,
+  code: string,
+  fetchFn: typeof fetch = fetch,
+): Promise<CodingAttempt> {
+  const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/codelab/activities/${activityId}/attempts`;
+  return CodingAttemptResponseSchema.parse(
+    await postAuthedJson<unknown>(endpoint, token, { code }, fetchFn),
+  );
 }

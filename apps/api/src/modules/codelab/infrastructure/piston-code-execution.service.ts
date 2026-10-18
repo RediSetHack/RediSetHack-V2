@@ -7,10 +7,7 @@ import {
   ExecutionResult,
   SupportedLanguage,
 } from '../domain/ports/code-execution.port.js';
-import {
-  CodeExecutionTimeoutError,
-  CodeExecutionUnavailableError,
-} from '../domain/errors.js';
+import { CodeExecutionUnavailableError } from '../domain/errors.js';
 
 // Piston (https://github.com/engineer-man/piston) is a free, keyless multi-language
 // execution API — the lazy choice over Judge0/Glot.io, which both require provisioning
@@ -93,7 +90,7 @@ export class PistonCodeExecutionService implements CodeExecutionPort {
         error instanceof Error &&
         ['TimeoutError', 'AbortError'].includes(error.name)
       )
-        throw new CodeExecutionTimeoutError();
+        throw new CodeExecutionUnavailableError();
       throw new CodeExecutionUnavailableError();
     }
     if (!response.ok) {
@@ -111,7 +108,7 @@ export class PistonCodeExecutionService implements CodeExecutionPort {
         error instanceof Error &&
         ['TimeoutError', 'AbortError'].includes(error.name)
       )
-        throw new CodeExecutionTimeoutError();
+        throw new CodeExecutionUnavailableError();
       throw new CodeExecutionUnavailableError();
     }
     const requestDurationMs = Date.now() - startedAt;
@@ -137,8 +134,10 @@ export class PistonCodeExecutionService implements CodeExecutionPort {
     const failureType =
       result.compile?.code !== undefined && result.compile.code !== 0
         ? 'compile'
-        : result.run && result.run.code !== 0
-          ? 'runtime'
+        : result.run?.signal === 'SIGKILL'
+          ? 'timeout'
+          : result.run && result.run.code !== 0
+            ? 'runtime'
           : 'none';
     const exitCode =
       result.run && result.run.code === null

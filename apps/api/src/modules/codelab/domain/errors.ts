@@ -25,3 +25,17 @@ export class CodeExecutionUnavailableError extends Error {
     this.name = 'CodeExecutionUnavailableError';
   }
 }
+
+export class CodingActivityNotFoundError extends Error {
+  constructor(activityId: number) {
+    super(`Coding activity with id ${activityId} does not exist`);
+    this.name = 'CodingActivityNotFoundError';
+  }
+}
+
+export class CodingAttemptNotFoundError extends Error {
+  constructor(attemptId: string) {
+    super(`Coding attempt with id ${attemptId} does not exist`);
+    this.name = 'CodingAttemptNotFoundError';
+  }
+}

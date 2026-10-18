@@ -39,8 +39,17 @@ function ExerciseBlockView({
   prompt,
   language,
   starterCode,
-}: Readonly<{ prompt: string; language: string; starterCode: string }>) {
-  const codelabHref = `/codelab?language=${encodeURIComponent(language)}&code=${encodeURIComponent(starterCode)}`;
+  activityId,
+}: Readonly<{
+  prompt: string;
+  language: string;
+  starterCode: string;
+  activityId?: number;
+}>) {
+  const codelabHref =
+    activityId === undefined
+      ? `/codelab?language=${encodeURIComponent(language)}&code=${encodeURIComponent(starterCode)}`
+      : `/codelab?activity=${activityId}`;
 
   return (
     <div className="rounded-md border border-border/60 p-4">
@@ -53,7 +62,7 @@ function ExerciseBlockView({
           href={codelabHref}
           className="text-sm font-medium text-primary underline-offset-4 hover:underline"
         >
-          Open in Codelab
+          {activityId === undefined ? "Open in Codelab" : "Solve and submit for grading"}
         </Link>
       </p>
     </div>
@@ -107,6 +116,7 @@ export function LessonBlockView({
           prompt={block.prompt}
           language={block.language}
           starterCode={block.starterCode}
+          activityId={block.activityId}
         />
       );
     case "image":
