@@ -254,7 +254,7 @@ export class DrizzleQuestRepository implements QuestRepository {
         elapsedDefinition: 'Server elapsed time from Quest session start to accepted submission, including idle time.',
         contentVersion: createHash('sha256').update(JSON.stringify(snapshot)).digest('hex'),
         skills: [...new Set(snapshot.flatMap((question) => question.competencyIds))],
-        difficulty: snapshot.map((question) => question.difficulty).filter(Boolean).sort().join(',') || null,
+        difficulty: snapshot.map((question) => question.difficulty).filter((difficulty): difficulty is Exclude<typeof difficulty, null> => difficulty !== null).sort((a, b) => a.localeCompare(b)).join(',') || null,
         answers: snapshot.map((question) => {
           const optionId = responseByQuestion.get(question.id);
           return { questionId: question.id, optionId: optionId ?? null, correct: optionId == null ? null : question.options.find((option) => option.id === optionId)?.isCorrect ?? false };
