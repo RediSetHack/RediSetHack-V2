@@ -31,6 +31,8 @@ export const ExerciseBlockSchema = z.object({
   prompt: z.string(),
   language: z.string(),
   starterCode: z.string(),
+  /** When set, the exercise is graded: it opens the Codelab on this coding activity. */
+  activityId: z.number().int().positive().optional(),
 });
 export type ExerciseBlock = z.infer<typeof ExerciseBlockSchema>;
 

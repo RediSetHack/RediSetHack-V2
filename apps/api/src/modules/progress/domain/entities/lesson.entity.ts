@@ -5,6 +5,7 @@ export type ExerciseBlock = {
   prompt: string;
   language: string;
   starterCode: string;
+  activityId?: number;
 };
 export type ImageBlock = {
   type: 'image';
