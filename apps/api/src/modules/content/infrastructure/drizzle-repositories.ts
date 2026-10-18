@@ -246,7 +246,7 @@ export class DrizzleQuestRepository implements QuestRepository {
   }): Promise<Quest> {
     return this.database.transaction(async (tx) => {
       const { initialAssessment, ...questInput } = input;
-      if (initialAssessment) await tx.update(quests).set({ initialAssessment: false });
+      if (initialAssessment) await tx.update(quests).set({ initialAssessment: false }).where(eq(quests.initialAssessment, true));
       const rows = await tx.insert(quests).values({ ...questInput, initialAssessment }).returning();
       await this.syncQuestions(tx, rows[0]!.id, input.questions);
       return toQuest(rows[0]!, input.questions);
@@ -267,7 +267,7 @@ export class DrizzleQuestRepository implements QuestRepository {
   ): Promise<Quest | null> {
     return this.database.transaction(async (tx) => {
       const { questions, ...rest } = input;
-      if (rest.initialAssessment) await tx.update(quests).set({ initialAssessment: false });
+      if (rest.initialAssessment) await tx.update(quests).set({ initialAssessment: false }).where(eq(quests.initialAssessment, true));
       const row = Object.keys(rest).length
         ? (await tx.update(quests).set(rest).where(eq(quests.id, id)).returning())[0]
         : await tx.query.quests.findFirst({ where: eq(quests.id, id) });

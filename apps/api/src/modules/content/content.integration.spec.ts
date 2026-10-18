@@ -857,7 +857,6 @@ describe('content admin CRUD', () => {
       });
     expect(valid.status).toBe(201);
     expect(valid.body.initialAssessment).toBe(true);
-    expect(valid.body.initialAssessment).toBe(true);
     expect(valid.body.questions).toHaveLength(1);
     expect(valid.body.questions[0]).toMatchObject({ competencyIds: ['programming.control-flow'], difficulty: 'beginner' });
     expect(

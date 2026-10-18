@@ -170,6 +170,8 @@ describe.skipIf(!dbUrl)('Quest Sessions over HTTP with PostgreSQL', () => {
   afterAll(async () => {
     await app?.close();
     if (db) {
+      await db.delete(initialCompetencyBaselines).where(eq(initialCompetencyBaselines.userId, learnerId));
+      await db.delete(initialCompetencyBaselines).where(eq(initialCompetencyBaselines.userId, otherId));
       await db.delete(regions).where(eq(regions.id, regionId));
       await db.delete(users).where(eq(users.id, learnerId));
       await db.delete(users).where(eq(users.id, otherId));
