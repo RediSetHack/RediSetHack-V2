@@ -144,7 +144,7 @@ export function CodelabEditor({
   useEffect(() => {
     if (activityId === undefined) return;
     let cancelled = false;
-    (async () => {
+    void (async () => {
       try {
         const token = await getToken();
         if (!token) throw new Error("Unable to obtain authentication session token");
