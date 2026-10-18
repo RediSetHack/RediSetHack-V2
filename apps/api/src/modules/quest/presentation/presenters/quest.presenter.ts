@@ -12,6 +12,7 @@ export class QuestPresenter {
       timeLimitSeconds: quest.timeLimitSeconds,
       passingScore: quest.passingScore,
       xpReward: quest.xpReward,
+      initialAssessment: quest.initialAssessment,
       completed,
       lockReason,
     };

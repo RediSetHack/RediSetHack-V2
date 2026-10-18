@@ -79,6 +79,7 @@ export abstract class QuestRepository {
     timeLimitSeconds: number;
     passingScore: number;
     xpReward: number;
+    initialAssessment?: boolean;
     questions: Quest['questions'];
   }): Promise<Quest>;
   abstract update(
@@ -89,6 +90,7 @@ export abstract class QuestRepository {
       timeLimitSeconds: number;
       passingScore: number;
       xpReward: number;
+      initialAssessment: boolean;
       questions: Quest['questions'];
     }>,
   ): Promise<Quest | null>;

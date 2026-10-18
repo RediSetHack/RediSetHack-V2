@@ -60,6 +60,7 @@ describe("DrizzleProfileRepository", () => {
             .mockResolvedValue({ id: 7, name: "Kalayaan", slug: "kalayaan", imageUrl: null }),
         },
         learningInteractions: { findMany: vi.fn().mockResolvedValue([]) },
+        initialCompetencyBaselines: { findFirst: vi.fn().mockResolvedValue(null) },
       },
     } as unknown as Database;
 
@@ -72,6 +73,7 @@ describe("DrizzleProfileRepository", () => {
     ]);
     expect(result?.character).toEqual({ id: 7, name: "Kalayaan", slug: "kalayaan", imageUrl: null });
     expect(result?.activity).toEqual([]);
+    expect(result?.initialCompetencyBaseline).toBeNull();
   });
 
   it("returns null when the user does not exist", async () => {

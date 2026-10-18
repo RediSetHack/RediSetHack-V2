@@ -263,6 +263,8 @@ function makeQuestRepository(): QuestRepository {
         input.passingScore,
         input.xpReward,
         input.questions,
+        null,
+        input.initialAssessment ?? false,
       );
       store.set(quest.id, quest);
       return quest;
@@ -281,6 +283,8 @@ function makeQuestRepository(): QuestRepository {
         input.passingScore ?? existing.passingScore,
         input.xpReward ?? existing.xpReward,
         input.questions ?? existing.questions,
+        existing.archivedAt,
+        input.initialAssessment ?? existing.initialAssessment,
       );
       store.set(id, updated);
       return updated;
@@ -803,6 +807,12 @@ describe('content admin CRUD', () => {
       .send({ stageId: stage.body.id, title: 'Empty quiz', questions: [] });
     expect(empty.status).toBe(400);
 
+    const untaggedAssessment = await request(app.getHttpServer())
+      .post('/v1/api/admin/quests')
+      .set(admin())
+      .send({ stageId: stage.body.id, title: 'Untagged baseline', initialAssessment: true, questions: [{ id: 'q1', prompt: '?', options: [{ id: 'a', text: 'A' }, { id: 'b', text: 'B' }], correctOptionId: 'a' }] });
+    expect(untaggedAssessment.status).toBe(400);
+
     const outOfRangeScore = await request(app.getHttpServer())
       .post('/v1/api/admin/quests')
       .set(admin())
@@ -830,6 +840,7 @@ describe('content admin CRUD', () => {
       .send({
         stageId: stage.body.id,
         title: 'Loop quiz',
+        initialAssessment: true,
         questions: [
           {
             id: 'q1',
@@ -845,6 +856,7 @@ describe('content admin CRUD', () => {
         ],
       });
     expect(valid.status).toBe(201);
+    expect(valid.body.initialAssessment).toBe(true);
     expect(valid.body.questions).toHaveLength(1);
     expect(valid.body.questions[0]).toMatchObject({ competencyIds: ['programming.control-flow'], difficulty: 'beginner' });
     expect(

@@ -73,6 +73,7 @@ export class Quest {
     public readonly xpReward: number,
     public readonly questions: QuestQuestion[],
     public readonly archivedAt: Date | null = null,
+    public readonly initialAssessment = false,
   ) {}
 }
 

@@ -1,6 +1,7 @@
 import { Quest, QuestQuestion } from '../domain/entities.js';
 import { ParentStageNotFoundError } from '../domain/errors.js';
 import { QuestRepository, StageRepository } from '../domain/ports.js';
+import { requireCompetencyTaggedQuestions } from './initial-assessment.js';
 
 export type CreateQuestInput = {
   stageId: number;
@@ -9,6 +10,7 @@ export type CreateQuestInput = {
   timeLimitSeconds?: number;
   passingScore?: number;
   xpReward?: number;
+  initialAssessment?: boolean;
   questions: QuestQuestion[];
 };
 
@@ -20,6 +22,8 @@ export class CreateQuestUseCase {
   async execute(input: CreateQuestInput): Promise<Quest> {
     const stage = await this.stages.findById(input.stageId);
     if (!stage) throw new ParentStageNotFoundError(input.stageId);
+    if (input.initialAssessment)
+      requireCompetencyTaggedQuestions(input.questions);
     return this.repository.create({
       stageId: input.stageId,
       title: input.title,
@@ -27,6 +31,7 @@ export class CreateQuestUseCase {
       timeLimitSeconds: input.timeLimitSeconds ?? 60,
       passingScore: input.passingScore ?? 70,
       xpReward: input.xpReward ?? 0,
+      initialAssessment: input.initialAssessment ?? false,
       questions: input.questions,
     });
   }

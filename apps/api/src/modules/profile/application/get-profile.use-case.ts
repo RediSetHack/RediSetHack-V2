@@ -21,6 +21,7 @@ export class GetProfileUseCase {
       calculateLevel(data.totalXp),
       data.badges,
       data.activity,
+      data.initialCompetencyBaseline,
     );
   }
 }

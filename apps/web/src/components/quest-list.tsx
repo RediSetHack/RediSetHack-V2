@@ -46,6 +46,7 @@ function QuestCard({ quest }: Readonly<{ quest: Quest }>) {
       <div>
         <p className="font-semibold text-foreground">
           {quest.title}
+          {quest.initialAssessment && <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">Initial assessment</span>}
           {quest.completed && (
             <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
               Completed

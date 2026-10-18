@@ -16,6 +16,7 @@ import {
   stages,
   users,
   learningInteractions,
+  initialCompetencyBaselines,
   zones,
   type Database,
 } from '@repo/db';
@@ -146,6 +147,7 @@ describe.skipIf(!dbUrl)('Quest Sessions over HTTP with PostgreSQL', () => {
         timeLimitSeconds: 300,
         passingScore: 100,
         xpReward: 10,
+        initialAssessment: true,
       })
       .returning();
     questId = quest!.id;
@@ -168,6 +170,8 @@ describe.skipIf(!dbUrl)('Quest Sessions over HTTP with PostgreSQL', () => {
   afterAll(async () => {
     await app?.close();
     if (db) {
+      await db.delete(initialCompetencyBaselines).where(eq(initialCompetencyBaselines.userId, learnerId));
+      await db.delete(initialCompetencyBaselines).where(eq(initialCompetencyBaselines.userId, otherId));
       await db.delete(regions).where(eq(regions.id, regionId));
       await db.delete(users).where(eq(users.id, learnerId));
       await db.delete(users).where(eq(users.id, otherId));
@@ -186,6 +190,7 @@ describe.skipIf(!dbUrl)('Quest Sessions over HTTP with PostgreSQL', () => {
   };
 
   const resetOther = async () => {
+    await db.delete(initialCompetencyBaselines).where(eq(initialCompetencyBaselines.userId, otherId));
     await db.delete(learningInteractions).where(eq(learningInteractions.learnerId, otherId));
     await db.delete(questSessions).where(eq(questSessions.userId, otherId));
     await db.delete(results).where(eq(results.userId, otherId));
@@ -313,6 +318,15 @@ describe.skipIf(!dbUrl)('Quest Sessions over HTTP with PostgreSQL', () => {
       expect(
         await db.select().from(results).where(eq(results.userId, otherId)),
       ).toHaveLength(2);
+      const baselines = await db.select().from(initialCompetencyBaselines).where(eq(initialCompetencyBaselines.userId, otherId));
+      expect(baselines).toHaveLength(1);
+      expect(baselines[0]).toMatchObject({
+        questId,
+        assessmentVersion: expect.stringMatching(/^[a-f0-9]{64}$/),
+        skills: { 'security.input-validation': { assessed: 1, correct: 1, score: 100 } },
+        unassessedSkills: expect.arrayContaining(['programming.debugging']),
+      });
+      expect(baselines[0]!.resultId).toBe(SubmitQuestResponseSchema.parse(retakes[0]!.body).resultId);
       const interactions = await db.select().from(learningInteractions).where(eq(learningInteractions.learnerId, otherId));
       expect(interactions.filter((event) => event.sessionId === `quest:${session.id}`)).toHaveLength(1);
       expect(interactions.find((event) => event.sessionId === `quest:${session.id}`)).toMatchObject({
@@ -325,8 +339,13 @@ describe.skipIf(!dbUrl)('Quest Sessions over HTTP with PostgreSQL', () => {
       const ownProfile = await request(app.getHttpServer()).get('/v1/api/users/profile').set(as('other'));
       expect(ownProfile.status).toBe(200);
       expect(ownProfile.body.activity).toHaveLength(2);
+      expect(ownProfile.body.initialCompetencyBaseline.skills).toEqual(expect.arrayContaining([
+        { id: 'security.input-validation', assessed: 1, correct: 1, score: 100 },
+        { id: 'programming.debugging', assessed: 0, correct: 0, score: null },
+      ]));
       const anotherProfile = await request(app.getHttpServer()).get('/v1/api/users/profile').set(as('learner'));
       expect(anotherProfile.body.activity).toEqual([]);
+      expect(anotherProfile.body.initialCompetencyBaseline).toBeNull();
     } finally {
       multiplier = 1;
     }

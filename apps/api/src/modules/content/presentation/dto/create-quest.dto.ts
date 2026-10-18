@@ -1,4 +1,4 @@
-import { IsInt, IsNotEmpty, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, Max, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 import type { QuestQuestion } from '../../domain/entities.js';
@@ -53,6 +53,11 @@ export class CreateQuestRequestDto {
   @IsInt()
   @Min(0)
   xpReward?: number;
+
+  @ApiPropertyOptional({ description: 'Designates this Quest as the learner initial competency assessment.' })
+  @IsOptional()
+  @IsBoolean()
+  initialAssessment?: boolean;
 
   @ApiPropertyOptional({
     type: 'array',

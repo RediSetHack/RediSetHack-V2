@@ -8,6 +8,7 @@ export class Quest {
     public readonly passingScore: number,
     public readonly xpReward: number,
     public readonly archivedAt: Date | null = null,
+    public readonly initialAssessment = false,
   ) {}
 }
 
@@ -25,6 +26,7 @@ export class QuestQuestion {
     public readonly prompt: string,
     public readonly options: QuestOption[],
     public readonly competencyIds: string[] = [],
-    public readonly difficulty: 'beginner' | 'intermediate' | 'advanced' | null = null,
+    public readonly difficulty:
+      'beginner' | 'intermediate' | 'advanced' | null = null,
   ) {}
 }
