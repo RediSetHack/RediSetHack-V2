@@ -6,6 +6,7 @@ const NAV_LINKS = [
   { href: "/map", label: "Map" },
   { href: "/quests", label: "Quests" },
   { href: "/codelab", label: "Codelab" },
+  { href: "/ctf", label: "CTF" },
   { href: "/leaderboard", label: "Leaderboard" },
   { href: "/profile", label: "Profile" },
 ];

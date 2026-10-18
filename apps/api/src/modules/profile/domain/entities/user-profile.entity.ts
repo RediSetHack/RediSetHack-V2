@@ -20,4 +20,4 @@ export class UserProfile {
   ) {}
 }
 
-export type ProfileDataActivity = { id: string; activityType: 'quest' | 'reading'; activityId: number; occurredAt: Date; outcome: unknown };
+export type ProfileDataActivity = { id: string; activityType: 'quest' | 'reading' | 'ctf'; activityId: number; occurredAt: Date; outcome: unknown };

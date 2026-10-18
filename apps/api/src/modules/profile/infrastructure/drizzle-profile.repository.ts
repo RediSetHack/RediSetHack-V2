@@ -68,7 +68,7 @@ export class DrizzleProfileRepository implements ProfileRepository {
             row.latestAwardedAt,
           ),
       ),
-      activity: activityRows.map((row) => ({ ...row, activityType: row.activityType as 'quest' | 'reading' })),
+      activity: activityRows.map((row) => ({ ...row, activityType: row.activityType as 'quest' | 'reading' | 'ctf' })),
       initialCompetencyBaseline: baseline ? {
         assessmentId: baseline.questId,
         assessmentVersion: baseline.assessmentVersion,

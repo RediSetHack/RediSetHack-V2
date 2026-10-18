@@ -7,7 +7,7 @@ export interface ProfileData {
   totalXp: number;
   character: ProfileCharacter | null;
   badges: BadgeAwardSummary[];
-  activity: { id: string; activityType: 'quest' | 'reading'; activityId: number; occurredAt: Date; outcome: unknown }[];
+  activity: { id: string; activityType: 'quest' | 'reading' | 'ctf'; activityId: number; occurredAt: Date; outcome: unknown }[];
   initialCompetencyBaseline: InitialCompetencyBaseline | null;
 }
 

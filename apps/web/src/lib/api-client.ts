@@ -5,6 +5,10 @@ import type {
   ExecuteCodeResponse,
   CodingActivityResponse,
   CodingAttemptResponse,
+  CtfArtifactResponse,
+  CtfAttemptResponse,
+  CtfChallengeResponse,
+  CtfChallengeSummary,
   Language,
   LeaderboardResponse,
   LessonResponse,
@@ -28,6 +32,10 @@ import {
   ExecuteCodeResponseSchema,
   CodingActivityResponseSchema,
   CodingAttemptResponseSchema,
+  CtfArtifactResponseSchema,
+  CtfAttemptResponseSchema,
+  CtfChallengeListResponseSchema,
+  CtfChallengeResponseSchema,
   QuestListResponseSchema,
   QuestResultReviewResponseSchema,
   QuestSessionResponseSchema,
@@ -47,6 +55,10 @@ export type StageCompletion = StageCompletionResponse;
 export type CodeExecutionResult = ExecuteCodeResponse;
 export type CodingActivity = CodingActivityResponse;
 export type CodingAttempt = CodingAttemptResponse;
+export type CtfChallenge = CtfChallengeResponse;
+export type CtfSummary = CtfChallengeSummary;
+export type CtfArtifact = CtfArtifactResponse;
+export type CtfAttempt = CtfAttemptResponse;
 export type { Region, Stage, Zone, Quest };
 
 export interface UpdatedUserResponse {
@@ -418,4 +430,26 @@ export async function submitCodingAttempt(
   return CodingAttemptResponseSchema.parse(
     await postAuthedJson<unknown>(endpoint, token, { code }, fetchFn),
   );
+}
+
+const ctfEndpoint = (apiBaseUrl: string, path: string) => `${apiBaseUrl.replace(/\/$/, "")}/v1/api/ctf/${path}`;
+
+/** Lists eligible CTF challenges, `GET /v1/api/ctf/challenges`. */
+export async function getCtfChallenges(apiBaseUrl: string, token: string, fetchFn: typeof fetch = fetch): Promise<CtfSummary[]> {
+  return CtfChallengeListResponseSchema.parse(await fetchAuthedJson<unknown>(ctfEndpoint(apiBaseUrl, "challenges"), token, fetchFn));
+}
+
+/** Opens a challenge brief, `GET /v1/api/ctf/challenges/:id`. */
+export async function getCtfChallenge(apiBaseUrl: string, token: string, id: number, fetchFn: typeof fetch = fetch): Promise<CtfChallenge> {
+  return CtfChallengeResponseSchema.parse(await fetchAuthedJson<unknown>(ctfEndpoint(apiBaseUrl, `challenges/${id}`), token, fetchFn));
+}
+
+/** Fetches the challenge artifact, `GET /v1/api/ctf/challenges/:id/artifact`. */
+export async function getCtfArtifact(apiBaseUrl: string, token: string, id: number, fetchFn: typeof fetch = fetch): Promise<CtfArtifact> {
+  return CtfArtifactResponseSchema.parse(await fetchAuthedJson<unknown>(ctfEndpoint(apiBaseUrl, `challenges/${id}/artifact`), token, fetchFn));
+}
+
+/** Submits a flag, `POST /v1/api/ctf/challenges/:id/attempts`. */
+export async function submitCtfFlag(apiBaseUrl: string, token: string, id: number, flag: string, fetchFn: typeof fetch = fetch): Promise<CtfAttempt> {
+  return CtfAttemptResponseSchema.parse(await postAuthedJson<unknown>(ctfEndpoint(apiBaseUrl, `challenges/${id}/attempts`), token, { flag }, fetchFn));
 }

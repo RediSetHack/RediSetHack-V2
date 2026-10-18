@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { boolean, date, index, integer, jsonb, pgTable, serial, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { users } from "./identity.js";
-import { codingActivities, stages } from "./catalog.js";
+import { codingActivities, ctfChallenges, stages } from "./catalog.js";
 
 // ---------------------------------------------------------------------------
 // Stage progression & daily events
@@ -49,7 +49,7 @@ export const learningInteractions = pgTable(
     id: uuid("id").defaultRandom().primaryKey(),
     learnerId: text("learner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
     sessionId: text("session_id"),
-    activityType: text("activity_type", { enum: ["quest", "reading", "coding"] }).notNull(),
+    activityType: text("activity_type", { enum: ["quest", "reading", "coding", "ctf"] }).notNull(),
     activityId: integer("activity_id").notNull(),
     startedAt: timestamp("started_at", { withTimezone: true }),
     occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull().defaultNow(),
@@ -122,4 +122,32 @@ export const codingXpAwards = pgTable(
     awardedAt: timestamp("awarded_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [uniqueIndex("coding_xp_awards_learner_activity_unique").on(table.learnerId, table.activityId)],
+);
+
+// One submitted flag. Only the verdict is kept, never the submitted text, so
+// attempts cannot become a side channel for answer material.
+export const ctfAttempts = pgTable(
+  "ctf_attempts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    learnerId: text("learner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    challengeId: integer("challenge_id").notNull().references(() => ctfChallenges.id, { onDelete: "cascade" }),
+    correct: boolean("correct").notNull(),
+    submittedAt: timestamp("submitted_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("ctf_attempts_learner_challenge_index").on(table.learnerId, table.challengeId, table.submittedAt)],
+);
+
+// The unique index is the exactly-once gate for the completion, its XP and its event.
+export const ctfSolves = pgTable(
+  "ctf_solves",
+  {
+    id: serial("id").primaryKey(),
+    learnerId: text("learner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    challengeId: integer("challenge_id").notNull().references(() => ctfChallenges.id, { onDelete: "cascade" }),
+    attemptId: uuid("attempt_id").notNull().references(() => ctfAttempts.id, { onDelete: "cascade" }),
+    xpAwarded: integer("xp_awarded").notNull().default(0),
+    solvedAt: timestamp("solved_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("ctf_solves_learner_challenge_unique").on(table.learnerId, table.challengeId)],
 );

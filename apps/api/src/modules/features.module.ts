@@ -8,6 +8,7 @@ import { ContentModule } from './content/content.module.js';
 import { DailyEventModule } from './daily-event/daily-event.module.js';
 import { ProgressModule } from './progress/progress.module.js';
 import { QuestModule } from './quest/quest.module.js';
+import { CtfModule } from './ctf/ctf.module.js';
 import { CodelabModule } from './codelab/codelab.module.js';
 import { ProfileModule } from "./profile/profile.module.js";
 
@@ -20,6 +21,7 @@ import { ProfileModule } from "./profile/profile.module.js";
     ProgressModule,
     QuestModule,
     CodelabModule,
+    CtfModule,
     ProfileModule
   ],
 })
