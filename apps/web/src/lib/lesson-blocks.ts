@@ -15,7 +15,13 @@ import type {
 export type RenderableBlock =
   | { kind: "text"; content: string }
   | { kind: "code"; language: string; content: string }
-  | { kind: "exercise"; prompt: string; language: string; starterCode: string }
+  | {
+      kind: "exercise";
+      prompt: string;
+      language: string;
+      starterCode: string;
+      activityId?: number;
+    }
   | { kind: "image"; url: string; alt: string; caption?: string }
   | { kind: "unsupported"; type: string };
 
@@ -34,8 +40,15 @@ function normalizeBlock(block: LessonBlock): RenderableBlock {
       return { kind: "code", language, content };
     }
     case "exercise": {
-      const { prompt, language, starterCode } = block as ExerciseBlock;
-      return { kind: "exercise", prompt, language, starterCode };
+      const { prompt, language, starterCode, activityId } =
+        block as ExerciseBlock;
+      return {
+        kind: "exercise",
+        prompt,
+        language,
+        starterCode,
+        ...(activityId === undefined ? {} : { activityId }),
+      };
     }
     case "image": {
       const { url, alt, caption } = block as ImageBlock;
