@@ -28,6 +28,10 @@ The learning content presented for a Stage.
 A multiple-choice quiz with a time allowance, passing score, and XP reward.
 _Avoid_: Stage when referring to an assessment.
 
+**Side Quest**:
+An optional learning objective that designates an existing assessed activity (a CTF challenge or coding activity) and is gated by prerequisite clauses (Level/Adventurer Rank, earned Badge, Novel completion, prior activity completion). Completing it records one accomplishment, XP once, and one learning event; it never blocks the main story. Skill-gated clauses deny until mastery estimates exist.
+_Avoid_: Quest when referring to an optional objective (a Quest is the multiple-choice quiz).
+
 **Quest Session**:
 A learner-owned, timed attempt at a Quest, persisted with a snapshot of the questions assessed (correct answers withheld while active) and a server-set deadline. It ends exactly once, submitted or expired, and starting again after that is a retake. A submission after the deadline earns no credit.
 _Avoid_: Attempt, run, active quest.

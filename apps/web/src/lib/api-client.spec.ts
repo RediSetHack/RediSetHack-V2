@@ -18,6 +18,7 @@ import {
   markStageComplete,
   executeCode,
   evaluateBadges,
+  getSideQuests,
   ApiError,
 } from "./api-client.js";
 
@@ -926,6 +927,20 @@ describe("api-client", () => {
           mockFetch as unknown as typeof fetch,
         ),
       ).rejects.toMatchObject({ status: 400 });
+    });
+  });
+
+  describe("getSideQuests", () => {
+    it("parses locked Side Quests with their lock reasons", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [
+          { id: 1, title: "Detour", summary: "s", xpReward: 15, status: "locked", lockReasons: [{ type: "level", message: "Reach Adventurer Rank 2." }] },
+        ],
+      });
+      const result = await getSideQuests("http://api", "tok", mockFetch);
+      expect(result[0]?.lockReasons[0]?.message).toBe("Reach Adventurer Rank 2.");
+      expect(mockFetch.mock.calls[0]?.[0]).toBe("http://api/v1/api/side-quests");
     });
   });
 });

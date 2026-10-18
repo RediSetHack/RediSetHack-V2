@@ -17,6 +17,8 @@ import type {
   QuestResponse,
   QuestResultReviewResponse,
   QuestSessionResponse,
+  SideQuestResponse,
+  SideQuestSummary,
   Region,
   Stage,
   StageCompletionResponse,
@@ -33,6 +35,8 @@ import {
   CodingActivityResponseSchema,
   CodingAttemptResponseSchema,
   CtfArtifactResponseSchema,
+  SideQuestListResponseSchema,
+  SideQuestResponseSchema,
   CtfAttemptResponseSchema,
   CtfChallengeListResponseSchema,
   CtfChallengeResponseSchema,
@@ -452,4 +456,19 @@ export async function getCtfArtifact(apiBaseUrl: string, token: string, id: numb
 /** Submits a flag, `POST /v1/api/ctf/challenges/:id/attempts`. */
 export async function submitCtfFlag(apiBaseUrl: string, token: string, id: number, flag: string, fetchFn: typeof fetch = fetch): Promise<CtfAttempt> {
   return CtfAttemptResponseSchema.parse(await postAuthedJson<unknown>(ctfEndpoint(apiBaseUrl, `challenges/${id}/attempts`), token, { flag }, fetchFn));
+}
+
+export type SideQuest = SideQuestResponse;
+export type SideQuestListItem = SideQuestSummary;
+
+const sideQuestEndpoint = (apiBaseUrl: string, path = "") => `${apiBaseUrl.replace(/\/$/, "")}/v1/api/side-quests${path}`;
+
+/** Lists optional Side Quests with status and lock reasons, `GET /v1/api/side-quests`. */
+export async function getSideQuests(apiBaseUrl: string, token: string, fetchFn: typeof fetch = fetch): Promise<SideQuestListItem[]> {
+  return SideQuestListResponseSchema.parse(await fetchAuthedJson<unknown>(sideQuestEndpoint(apiBaseUrl), token, fetchFn));
+}
+
+/** Opens a Side Quest, `GET /v1/api/side-quests/:id`. */
+export async function getSideQuest(apiBaseUrl: string, token: string, id: number, fetchFn: typeof fetch = fetch): Promise<SideQuest> {
+  return SideQuestResponseSchema.parse(await fetchAuthedJson<unknown>(sideQuestEndpoint(apiBaseUrl, `/${id}`), token, fetchFn));
 }

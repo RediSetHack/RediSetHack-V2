@@ -20,5 +20,6 @@ import { ExecuteCodeController } from './presentation/controllers/execute-code.c
     ExecuteCodeUseCase,
     GradeCodingActivityUseCase,
   ],
+  exports: [GradeCodingActivityUseCase],
 })
 export class CodelabModule {}
