@@ -20,6 +20,7 @@ export class GetProfileUseCase {
       data.totalXp,
       calculateLevel(data.totalXp),
       data.badges,
+      data.activity,
     );
   }
 }

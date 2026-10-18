@@ -15,6 +15,7 @@ import {
   regions,
   stages,
   users,
+  learningInteractions,
   zones,
   type Database,
 } from '@repo/db';
@@ -150,7 +151,7 @@ describe.skipIf(!dbUrl)('Quest Sessions over HTTP with PostgreSQL', () => {
     questId = quest!.id;
     const [question] = await db
       .insert(questQuestions)
-      .values({ questId, prompt: 'Original prompt?' })
+      .values({ questId, prompt: 'Original prompt?', competencyIds: ['security.input-validation'], difficulty: 'beginner' })
       .returning();
     questionId = question!.id;
     const options = await db
@@ -185,6 +186,7 @@ describe.skipIf(!dbUrl)('Quest Sessions over HTTP with PostgreSQL', () => {
   };
 
   const resetOther = async () => {
+    await db.delete(learningInteractions).where(eq(learningInteractions.learnerId, otherId));
     await db.delete(questSessions).where(eq(questSessions.userId, otherId));
     await db.delete(results).where(eq(results.userId, otherId));
     await db.delete(questXpAwards).where(eq(questXpAwards.userId, otherId));
@@ -311,9 +313,35 @@ describe.skipIf(!dbUrl)('Quest Sessions over HTTP with PostgreSQL', () => {
       expect(
         await db.select().from(results).where(eq(results.userId, otherId)),
       ).toHaveLength(2);
+      const interactions = await db.select().from(learningInteractions).where(eq(learningInteractions.learnerId, otherId));
+      expect(interactions.filter((event) => event.sessionId === `quest:${session.id}`)).toHaveLength(1);
+      expect(interactions.find((event) => event.sessionId === `quest:${session.id}`)).toMatchObject({
+        activityType: 'quest', activityId: questId, correctness: true,
+        skills: ['security.input-validation'], difficulty: 'beginner',
+        elapsedDefinition: expect.stringContaining('Server elapsed time'),
+        outcome: { passed: true, score: 100, xpAwarded: 20 },
+      });
+      expect(interactions.find((event) => event.sessionId === `quest:${session.id}`)!.contentVersion).toMatch(/^[a-f0-9]{64}$/);
+      const ownProfile = await request(app.getHttpServer()).get('/v1/api/users/profile').set(as('other'));
+      expect(ownProfile.status).toBe(200);
+      expect(ownProfile.body.activity).toHaveLength(2);
+      const anotherProfile = await request(app.getHttpServer()).get('/v1/api/users/profile').set(as('learner'));
+      expect(anotherProfile.body.activity).toEqual([]);
     } finally {
       multiplier = 1;
     }
+  });
+
+  it('does not expose another learner’s learning activity through the profile endpoint', async () => {
+    await resetOther();
+    const session = await start('other');
+    expect((await submit(session.id, correct(), 'other')).status).toBe(201);
+
+    const ownerProfile = await request(app.getHttpServer()).get('/v1/api/users/profile').set(as('other'));
+    const learnerProfile = await request(app.getHttpServer()).get('/v1/api/users/profile').set(as('learner'));
+    expect(ownerProfile.body.activity).toHaveLength(1);
+    expect(learnerProfile.status).toBe(200);
+    expect(learnerProfile.body.activity).toEqual([]);
   });
 
   it('keeps the accepted Result and credit when badge evaluation fails', async () => {

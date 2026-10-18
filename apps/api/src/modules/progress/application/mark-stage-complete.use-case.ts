@@ -14,6 +14,7 @@ import {
 import { GetTodayEventUseCase } from '../../daily-event/application/get-today-event.use-case.js';
 import { calculateLevel } from '../../profile/domain/level-calculator.js';
 import { getStageAccess, isUnlocked } from './stage-access.js';
+import { createHash } from 'node:crypto';
 
 export type StageCompletion = {
   stageId: number;
@@ -47,11 +48,14 @@ export class MarkStageCompleteUseCase {
 
     const event = await this.getTodayEvent.execute();
     const xpEarned = stage.xpReward * event.xpMultiplier;
+    const session = await this.progress.findActiveReadingSession(userId, stage.id);
 
     const totalXp = await this.progress.markCompleted(
       userId,
       stage.id,
       xpEarned,
+      session,
+      { contentVersion: createHash('sha256').update(JSON.stringify({ id: stage.id, title: stage.title, lessonContent: stage.lessonContent, skills: stage.competencyIds, difficulty: stage.difficulty })).digest('hex'), skills: stage.competencyIds, difficulty: stage.difficulty },
     );
     if (totalXp === null) throw new StageAlreadyCompletedError(stageId);
 

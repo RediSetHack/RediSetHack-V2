@@ -10,6 +10,7 @@ const profileData: ProfileData = {
   totalXp: 450,
   character: { id: 1, name: "Kalayaan", slug: "kalayaan", imageUrl: null },
   badges: [new BadgeAwardSummary(1, "Pull Shark", "pull-shark", null, 3, new Date("2026-01-01"))],
+  activity: [],
 };
 
 describe("GetProfileUseCase", () => {

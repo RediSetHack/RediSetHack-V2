@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { createHash } from 'node:crypto';
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import {
   quests,
@@ -11,6 +12,7 @@ import {
   regions,
   results,
   users,
+  learningInteractions,
   type Database,
 } from '@repo/db';
 
@@ -239,6 +241,27 @@ export class DrizzleQuestRepository implements QuestRepository {
         .update(questSessions)
         .set({ resultId: row!.id, xpAwarded })
         .where(eq(questSessions.id, input.sessionId));
+      const snapshot = claimed.questionsJson as QuestQuestion[];
+      const acceptedResponses = input.status === 'expired' ? [] : input.responses;
+      const responseByQuestion = new Map(acceptedResponses.map((answer) => [answer.questionId, answer.optionId]));
+      await tx.insert(learningInteractions).values({
+        learnerId: claimed.userId,
+        sessionId: `quest:${claimed.id}`,
+        activityType: 'quest',
+        activityId: claimed.questId,
+        startedAt: claimed.startedAt,
+        elapsedMs: Math.max(0, Date.now() - claimed.startedAt.getTime()),
+        elapsedDefinition: 'Server elapsed time from Quest session start to accepted submission, including idle time.',
+        contentVersion: createHash('sha256').update(JSON.stringify(snapshot)).digest('hex'),
+        skills: [...new Set(snapshot.flatMap((question) => question.competencyIds))],
+        difficulty: snapshot.map((question) => question.difficulty).filter((difficulty): difficulty is Exclude<typeof difficulty, null> => difficulty !== null).sort((a, b) => a.localeCompare(b)).join(',') || null,
+        answers: snapshot.map((question) => {
+          const optionId = responseByQuestion.get(question.id);
+          return { questionId: question.id, optionId: optionId ?? null, correct: optionId == null ? null : question.options.find((option) => option.id === optionId)?.isCorrect ?? false };
+        }),
+        correctness: input.status === 'expired' ? null : input.passed,
+        outcome: { status: input.status, passed: input.passed, score: input.score, xpAwarded },
+      });
       return { result: toResult(row!), xpAwarded };
     });
   }

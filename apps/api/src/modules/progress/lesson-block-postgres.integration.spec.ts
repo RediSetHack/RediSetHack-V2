@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { DrizzleStageRepository as AuthorStageRepository } from '../content/infrastructure/drizzle-repositories.js';
 import { DrizzleStageRepository as LearnerStageRepository } from '../content/infrastructure/drizzle-stage.repository.js';
 import { GetStageLessonUseCase } from './application/get-stage-lesson.use-case.js';
+import type { ProgressRepository } from './domain/ports/progress.repository.js';
 
 describe.skipIf(!db)('Lesson blocks PostgreSQL round trip', () => {
   it('preserves every authored block through PostgreSQL and the learner response contract', async () => {
@@ -51,6 +52,7 @@ describe.skipIf(!db)('Lesson blocks PostgreSQL round trip', () => {
 
       const lesson = await new GetStageLessonUseCase(
         new LearnerStageRepository(database),
+        { startReadingSession: async () => ({ id: 'test-session', startedAt: new Date() }), findActiveReadingSession: async () => null, markCompleted: async () => null } as ProgressRepository,
       ).execute('t119-test-user', stage.id);
 
       expect(LessonResponseSchema.parse(lesson).blocks).toEqual(blocks);

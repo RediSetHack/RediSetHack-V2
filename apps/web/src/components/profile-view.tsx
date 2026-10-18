@@ -101,6 +101,21 @@ export function ProfileView({
         <BadgeList badges={profile.badges} />
       </section>
 
+      <section aria-labelledby="activity-heading" className="space-y-3">
+        <h2 id="activity-heading" className="text-lg font-semibold">Recent learning activity</h2>
+        {profile.activity.length === 0 ? <p className="text-sm text-muted-foreground">No learning activity yet.</p> : (
+          <ul className="space-y-2">
+            {profile.activity.map((event) => <li key={event.id} className="rounded-lg border border-border bg-card p-3 text-sm">
+              <span className="font-medium">{event.activityType === "quest" ? "Quest submission" : "Reading completion"}</span>
+              <p className="text-muted-foreground">{event.activityType === "quest"
+                ? event.outcome.status === "expired" ? "Expired · no assessed answers" : `${event.outcome.passed ? "Passed" : "Not passed"} · ${event.outcome.score}% · ${event.outcome.xpAwarded} XP`
+                : `Completed · ${event.outcome.xpAwarded} XP · not assessed`}</p>
+              <time className="ml-2 text-muted-foreground" dateTime={event.occurredAt}>{new Date(event.occurredAt).toLocaleString()}</time>
+            </li>)}
+          </ul>
+        )}
+      </section>
+
       <section aria-labelledby="character-heading" className="space-y-3">
         <h2 id="character-heading" className="text-lg font-semibold">
           Change Character

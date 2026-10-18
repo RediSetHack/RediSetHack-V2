@@ -18,6 +18,7 @@ import { StageRepository } from '../content/domain/ports/stage.repository.js';
 import { makeFakeStageRepository } from '../content/fake-stage.fixture.js';
 import { GetStageLessonUseCase } from './application/get-stage-lesson.use-case.js';
 import { GetStageLessonController } from './presentation/controllers/get-stage-lesson.controller.js';
+import { ProgressRepository } from './domain/ports/progress.repository.js';
 
 describe('GET /v1/api/stages/:stageId/lesson integration', () => {
   let app: INestApplication;
@@ -49,6 +50,7 @@ describe('GET /v1/api/stages/:stageId/lesson integration', () => {
       controllers: [GetStageLessonController],
       providers: [
         { provide: StageRepository, useValue: fakeStages },
+        { provide: ProgressRepository, useValue: { startReadingSession: async () => ({ id: 'reading-session', startedAt: new Date() }) } },
         { provide: ClerkAuthPort, useValue: fakeClerk },
         { provide: UserRepository, useValue: fakeUsers },
         ClerkAuthGuard,

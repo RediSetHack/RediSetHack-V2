@@ -6,6 +6,7 @@ import { StageLockedError, StageNotFoundError } from '../domain/errors.js';
 import { resolveCompetencies } from '@repo/contracts';
 import type { LessonBlock } from '../domain/entities/lesson.entity.js';
 import { getStageAccess, isUnlocked } from './stage-access.js';
+import { ProgressRepository } from '../domain/ports/progress.repository.js';
 
 export type StageLesson = {
   id: number;
@@ -27,7 +28,7 @@ function parseLessonBlocks(raw: unknown): LessonBlock[] {
 
 @Injectable()
 export class GetStageLessonUseCase {
-  constructor(private readonly stages: StageRepository) {}
+  constructor(private readonly stages: StageRepository, private readonly progress: ProgressRepository) {}
 
   async execute(userId: string, stageId: number): Promise<StageLesson> {
     const stage = await this.stages.findById(stageId);
@@ -35,6 +36,7 @@ export class GetStageLessonUseCase {
 
     const access = await getStageAccess(this.stages, userId, stage);
     if (!isUnlocked(access)) throw new StageLockedError(stageId);
+    if (!access.completedIds.has(stage.id)) await this.progress.startReadingSession(userId, stage.id);
 
     return {
       id: stage.id,

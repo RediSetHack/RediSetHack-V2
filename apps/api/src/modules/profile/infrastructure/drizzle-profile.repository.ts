@@ -1,6 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { desc, eq, sql } from "drizzle-orm";
-import { badgeAwards, badgeDefinitions, characters, users, type Database } from "@repo/db";
+import { badgeAwards, badgeDefinitions, characters, users, learningInteractions, type Database } from "@repo/db";
 
 import { DB } from "../../../database/database.module.js";
 import {
@@ -42,6 +42,12 @@ export class DrizzleProfileRepository implements ProfileRepository {
         badgeDefinitions.slug,
         badgeDefinitions.imageUrl,
       );
+    const activityRows = await this.database.query.learningInteractions.findMany({
+      where: eq(learningInteractions.learnerId, userId),
+      orderBy: [desc(learningInteractions.occurredAt)],
+      limit: 10,
+      columns: { id: true, activityType: true, activityId: true, occurredAt: true, outcome: true },
+    });
 
     return {
       userId: user.id,
@@ -60,6 +66,7 @@ export class DrizzleProfileRepository implements ProfileRepository {
             row.latestAwardedAt,
           ),
       ),
+      activity: activityRows.map((row) => ({ ...row, activityType: row.activityType as 'quest' | 'reading' })),
     };
   }
 

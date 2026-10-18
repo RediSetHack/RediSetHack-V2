@@ -5,6 +5,8 @@ import {
   badgeDefinitions,
   characters,
   dailyEvents,
+  learningInteractions,
+  readingSessions,
   deletedUsers,
   quests,
   regions,
@@ -17,10 +19,10 @@ import {
 
 describe("database schema (issue #6)", () => {
   it("exposes the required domain tables", () => {
-    const tables = [users, deletedUsers, characters, regions, zones, stages, quests, results, badgeDefinitions, badgeAwards, userProgress, dailyEvents];
+    const tables = [users, deletedUsers, characters, regions, zones, stages, quests, results, badgeDefinitions, badgeAwards, userProgress, dailyEvents, learningInteractions, readingSessions];
     const nameOf = (table: object) =>
       (table as Record<PropertyKey, unknown>)[Symbol.for("drizzle:Name")];
-    expect(tables).toHaveLength(12);
+    expect(tables).toHaveLength(14);
     expect(tables.map(nameOf)).toEqual(
       expect.arrayContaining([
         "users",
@@ -35,6 +37,8 @@ describe("database schema (issue #6)", () => {
         "badge_awards",
         "user_progress",
         "daily_events",
+        "learning_interactions",
+        "reading_sessions",
       ]),
     );
   });

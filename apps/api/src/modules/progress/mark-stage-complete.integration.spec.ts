@@ -40,6 +40,8 @@ describe('POST /v1/api/stages/:stageId/complete integration', () => {
 
   const totalXpByUser = new Map<string, number>();
   const fakeProgress: ProgressRepository = {
+    async startReadingSession() { return { id: 'session-1', startedAt: new Date() }; },
+    async findActiveReadingSession() { return { id: 'session-1', startedAt: new Date() }; },
     async markCompleted(userId, stageId, xpEarned) {
       if (completedStageIds.has(stageId)) return null;
       completedStageIds.add(stageId);

@@ -11,6 +11,7 @@ import {
   stages,
   quests,
   users,
+  learningInteractions,
   type Database,
 } from '@repo/db';
 import {
@@ -101,6 +102,8 @@ describe.skipIf(!databaseUrl)(
             title: 'Predecessor',
             slug: `first-${suffix}`,
             sortOrder: 10,
+            competencyIds: ['programming.control-flow'],
+            difficulty: 'beginner',
             xpReward: 0,
           },
           {
@@ -109,6 +112,8 @@ describe.skipIf(!databaseUrl)(
             slug: `locked-${suffix}`,
             sortOrder: 20,
             lessonContent: blocks,
+            competencyIds: ['programming.control-flow'],
+            difficulty: 'beginner',
             xpReward: 5,
           },
         ])
@@ -208,9 +213,18 @@ describe.skipIf(!databaseUrl)(
           .set(as(id))
           .send({ sessionId, responses: [] });
 
+      const opened = await request(app.getHttpServer()).get(`/v1/api/stages/${firstId}/lesson`).set(as());
+      expect(opened.status).toBe(200);
       const completed = await complete(firstId);
       expect(completed.status).toBe(201);
       StageCompletionResponseSchema.parse(completed.body);
+      const reading = await database.select().from(learningInteractions).where(eq(learningInteractions.learnerId, learner));
+      expect(reading).toHaveLength(1);
+      expect(reading[0]).toMatchObject({ activityType: 'reading', activityId: firstId, correctness: null, skills: ['programming.control-flow'], difficulty: 'beginner', elapsedDefinition: expect.stringContaining('Server elapsed time'), outcome: { assessed: false, xpAwarded: 0 } });
+      expect(reading[0]!.startedAt).not.toBeNull();
+      expect(reading[0]!.occurredAt.getTime()).toBeGreaterThanOrEqual(reading[0]!.startedAt!.getTime());
+      const privateHistory = await request(app.getHttpServer()).get('/v1/api/users/profile').set(as(other));
+      expect(privateHistory.body.activity).toEqual([]);
       const listing = StageListResponseSchema.parse((await catalog()).body);
       expect(listing[1]).toMatchObject({
         status: 'available',
@@ -264,6 +278,8 @@ describe.skipIf(!databaseUrl)(
         expect(response.body.message).toBe(relocked.lockReason);
       }
       expect((await complete(added!.id)).status).toBe(201);
+      const unmeasured = (await database.select().from(learningInteractions).where(eq(learningInteractions.learnerId, learner))).find((event) => event.activityId === added!.id);
+      expect(unmeasured).toMatchObject({ sessionId: null, startedAt: null, elapsedMs: null, elapsedDefinition: 'No prior lesson read session; elapsed time unavailable.' });
       const resumed = await start();
       expect(resumed.status).toBe(201);
       expect(QuestSessionResponseSchema.parse(resumed.body).id).toBe(active.id);
