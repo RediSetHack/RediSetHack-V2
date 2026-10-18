@@ -48,7 +48,7 @@ export class MarkStageCompleteUseCase {
 
     const event = await this.getTodayEvent.execute();
     const xpEarned = stage.xpReward * event.xpMultiplier;
-    const session = await this.progress.startReadingSession(userId, stage.id);
+    const session = await this.progress.findActiveReadingSession(userId, stage.id);
 
     const totalXp = await this.progress.markCompleted(
       userId,

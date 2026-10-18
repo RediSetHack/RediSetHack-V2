@@ -4,6 +4,7 @@ import { Stage } from '../content/domain/entities/stage.entity.js';
 import type { StageRepository } from '../content/domain/ports/stage.repository.js';
 import { GetStageLessonUseCase } from './application/get-stage-lesson.use-case.js';
 import { StageLockedError, StageNotFoundError } from './domain/errors.js';
+import type { ProgressRepository } from './domain/ports/progress.repository.js';
 
 const stages: Stage[] = [
   new Stage(
@@ -40,10 +41,16 @@ function makeRepo(overrides: Partial<StageRepository> = {}): StageRepository {
   };
 }
 
+const progress: ProgressRepository = {
+  startReadingSession: vi.fn().mockResolvedValue({ id: 'reading-session', startedAt: new Date() }),
+  findActiveReadingSession: vi.fn().mockResolvedValue(null),
+  markCompleted: vi.fn(),
+};
+
 describe('GetStageLessonUseCase', () => {
   it('returns lesson blocks for stage 1 without any progression', async () => {
     const repo = makeRepo({ findById: vi.fn().mockResolvedValue(stages[0]) });
-    const useCase = new GetStageLessonUseCase(repo);
+    const useCase = new GetStageLessonUseCase(repo, progress);
 
     const lesson = await useCase.execute('user_1', 1);
 
@@ -60,7 +67,7 @@ describe('GetStageLessonUseCase', () => {
       findById: vi.fn().mockResolvedValue(stages[1]),
       findCompletedStageIds: vi.fn().mockResolvedValue([1]),
     });
-    const useCase = new GetStageLessonUseCase(repo);
+    const useCase = new GetStageLessonUseCase(repo, progress);
 
     const lesson = await useCase.execute('user_1', 2);
 
@@ -74,7 +81,7 @@ describe('GetStageLessonUseCase', () => {
       findById: vi.fn().mockResolvedValue(stages[1]),
       findCompletedStageIds: vi.fn().mockResolvedValue([1, 2]),
     });
-    const useCase = new GetStageLessonUseCase(repo);
+    const useCase = new GetStageLessonUseCase(repo, progress);
 
     const lesson = await useCase.execute('user_1', 2);
 
@@ -86,7 +93,7 @@ describe('GetStageLessonUseCase', () => {
       findById: vi.fn().mockResolvedValue(stages[2]),
       findCompletedStageIds: vi.fn().mockResolvedValue([1, 2]),
     });
-    const useCase = new GetStageLessonUseCase(repo);
+    const useCase = new GetStageLessonUseCase(repo, progress);
 
     const lesson = await useCase.execute('user_1', 3);
 
@@ -95,7 +102,7 @@ describe('GetStageLessonUseCase', () => {
 
   it('throws StageLockedError when predecessor is not completed', async () => {
     const repo = makeRepo({ findById: vi.fn().mockResolvedValue(stages[1]) });
-    const useCase = new GetStageLessonUseCase(repo);
+    const useCase = new GetStageLessonUseCase(repo, progress);
 
     await expect(useCase.execute('user_1', 2)).rejects.toBeInstanceOf(
       StageLockedError,
@@ -104,7 +111,7 @@ describe('GetStageLessonUseCase', () => {
 
   it('throws StageNotFoundError when stage does not exist', async () => {
     const repo = makeRepo({ findById: vi.fn().mockResolvedValue(null) });
-    const useCase = new GetStageLessonUseCase(repo);
+    const useCase = new GetStageLessonUseCase(repo, progress);
 
     await expect(useCase.execute('user_1', 999)).rejects.toBeInstanceOf(
       StageNotFoundError,

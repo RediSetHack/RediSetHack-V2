@@ -46,9 +46,10 @@ function makeEvent(
   return new GetTodayEventUseCase(repo);
 }
 
-function makeProgress(totalXp: number | null = 20): ProgressRepository {
+function makeProgress(totalXp: number | null = 20, session: { id: string; startedAt: Date } | null = { id: 'session-1', startedAt: new Date('2026-01-01T00:00:00Z') }): ProgressRepository {
   return {
     startReadingSession: vi.fn().mockResolvedValue({ id: 'session-1', startedAt: new Date('2026-01-01T00:00:00Z') }),
+    findActiveReadingSession: vi.fn().mockResolvedValue(session),
     markCompleted: vi.fn().mockResolvedValue(totalXp),
   };
 }
@@ -79,6 +80,21 @@ describe('MarkStageCompleteUseCase', () => {
       badgesEarned: [],
     });
     expect(progress.markCompleted).toHaveBeenCalledWith('user_1', 2, 20, expect.objectContaining({ id: 'session-1' }), expect.objectContaining({ skills: [], difficulty: null }));
+  });
+
+  it('records no elapsed time when completion has no prior lesson session', async () => {
+    const repo = makeStageRepo({
+      findById: vi.fn().mockResolvedValue(stages[1]),
+      findCompletedStageIds: vi.fn().mockResolvedValue([1]),
+    });
+    const progress = makeProgress(20, null);
+    const useCase = new MarkStageCompleteUseCase(repo, progress, makeEvent('normal', 1), makeEvaluateBadges());
+
+    await useCase.execute('user_1', 2);
+
+    expect(progress.findActiveReadingSession).toHaveBeenCalledWith('user_1', 2);
+    expect(progress.startReadingSession).not.toHaveBeenCalled();
+    expect(progress.markCompleted).toHaveBeenCalledWith('user_1', 2, 20, null, expect.any(Object));
   });
 
   it("doubles XP when today's event is Bonus", async () => {

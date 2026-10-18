@@ -11,6 +11,7 @@ import { DrizzleStageRepository } from './infrastructure/drizzle-stage.repositor
 import { StageRepository } from './domain/ports.js';
 import { CreateQuestRequestDto } from './presentation/dto/create-quest.dto.js';
 import { GetStageLessonUseCase } from '../progress/application/get-stage-lesson.use-case.js';
+import { DrizzleProgressRepository } from '../progress/infrastructure/drizzle-progress.repository.js';
 import { LessonPresenter } from '../progress/presentation/presenters/lesson.presenter.js';
 import { LessonResponseSchema, QuestSessionResponseSchema } from '@repo/contracts';
 import { QuestPresenter } from '../quest/presentation/presenters/quest.presenter.js';
@@ -76,7 +77,7 @@ describe.skipIf(!database)('authored Quest PostgreSQL flow', () => {
 
   it('creates, edits, starts, submits, and reviews the same persisted questions', async () => {
     const stageRepository = new DrizzleStageRepository(database!);
-    const lesson = await new GetStageLessonUseCase(stageRepository).execute(userId, stageId);
+    const lesson = await new GetStageLessonUseCase(stageRepository, new DrizzleProgressRepository(database!)).execute(userId, stageId);
     expect(LessonResponseSchema.parse(LessonPresenter.toResponse(lesson))).toMatchObject({
       competencies: [{ id: 'programming.control-flow' }],
       difficulty: 'beginner',

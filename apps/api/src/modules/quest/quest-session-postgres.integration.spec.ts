@@ -332,6 +332,18 @@ describe.skipIf(!dbUrl)('Quest Sessions over HTTP with PostgreSQL', () => {
     }
   });
 
+  it('does not expose another learner’s learning activity through the profile endpoint', async () => {
+    await resetOther();
+    const session = await start('other');
+    expect((await submit(session.id, correct(), 'other')).status).toBe(201);
+
+    const ownerProfile = await request(app.getHttpServer()).get('/v1/api/users/profile').set(as('other'));
+    const learnerProfile = await request(app.getHttpServer()).get('/v1/api/users/profile').set(as('learner'));
+    expect(ownerProfile.body.activity).toHaveLength(1);
+    expect(learnerProfile.status).toBe(200);
+    expect(learnerProfile.body.activity).toEqual([]);
+  });
+
   it('keeps the accepted Result and credit when badge evaluation fails', async () => {
     await resetOther();
     const session = await start('other');
