@@ -1,4 +1,5 @@
 import { CharacterSelector } from "@/components/character-selector";
+import { COMPETENCIES } from "@repo/contracts";
 import type { CharacterOption, Profile } from "@/lib/api-client";
 
 function CharacterSummary({ profile }: Readonly<{ profile: Profile }>) {
@@ -93,6 +94,17 @@ export function ProfileView({
   return (
     <div className="space-y-8">
       <CharacterSummary profile={profile} />
+
+      <section aria-labelledby="competency-heading" className="space-y-3">
+        <h2 id="competency-heading" className="text-lg font-semibold">Initial competency baseline</h2>
+        {profile.initialCompetencyBaseline ? <>
+          <p className="text-sm text-muted-foreground">Assessment-based snapshot; this is not a trained ML estimate. Completed {new Date(profile.initialCompetencyBaseline.completedAt).toLocaleDateString()} (version {profile.initialCompetencyBaseline.assessmentVersion.slice(0, 12)}).</p>
+          <ul className="grid gap-2 sm:grid-cols-2">{profile.initialCompetencyBaseline.skills.map((skill) => <li key={skill.id} className="rounded-lg border border-border bg-card p-3 text-sm">
+            <span className="font-medium">{COMPETENCIES.find(({ id }) => id === skill.id)?.title ?? skill.id}</span>
+            <p className="text-muted-foreground">{skill.score === null ? "Unassessed" : `${skill.score}% correct (${skill.correct}/${skill.assessed} questions)`}</p>
+          </li>)}</ul>
+        </> : <p className="text-sm text-muted-foreground">No initial assessment completed yet. Complete the designated assessment from Quests to establish your baseline.</p>}
+      </section>
 
       <section aria-labelledby="badges-heading" className="space-y-3">
         <h2 id="badges-heading" className="text-lg font-semibold">

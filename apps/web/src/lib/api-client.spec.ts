@@ -484,6 +484,7 @@ describe("api-client", () => {
             timeLimitSeconds: 300,
             passingScore: 70,
             xpReward: 100,
+            initialAssessment: false,
             completed: false,
             lockReason: null,
           },

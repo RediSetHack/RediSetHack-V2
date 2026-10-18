@@ -1,5 +1,5 @@
 {
-  "id": "bff2a338-9a61-4d25-b8df-7dc6d05c3a1d",
+  "id": "f025aba4-2a29-4bb3-9db1-c3828f1531c4",
   "prevId": "4e396426-3beb-4545-9eb9-77e4b9254c9d",
   "version": "7",
   "dialect": "postgresql",
@@ -206,172 +206,108 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.coding_activities": {
-      "name": "coding_activities",
+    "public.initial_competency_baselines": {
+      "name": "initial_competency_baselines",
       "schema": "",
       "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
           "primaryKey": true,
           "notNull": true
         },
-        "stage_id": {
-          "name": "stage_id",
+        "quest_id": {
+          "name": "quest_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
-        "authoring_id": {
-          "name": "authoring_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "title": {
-          "name": "title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "prompt": {
-          "name": "prompt",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "language": {
-          "name": "language",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'python'"
-        },
-        "starter_code": {
-          "name": "starter_code",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "''"
-        },
-        "competency_ids": {
-          "name": "competency_ids",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'[]'::jsonb"
-        },
-        "difficulty": {
-          "name": "difficulty",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "visible_examples": {
-          "name": "visible_examples",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'[]'::jsonb"
-        },
-        "hidden_checks": {
-          "name": "hidden_checks",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'[]'::jsonb"
-        },
-        "passing_score": {
-          "name": "passing_score",
+        "result_id": {
+          "name": "result_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true,
-          "default": 100
+          "notNull": true
         },
-        "xp_reward": {
-          "name": "xp_reward",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "content_version": {
-          "name": "content_version",
+        "assessment_version": {
+          "name": "assessment_version",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'1'"
+          "notNull": true
         },
-        "created_at": {
-          "name": "created_at",
+        "skills": {
+          "name": "skills",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "unassessed_skills": {
+          "name": "unassessed_skills",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "completed_at": {
+          "name": "completed_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "archived_at": {
-          "name": "archived_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
         }
       },
-      "indexes": {
-        "coding_activities_authoring_id_unique": {
-          "name": "coding_activities_authoring_id_unique",
-          "columns": [
-            {
-              "expression": "authoring_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "coding_activities_stage_id_index": {
-          "name": "coding_activities_stage_id_index",
-          "columns": [
-            {
-              "expression": "stage_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
-        "coding_activities_stage_id_stages_id_fk": {
-          "name": "coding_activities_stage_id_stages_id_fk",
-          "tableFrom": "coding_activities",
-          "tableTo": "stages",
+        "initial_competency_baselines_user_id_users_id_fk": {
+          "name": "initial_competency_baselines_user_id_users_id_fk",
+          "tableFrom": "initial_competency_baselines",
+          "tableTo": "users",
           "columnsFrom": [
-            "stage_id"
+            "user_id"
           ],
           "columnsTo": [
             "id"
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
+        },
+        "initial_competency_baselines_quest_id_quests_id_fk": {
+          "name": "initial_competency_baselines_quest_id_quests_id_fk",
+          "tableFrom": "initial_competency_baselines",
+          "tableTo": "quests",
+          "columnsFrom": [
+            "quest_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "initial_competency_baselines_result_id_results_id_fk": {
+          "name": "initial_competency_baselines_result_id_results_id_fk",
+          "tableFrom": "initial_competency_baselines",
+          "tableTo": "results",
+          "columnsFrom": [
+            "result_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "coding_activities_difficulty_check": {
-          "name": "coding_activities_difficulty_check",
-          "value": "\"coding_activities\".\"difficulty\" is null or \"coding_activities\".\"difficulty\" in ('beginner', 'intermediate', 'advanced')"
+      "uniqueConstraints": {
+        "initial_competency_baselines_result_id_unique": {
+          "name": "initial_competency_baselines_result_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "result_id"
+          ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.quest_options": {
@@ -850,6 +786,13 @@
           "notNull": true,
           "default": 0
         },
+        "initial_assessment": {
+          "name": "initial_assessment",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -876,6 +819,22 @@
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "quests_one_initial_assessment_unique": {
+          "name": "quests_one_initial_assessment_unique",
+          "columns": [
+            {
+              "expression": "initial_assessment",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"quests\".\"initial_assessment\" = true",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -1504,256 +1463,6 @@
             "id"
           ],
           "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.coding_attempts": {
-      "name": "coding_attempts",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "learner_id": {
-          "name": "learner_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "activity_id": {
-          "name": "activity_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "code": {
-          "name": "code",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "score": {
-          "name": "score",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "passed": {
-          "name": "passed",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "error_category": {
-          "name": "error_category",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "checks_passed": {
-          "name": "checks_passed",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "checks_total": {
-          "name": "checks_total",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "visible_results": {
-          "name": "visible_results",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'[]'::jsonb"
-        },
-        "elapsed_ms": {
-          "name": "elapsed_ms",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "xp_awarded": {
-          "name": "xp_awarded",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "submitted_at": {
-          "name": "submitted_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "coding_attempts_learner_activity_index": {
-          "name": "coding_attempts_learner_activity_index",
-          "columns": [
-            {
-              "expression": "learner_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "activity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "coding_attempts_learner_id_users_id_fk": {
-          "name": "coding_attempts_learner_id_users_id_fk",
-          "tableFrom": "coding_attempts",
-          "tableTo": "users",
-          "columnsFrom": [
-            "learner_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "coding_attempts_activity_id_coding_activities_id_fk": {
-          "name": "coding_attempts_activity_id_coding_activities_id_fk",
-          "tableFrom": "coding_attempts",
-          "tableTo": "coding_activities",
-          "columnsFrom": [
-            "activity_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.coding_xp_awards": {
-      "name": "coding_xp_awards",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "learner_id": {
-          "name": "learner_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "activity_id": {
-          "name": "activity_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "attempt_id": {
-          "name": "attempt_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "awarded_at": {
-          "name": "awarded_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "coding_xp_awards_learner_activity_unique": {
-          "name": "coding_xp_awards_learner_activity_unique",
-          "columns": [
-            {
-              "expression": "learner_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "activity_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "coding_xp_awards_learner_id_users_id_fk": {
-          "name": "coding_xp_awards_learner_id_users_id_fk",
-          "tableFrom": "coding_xp_awards",
-          "tableTo": "users",
-          "columnsFrom": [
-            "learner_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "coding_xp_awards_activity_id_coding_activities_id_fk": {
-          "name": "coding_xp_awards_activity_id_coding_activities_id_fk",
-          "tableFrom": "coding_xp_awards",
-          "tableTo": "coding_activities",
-          "columnsFrom": [
-            "activity_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "coding_xp_awards_attempt_id_coding_attempts_id_fk": {
-          "name": "coding_xp_awards_attempt_id_coding_attempts_id_fk",
-          "tableFrom": "coding_xp_awards",
-          "tableTo": "coding_attempts",
-          "columnsFrom": [
-            "attempt_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },

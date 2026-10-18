@@ -1,5 +1,6 @@
 import { BadgeAwardSummary } from "../entities/badge-award-summary.entity.js";
 import { ProfileCharacter } from "../entities/user-profile.entity.js";
+import type { InitialCompetencyBaseline } from "@repo/contracts";
 
 export interface ProfileData {
   userId: string;
@@ -7,6 +8,7 @@ export interface ProfileData {
   character: ProfileCharacter | null;
   badges: BadgeAwardSummary[];
   activity: { id: string; activityType: 'quest' | 'reading'; activityId: number; occurredAt: Date; outcome: unknown }[];
+  initialCompetencyBaseline: InitialCompetencyBaseline | null;
 }
 
 export interface LeaderboardRow {

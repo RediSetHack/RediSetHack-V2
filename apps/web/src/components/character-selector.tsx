@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { selectUserCharacter, type CharacterOption } from "@/lib/api-client";
+import { getQuests, selectUserCharacter, type CharacterOption } from "@/lib/api-client";
 
 interface CharacterSelectorProps {
   readonly characters: readonly CharacterOption[];
@@ -43,6 +43,7 @@ export function CharacterSelector({
   } | null>(null);
 
   const handleSelect = async (character: CharacterOption) => {
+    const isFirstCharacter = activeCharacterId === null;
     setSelectedId(character.id);
     setIsLoading(true);
     setMessage(null);
@@ -62,6 +63,11 @@ export function CharacterSelector({
       // Re-run server components (e.g. the app shell's profile summary) so
       // the new Character shows up without requiring a fresh sign-in.
       router.refresh();
+      if (isFirstCharacter) {
+        const quests = await getQuests(apiUrl, token).catch(() => []);
+        const assessment = quests.find((quest) => quest.initialAssessment);
+        router.push(assessment && !assessment.lockReason ? `/quests/${assessment.id}/session` : "/quests");
+      }
     } catch (err: unknown) {
       const errorMsg =
         err instanceof Error ? err.message : "Failed to select character";
