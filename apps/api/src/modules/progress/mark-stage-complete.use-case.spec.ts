@@ -47,7 +47,10 @@ function makeEvent(
 }
 
 function makeProgress(totalXp: number | null = 20): ProgressRepository {
-  return { markCompleted: vi.fn().mockResolvedValue(totalXp) };
+  return {
+    startReadingSession: vi.fn().mockResolvedValue({ id: 'session-1', startedAt: new Date('2026-01-01T00:00:00Z') }),
+    markCompleted: vi.fn().mockResolvedValue(totalXp),
+  };
 }
 
 describe('MarkStageCompleteUseCase', () => {
@@ -75,7 +78,7 @@ describe('MarkStageCompleteUseCase', () => {
       leveledUp: false,
       badgesEarned: [],
     });
-    expect(progress.markCompleted).toHaveBeenCalledWith('user_1', 2, 20);
+    expect(progress.markCompleted).toHaveBeenCalledWith('user_1', 2, 20, expect.objectContaining({ id: 'session-1' }), expect.objectContaining({ skills: [], difficulty: null }));
   });
 
   it("doubles XP when today's event is Bonus", async () => {
@@ -96,7 +99,7 @@ describe('MarkStageCompleteUseCase', () => {
     expect(completion.xpEarned).toBe(40);
     expect(completion.eventMultiplier).toBe(2);
     expect(completion.eventType).toBe('bonus');
-    expect(progress.markCompleted).toHaveBeenCalledWith('user_1', 2, 40);
+    expect(progress.markCompleted).toHaveBeenCalledWith('user_1', 2, 40, expect.objectContaining({ id: 'session-1' }), expect.objectContaining({ skills: [], difficulty: null }));
   });
 
   it('allows completing stage 1 without any progression', async () => {

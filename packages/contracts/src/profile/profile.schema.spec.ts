@@ -18,6 +18,7 @@ describe("ProfileResponseSchema", () => {
           latestAwardedAt: "2026-01-01T00:00:00.000Z",
         },
       ],
+      activity: [{ id: "123e4567-e89b-42d3-a456-426614174000", activityType: "quest", activityId: 7, occurredAt: "2026-01-02T00:00:00.000Z", outcome: { status: "submitted", passed: true, score: 100, xpAwarded: 20 } }],
     };
 
     expect(ProfileResponseSchema.parse(payload)).toEqual(payload);
@@ -30,6 +31,7 @@ describe("ProfileResponseSchema", () => {
       totalXp: 0,
       level: 1,
       badges: [],
+      activity: [],
     };
 
     expect(ProfileResponseSchema.parse(payload)).toEqual(payload);

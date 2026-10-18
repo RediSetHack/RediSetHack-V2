@@ -59,6 +59,7 @@ describe("DrizzleProfileRepository", () => {
             .fn()
             .mockResolvedValue({ id: 7, name: "Kalayaan", slug: "kalayaan", imageUrl: null }),
         },
+        learningInteractions: { findMany: vi.fn().mockResolvedValue([]) },
       },
     } as unknown as Database;
 
@@ -70,6 +71,7 @@ describe("DrizzleProfileRepository", () => {
       expect.objectContaining({ name: "Pull Shark", count: 3, latestAwardedAt }),
     ]);
     expect(result?.character).toEqual({ id: 7, name: "Kalayaan", slug: "kalayaan", imageUrl: null });
+    expect(result?.activity).toEqual([]);
   });
 
   it("returns null when the user does not exist", async () => {

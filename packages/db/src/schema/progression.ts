@@ -1,4 +1,5 @@
-import { boolean, date, index, integer, pgTable, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { boolean, date, index, integer, jsonb, pgTable, serial, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { users } from "./identity.js";
 import { stages } from "./catalog.js";
 
@@ -39,4 +40,46 @@ export const dailyEvents = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [uniqueIndex("daily_events_event_date_unique").on(table.eventDate)],
+);
+
+// One immutable research/profile event per accepted Quest result or reading completion.
+export const learningInteractions = pgTable(
+  "learning_interactions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    learnerId: text("learner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    sessionId: text("session_id").notNull(),
+    activityType: text("activity_type", { enum: ["quest", "reading"] }).notNull(),
+    activityId: integer("activity_id").notNull(),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+    occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull().defaultNow(),
+    elapsedMs: integer("elapsed_ms").notNull(),
+    elapsedDefinition: text("elapsed_definition").notNull(),
+    contentVersion: text("content_version").notNull(),
+    skills: jsonb("skills").$type<string[]>().notNull().default([]),
+    difficulty: text("difficulty"),
+    answers: jsonb("answers"),
+    correctness: boolean("correctness"),
+    outcome: jsonb("outcome").notNull(),
+    errors: jsonb("errors"),
+    hints: jsonb("hints"),
+  },
+  (table) => [
+    uniqueIndex("learning_interactions_session_unique").on(table.sessionId),
+    index("learning_interactions_learner_occurred_index").on(table.learnerId, table.occurredAt),
+  ],
+);
+
+export const readingSessions = pgTable(
+  "reading_sessions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    learnerId: text("learner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    stageId: integer("stage_id").notNull().references(() => stages.id, { onDelete: "cascade" }),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex("reading_sessions_active_unique").on(table.learnerId, table.stageId).where(sql`${table.completedAt} is null`),
+  ],
 );

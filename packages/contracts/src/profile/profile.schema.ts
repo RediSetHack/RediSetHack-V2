@@ -20,6 +20,23 @@ export const ProfileBadgeSchema = z.object({
 });
 export type ProfileBadge = z.infer<typeof ProfileBadgeSchema>;
 
+const QuestInteractionOutcomeSchema = z.object({
+  status: z.enum(["submitted", "expired"]),
+  passed: z.boolean(),
+  score: z.number().int().min(0).max(100),
+  xpAwarded: z.number().int().nonnegative(),
+});
+const ReadingInteractionOutcomeSchema = z.object({
+  status: z.literal("completed"),
+  assessed: z.literal(false),
+  xpAwarded: z.number().int().nonnegative(),
+});
+export const ProfileActivitySchema = z.discriminatedUnion("activityType", [
+  z.object({ id: z.string().uuid(), activityType: z.literal("quest"), activityId: z.number().int().positive(), occurredAt: z.string(), outcome: QuestInteractionOutcomeSchema }),
+  z.object({ id: z.string().uuid(), activityType: z.literal("reading"), activityId: z.number().int().positive(), occurredAt: z.string(), outcome: ReadingInteractionOutcomeSchema }),
+]);
+export type ProfileActivity = z.infer<typeof ProfileActivitySchema>;
+
 /**
  * A learner's profile, as returned by `ProfilePresenter` in `apps/api`
  * (`GET /v1/api/users/profile`). `character` is `null` until the learner
@@ -31,5 +48,6 @@ export const ProfileResponseSchema = z.object({
   totalXp: z.number().int().nonnegative(),
   level: z.number().int().positive(),
   badges: z.array(ProfileBadgeSchema),
+  activity: z.array(ProfileActivitySchema),
 });
 export type ProfileResponse = z.infer<typeof ProfileResponseSchema>;

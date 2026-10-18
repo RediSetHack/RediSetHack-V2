@@ -159,7 +159,7 @@ describe('auth integration', () => {
 
   const fakeProfiles: ProfileRepository = {
     async findProfileByUserId(userId) {
-      return { userId, totalXp: 0, character: null, badges: [] };
+      return { userId, totalXp: 0, character: null, badges: [], activity: [] };
     },
     async findLeaderboardPage(page, limit) {
       const offset = (page - 1) * limit;
@@ -365,6 +365,7 @@ describe('auth integration', () => {
       character: null,
       level: 1,
       badges: [],
+      activity: [],
     });
   });
 

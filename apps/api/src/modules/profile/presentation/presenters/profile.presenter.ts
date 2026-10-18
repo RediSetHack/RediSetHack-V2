@@ -15,6 +15,7 @@ export class ProfilePresenter {
         count: badge.count,
         latestAwardedAt: badge.latestAwardedAt,
       })),
+      activity: profile.activity.map((event) => ({ ...event, occurredAt: event.occurredAt.toISOString() })),
     };
   }
 }

@@ -14,5 +14,8 @@ export class UserProfile {
     public readonly totalXp: number,
     public readonly level: number,
     public readonly badges: BadgeAwardSummary[],
+    public readonly activity: ProfileDataActivity[],
   ) {}
 }
+
+export type ProfileDataActivity = { id: string; activityType: 'quest' | 'reading'; activityId: number; occurredAt: Date; outcome: unknown };

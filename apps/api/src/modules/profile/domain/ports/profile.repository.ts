@@ -6,6 +6,7 @@ export interface ProfileData {
   totalXp: number;
   character: ProfileCharacter | null;
   badges: BadgeAwardSummary[];
+  activity: { id: string; activityType: 'quest' | 'reading'; activityId: number; occurredAt: Date; outcome: unknown }[];
 }
 
 export interface LeaderboardRow {
