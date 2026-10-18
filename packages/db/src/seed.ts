@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { eq, sql } from "drizzle-orm";
-import { characters, codingActivities, ctfChallenges, stages } from "./schema/index.js";
+import { characters, codingActivities, ctfChallenges, sideQuests, stages } from "./schema/index.js";
 import { createDb } from "./index.js";
 import { SECURE_DEV_ACTIVITY, SECURE_DEV_LESSON, SECURE_DEV_STAGE_SLUG } from "./secure-dev-content.js";
 
@@ -127,9 +127,26 @@ export async function seed(databaseUrl?: string) {
       xpReward: 25,
       contentVersion: "1",
     };
-    await db.insert(ctfChallenges).values(ctf).onConflictDoUpdate({
+    const [challenge] = await db.insert(ctfChallenges).values(ctf).onConflictDoUpdate({
       target: ctfChallenges.authoringId,
       set: { ...ctf, archivedAt: null },
+    }).returning();
+
+    // Optional Side Quest reusing the CTF challenge above; unlocked after the coding activity.
+    const sideQuest = {
+      authoringId: "side-quest-quiet-log",
+      title: "Side Quest: Trace the quiet log",
+      summary: "An optional forensics detour: recover the hidden flag from a rover telemetry log.",
+      brief: "Open the designated challenge, inspect the log artifact offline, and submit the flag. The main story never waits on this.",
+      activityType: "ctf" as const,
+      activityId: challenge!.id,
+      prerequisites: [{ type: "level", minLevel: 1 }, { type: "activity", activityType: "coding", activityId: activity!.id }],
+      xpReward: 15,
+      contentVersion: "1",
+    };
+    await db.insert(sideQuests).values(sideQuest).onConflictDoUpdate({
+      target: sideQuests.authoringId,
+      set: { ...sideQuest, archivedAt: null },
     });
   }
 

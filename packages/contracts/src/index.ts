@@ -14,3 +14,4 @@ export * from "./leaderboard/index.js";
 export * from "./profile/index.js";
 export * from "./progress/index.js";
 export * from "./quest/index.js";
+export * from "./side-quest/index.js";

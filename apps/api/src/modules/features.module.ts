@@ -10,6 +10,7 @@ import { ProgressModule } from './progress/progress.module.js';
 import { QuestModule } from './quest/quest.module.js';
 import { CtfModule } from './ctf/ctf.module.js';
 import { CodelabModule } from './codelab/codelab.module.js';
+import { SideQuestModule } from "./side-quest/side-quest.module.js";
 import { ProfileModule } from "./profile/profile.module.js";
 
 @Module({
@@ -22,6 +23,7 @@ import { ProfileModule } from "./profile/profile.module.js";
     QuestModule,
     CodelabModule,
     CtfModule,
+    SideQuestModule,
     ProfileModule
   ],
 })

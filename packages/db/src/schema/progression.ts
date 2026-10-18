@@ -49,7 +49,7 @@ export const learningInteractions = pgTable(
     id: uuid("id").defaultRandom().primaryKey(),
     learnerId: text("learner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
     sessionId: text("session_id"),
-    activityType: text("activity_type", { enum: ["quest", "reading", "coding", "ctf"] }).notNull(),
+    activityType: text("activity_type", { enum: ["quest", "reading", "coding", "ctf", "side_quest"] }).notNull(),
     activityId: integer("activity_id").notNull(),
     startedAt: timestamp("started_at", { withTimezone: true }),
     occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull().defaultNow(),
@@ -150,4 +150,54 @@ export const ctfSolves = pgTable(
     solvedAt: timestamp("solved_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [uniqueIndex("ctf_solves_learner_challenge_unique").on(table.learnerId, table.challengeId)],
+);
+
+// An optional learning objective that designates an existing assessed activity
+// (a CTF challenge or coding activity) as its task. `prerequisites` is a data-
+// driven list of clauses (see @repo/contracts); it gates visibility of the
+// objective's body, start, submit and completion.
+export const sideQuests = pgTable(
+  "side_quests",
+  {
+    id: serial("id").primaryKey(),
+    authoringId: text("authoring_id").notNull(),
+    title: text("title").notNull(),
+    summary: text("summary").notNull(),
+    brief: text("brief").notNull(),
+    // Polymorphic reference (no FK): "ctf" -> ctf_challenges.id, "coding" -> coding_activities.id.
+    activityType: text("activity_type", { enum: ["ctf", "coding"] }).notNull(),
+    activityId: integer("activity_id").notNull(),
+    prerequisites: jsonb("prerequisites").$type<Record<string, unknown>[]>().notNull().default([]),
+    xpReward: integer("xp_reward").notNull().default(0),
+    contentVersion: text("content_version").notNull().default("1"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+  },
+  (table) => [uniqueIndex("side_quests_authoring_id_unique").on(table.authoringId)],
+);
+
+export const sideQuestStarts = pgTable(
+  "side_quest_starts",
+  {
+    id: serial("id").primaryKey(),
+    learnerId: text("learner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    sideQuestId: integer("side_quest_id").notNull().references(() => sideQuests.id, { onDelete: "cascade" }),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("side_quest_starts_learner_quest_unique").on(table.learnerId, table.sideQuestId)],
+);
+
+// One Side Quest accomplishment per learner. The unique index is the exactly-once
+// gate for the completion, its XP and its learning-interaction event (`eventId`).
+export const sideQuestCompletions = pgTable(
+  "side_quest_completions",
+  {
+    id: serial("id").primaryKey(),
+    learnerId: text("learner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    sideQuestId: integer("side_quest_id").notNull().references(() => sideQuests.id, { onDelete: "cascade" }),
+    eventId: uuid("event_id").references(() => learningInteractions.id, { onDelete: "set null" }),
+    xpAwarded: integer("xp_awarded").notNull().default(0),
+    completedAt: timestamp("completed_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("side_quest_completions_learner_quest_unique").on(table.learnerId, table.sideQuestId)],
 );

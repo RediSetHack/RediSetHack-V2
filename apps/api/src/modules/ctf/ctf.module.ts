@@ -11,5 +11,6 @@ import { CtfController } from './presentation/controllers/ctf.controller.js';
   imports: [ContentModule, DailyEventModule],
   controllers: [CtfController],
   providers: [{ provide: CtfRepository, useClass: DrizzleCtfRepository }, CtfUseCase],
+  exports: [CtfUseCase],
 })
 export class CtfModule {}
