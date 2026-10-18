@@ -1,4 +1,18 @@
 import { z } from "zod";
+import { CompetencyIdSchema } from "../content/competency.schema.js";
+
+export const InitialCompetencyBaselineSchema = z.object({
+  assessmentId: z.number().int().positive(),
+  assessmentVersion: z.string().min(1),
+  completedAt: z.string(),
+  skills: z.array(z.object({
+    id: CompetencyIdSchema,
+    assessed: z.number().int().nonnegative(),
+    correct: z.number().int().nonnegative(),
+    score: z.number().int().min(0).max(100).nullable(),
+  })),
+});
+export type InitialCompetencyBaseline = z.infer<typeof InitialCompetencyBaselineSchema>;
 
 /** The Character a learner has chosen, as embedded in their profile. */
 export const ProfileCharacterSchema = z.object({
@@ -49,5 +63,6 @@ export const ProfileResponseSchema = z.object({
   level: z.number().int().positive(),
   badges: z.array(ProfileBadgeSchema),
   activity: z.array(ProfileActivitySchema),
+  initialCompetencyBaseline: InitialCompetencyBaselineSchema.nullable(),
 });
 export type ProfileResponse = z.infer<typeof ProfileResponseSchema>;

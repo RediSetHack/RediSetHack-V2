@@ -78,10 +78,11 @@ export const quests = pgTable(
     timeLimitSeconds: integer("time_limit_seconds").notNull().default(60),
     passingScore: integer("passing_score").notNull().default(70),
     xpReward: integer("xp_reward").notNull().default(0),
+    initialAssessment: boolean("initial_assessment").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
   },
-  (table) => [index("quests_stage_id_index").on(table.stageId)],
+  (table) => [index("quests_stage_id_index").on(table.stageId), uniqueIndex("quests_one_initial_assessment_unique").on(table.initialAssessment).where(sql`${table.initialAssessment} = true`)],
 );
 
 // A multiple-choice question belonging to a Quest.
@@ -144,6 +145,16 @@ export const results = pgTable(
     index("results_quest_id_index").on(table.questId),
   ],
 );
+
+export const initialCompetencyBaselines = pgTable("initial_competency_baselines", {
+  userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  questId: integer("quest_id").notNull().references(() => quests.id),
+  resultId: integer("result_id").notNull().unique().references(() => results.id),
+  assessmentVersion: text("assessment_version").notNull(),
+  skills: jsonb("skills").$type<Record<string, { assessed: number; correct: number; score: number }>>().notNull(),
+  unassessedSkills: jsonb("unassessed_skills").$type<string[]>().notNull(),
+  completedAt: timestamp("completed_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 // A Quest Session is the server-owned record of one timed attempt: who is
 // playing, the question snapshot being assessed, and the server-set deadline.

@@ -1,4 +1,4 @@
-import { UserProfile } from "../../domain/entities/user-profile.entity.js";
+import { UserProfile } from '../../domain/entities/user-profile.entity.js';
 
 export class ProfilePresenter {
   static toResponse(profile: UserProfile) {
@@ -15,7 +15,11 @@ export class ProfilePresenter {
         count: badge.count,
         latestAwardedAt: badge.latestAwardedAt,
       })),
-      activity: profile.activity.map((event) => ({ ...event, occurredAt: event.occurredAt.toISOString() })),
+      activity: profile.activity.map((event) => ({
+        ...event,
+        occurredAt: event.occurredAt.toISOString(),
+      })),
+      initialCompetencyBaseline: profile.initialCompetencyBaseline,
     };
   }
 }

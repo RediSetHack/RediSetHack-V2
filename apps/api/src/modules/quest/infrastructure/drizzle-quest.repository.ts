@@ -13,10 +13,12 @@ import {
   results,
   users,
   learningInteractions,
+  initialCompetencyBaselines,
   type Database,
 } from '@repo/db';
 
 import { DB } from '../../../database/database.module.js';
+import { COMPETENCIES } from '@repo/contracts';
 import {
   Quest,
   QuestOption,
@@ -50,6 +52,7 @@ function toQuest(row: QuestRow): Quest {
     row.passingScore,
     row.xpReward,
     row.archivedAt,
+    row.initialAssessment,
   );
 }
 
@@ -262,6 +265,25 @@ export class DrizzleQuestRepository implements QuestRepository {
         correctness: input.status === 'expired' ? null : input.passed,
         outcome: { status: input.status, passed: input.passed, score: input.score, xpAwarded },
       });
+      const assessment = await tx.query.quests.findFirst({ where: eq(quests.id, claimed.questId), columns: { initialAssessment: true } });
+      if (assessment?.initialAssessment && input.status === 'submitted') {
+        const counts = new Map<string, { assessed: number; correct: number }>();
+        for (const question of snapshot) {
+          const optionId = responseByQuestion.get(question.id);
+          if (optionId === undefined) continue;
+          for (const skill of question.competencyIds ?? []) {
+            const current = counts.get(skill) ?? { assessed: 0, correct: 0 };
+            current.assessed++;
+            if (question.options.some((option) => option.id === optionId && option.isCorrect)) current.correct++;
+            counts.set(skill, current);
+          }
+        }
+        const skills = Object.fromEntries([...counts].map(([id, value]) => [id, { ...value, score: Math.round(value.correct / value.assessed * 100) }]));
+        const assessmentVersion = createHash('sha256').update(JSON.stringify({ questions: snapshot, passingScore: claimed.passingScore })).digest('hex');
+        const unassessedSkills = COMPETENCIES.map(({ id }) => id).filter((id) => !counts.has(id));
+        await tx.insert(initialCompetencyBaselines).values({ userId: claimed.userId, questId: claimed.questId, resultId: row!.id, assessmentVersion, skills, unassessedSkills })
+          .onConflictDoUpdate({ target: initialCompetencyBaselines.userId, set: { questId: claimed.questId, resultId: row!.id, assessmentVersion, skills, unassessedSkills, completedAt: new Date() } });
+      }
       return { result: toResult(row!), xpAwarded };
     });
   }

@@ -241,10 +241,13 @@ export class DrizzleQuestRepository implements QuestRepository {
     timeLimitSeconds: number;
     passingScore: number;
     xpReward: number;
+    initialAssessment: boolean;
     questions: Quest['questions'];
   }): Promise<Quest> {
     return this.database.transaction(async (tx) => {
-      const rows = await tx.insert(quests).values(input).returning();
+      const { initialAssessment, ...questInput } = input;
+      if (initialAssessment) await tx.update(quests).set({ initialAssessment: false });
+      const rows = await tx.insert(quests).values({ ...questInput, initialAssessment }).returning();
       await this.syncQuestions(tx, rows[0]!.id, input.questions);
       return toQuest(rows[0]!, input.questions);
     });
@@ -258,11 +261,13 @@ export class DrizzleQuestRepository implements QuestRepository {
       timeLimitSeconds: number;
       passingScore: number;
       xpReward: number;
+      initialAssessment: boolean;
       questions: Quest['questions'];
     }>,
   ): Promise<Quest | null> {
     return this.database.transaction(async (tx) => {
       const { questions, ...rest } = input;
+      if (rest.initialAssessment) await tx.update(quests).set({ initialAssessment: false });
       const row = Object.keys(rest).length
         ? (await tx.update(quests).set(rest).where(eq(quests.id, id)).returning())[0]
         : await tx.query.quests.findFirst({ where: eq(quests.id, id) });
@@ -418,6 +423,7 @@ function toQuest(row: typeof quests.$inferSelect, questions: Quest['questions'])
     row.xpReward,
     questions,
     row.archivedAt,
+    row.initialAssessment,
   );
 }
 

@@ -59,6 +59,7 @@ export class QuestPresenter {
       timeLimitSeconds: entity.timeLimitSeconds,
       passingScore: entity.passingScore,
       xpReward: entity.xpReward,
+      initialAssessment: entity.initialAssessment,
       questions: entity.questions,
     };
   }

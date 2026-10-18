@@ -1,6 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { desc, eq, sql } from "drizzle-orm";
-import { badgeAwards, badgeDefinitions, characters, users, learningInteractions, type Database } from "@repo/db";
+import { badgeAwards, badgeDefinitions, characters, users, learningInteractions, initialCompetencyBaselines, type Database } from "@repo/db";
+import { COMPETENCIES } from "@repo/contracts";
 
 import { DB } from "../../../database/database.module.js";
 import {
@@ -48,6 +49,7 @@ export class DrizzleProfileRepository implements ProfileRepository {
       limit: 10,
       columns: { id: true, activityType: true, activityId: true, occurredAt: true, outcome: true },
     });
+    const baseline = await this.database.query.initialCompetencyBaselines.findFirst({ where: eq(initialCompetencyBaselines.userId, userId) });
 
     return {
       userId: user.id,
@@ -67,6 +69,15 @@ export class DrizzleProfileRepository implements ProfileRepository {
           ),
       ),
       activity: activityRows.map((row) => ({ ...row, activityType: row.activityType as 'quest' | 'reading' })),
+      initialCompetencyBaseline: baseline ? {
+        assessmentId: baseline.questId,
+        assessmentVersion: baseline.assessmentVersion,
+        completedAt: baseline.completedAt.toISOString(),
+        skills: COMPETENCIES.map(({ id }) => {
+          const score = baseline.skills[id];
+          return { id, assessed: score?.assessed ?? 0, correct: score?.correct ?? 0, score: score?.score ?? null };
+        }),
+      } : null,
     };
   }
 

@@ -18,6 +18,7 @@ export const QuestSchema = z.object({
   timeLimitSeconds: z.number().int().positive(),
   passingScore: z.number().int().min(0).max(100),
   xpReward: z.number().int().nonnegative(),
+  initialAssessment: z.boolean(),
   completed: z.boolean(),
   lockReason: z.string().nullable(),
 });

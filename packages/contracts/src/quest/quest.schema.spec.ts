@@ -17,6 +17,7 @@ describe("QuestSchema", () => {
       timeLimitSeconds: 300,
       passingScore: 70,
       xpReward: 100,
+      initialAssessment: false,
       completed: false,
       lockReason: null,
     };
@@ -33,6 +34,7 @@ describe("QuestSchema", () => {
       timeLimitSeconds: 300,
       passingScore: 70,
       xpReward: 100,
+      initialAssessment: false,
       completed: true,
       lockReason: null,
     };
@@ -56,6 +58,7 @@ describe("QuestListResponseSchema", () => {
         timeLimitSeconds: 300,
         passingScore: 70,
         xpReward: 100,
+        initialAssessment: false,
         completed: false,
       lockReason: null,
       },

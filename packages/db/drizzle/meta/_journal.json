@@ -99,6 +99,13 @@
       "when": 1792282015916,
       "tag": "0013_serious_wendigo",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792282752022,
+      "tag": "0014_round_gorilla_man",
+      "breakpoints": true
     }
   ]
 }
