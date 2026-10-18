@@ -251,6 +251,21 @@ export function CodelabEditor({
         <section className="space-y-2 rounded-md border border-border/60 p-4">
           <h2 className="font-semibold">{activity.title}</h2>
           <p>{activity.prompt}</p>
+          {[...activity.objectives.programming, ...activity.objectives.security].length > 0 && (
+            <ul className="list-disc pl-5 text-sm">
+              {activity.objectives.programming.map((o) => (
+                <li key={o}>Programming: {o}</li>
+              ))}
+              {activity.objectives.security.map((o) => (
+                <li key={o}>Security: {o}</li>
+              ))}
+            </ul>
+          )}
+          {activity.provenance && (
+            <p className="text-xs text-muted-foreground">
+              Source: {activity.provenance.source}. Reviewed {activity.provenance.reviewedAt}.
+            </p>
+          )}
           <ul className="font-mono text-sm">
             {activity.visibleExamples.map((example) => (
               <li key={example.input}>

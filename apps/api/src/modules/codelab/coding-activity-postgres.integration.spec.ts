@@ -89,6 +89,8 @@ describe.skipIf(!databaseUrl)('Graded coding activity through HTTP with PostgreS
       starterCode: 'a, b = map(int, input().split())\n',
       competencyIds: ['programming.control-flow'],
       difficulty: 'beginner',
+      objectives: { programming: [], security: [] },
+      provenance: null,
       visibleExamples: [{ input: '1 2', expected: '3' }],
       hiddenChecks: [{ input: '1000000 234567', expected: '1234567' }],
       passingScore: 100,

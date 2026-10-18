@@ -2,7 +2,7 @@ import type { IncomingMessage } from 'node:http';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createDb, stages, userProgress, users, zones, type Database } from '@repo/db';
 import { StageListResponseSchema } from '@repo/contracts';
@@ -60,6 +60,6 @@ describe.skipIf(!databaseUrl)('seeded Novel resume with PostgreSQL', () => {
     await db.update(stages).set({ archivedAt: new Date() }).where(eq(stages.id, archivedStageId));
     const archived = StageListResponseSchema.parse((await request(app.getHttpServer()).get(`/v1/api/zones/${chapterId}/stages`).set({ authorization: `Bearer ${learner}` })).body);
     expect(archived.map(s => s.id)).toEqual([completedId]);
-    expect(await db.select().from(userProgress).where(eq(userProgress.stageId, completedId))).toHaveLength(1);
+    expect(await db.select().from(userProgress).where(and(eq(userProgress.stageId, completedId), eq(userProgress.userId, learner)))).toHaveLength(1);
   });
 });

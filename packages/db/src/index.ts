@@ -15,3 +15,4 @@ export const db: Database | null = process.env.DATABASE_URL
 
 export * from "./schema/index.js";
 export { DEFAULT_CHARACTERS, seed } from "./seed.js";
+export * from "./secure-dev-content.js";

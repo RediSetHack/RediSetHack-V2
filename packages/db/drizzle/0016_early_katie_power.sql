@@ -1,0 +1,2 @@
+ALTER TABLE "coding_activities" ADD COLUMN "objectives" jsonb DEFAULT '{"programming":[],"security":[]}'::jsonb NOT NULL;--> statement-breakpoint
+ALTER TABLE "coding_activities" ADD COLUMN "provenance" jsonb;
