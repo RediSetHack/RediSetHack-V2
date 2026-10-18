@@ -243,3 +243,35 @@ export const codingActivities = pgTable(
     check("coding_activities_difficulty_check", sql`${table.difficulty} is null or ${table.difficulty} in ('beginner', 'intermediate', 'advanced')`),
   ],
 );
+
+// A reviewed, artifact-based CTF challenge. `flagHash` (sha256 of the flag) is
+// server-only and never leaves the API; `artifact` is served only through the
+// stage-gated artifact endpoint, never the catalog. Challenges must not require
+// attacking any external target: the artifact is the whole scope.
+export const ctfChallenges = pgTable(
+  "ctf_challenges",
+  {
+    id: serial("id").primaryKey(),
+    stageId: integer("stage_id")
+      .notNull()
+      .references(() => stages.id, { onDelete: "cascade" }),
+    authoringId: text("authoring_id").notNull(),
+    title: text("title").notNull(),
+    category: text("category").notNull(),
+    difficulty: text("difficulty").notNull(),
+    competencyIds: jsonb("competency_ids").$type<string[]>().notNull().default([]),
+    brief: text("brief").notNull(),
+    artifactName: text("artifact_name").notNull(),
+    artifact: text("artifact").notNull(),
+    flagHash: text("flag_hash").notNull(),
+    xpReward: integer("xp_reward").notNull().default(0),
+    contentVersion: text("content_version").notNull().default("1"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex("ctf_challenges_authoring_id_unique").on(table.authoringId),
+    index("ctf_challenges_stage_id_index").on(table.stageId),
+    check("ctf_challenges_difficulty_check", sql`${table.difficulty} in ('beginner', 'intermediate', 'advanced')`),
+  ],
+);

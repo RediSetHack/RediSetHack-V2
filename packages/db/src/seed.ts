@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { eq, sql } from "drizzle-orm";
-import { characters, codingActivities, stages } from "./schema/index.js";
+import { characters, codingActivities, ctfChallenges, stages } from "./schema/index.js";
 import { createDb } from "./index.js";
 import { SECURE_DEV_ACTIVITY, SECURE_DEV_LESSON, SECURE_DEV_STAGE_SLUG } from "./secure-dev-content.js";
 
@@ -103,6 +103,34 @@ export async function seed(databaseUrl?: string) {
         block.type === "exercise" ? { ...block, activityId: activity!.id } : block,
       ),
     }).where(eq(stages.id, stage.id));
+
+    // Controlled CTF: the artifact below is the entire scope; nothing external is attacked.
+    const ctf = {
+      stageId: stage.id,
+      authoringId: "ctf-log-forensics-1",
+      title: "The quiet log line",
+      category: "forensics",
+      difficulty: "beginner" as const,
+      competencyIds: ["programming.control-flow"],
+      brief: "A rover's telemetry log was captured offline. One line carries a base64-encoded flag in the form RSH{...}. Inspect the log, decode it locally, and submit the flag. No network access to any system is needed or allowed.",
+      artifactName: "rover-telemetry.log",
+      artifact: [
+        "2026-03-02T08:00:01Z INFO  boot sequence ok",
+        "2026-03-02T08:00:04Z INFO  battery=97% temp=21C",
+        "2026-03-02T08:00:09Z WARN  sensor drift on axis-y",
+        "2026-03-02T08:00:12Z DEBUG beacon=UlNIe3RydXN0X2J1dF92ZXJpZnlfdGhlX2xvZ30=",
+        "2026-03-02T08:00:15Z INFO  uplink idle",
+        "",
+      ].join("\n"),
+      // sha256 of the flag; the plaintext flag is never stored.
+      flagHash: "dbfd2aa26dd5cff48c9de5167aa013e770a0d6b16b3cb7c2698fa0d720518fb9",
+      xpReward: 25,
+      contentVersion: "1",
+    };
+    await db.insert(ctfChallenges).values(ctf).onConflictDoUpdate({
+      target: ctfChallenges.authoringId,
+      set: { ...ctf, archivedAt: null },
+    });
   }
 
   const [secureStage] = await db.select().from(stages).where(eq(stages.slug, SECURE_DEV_STAGE_SLUG)).limit(1);

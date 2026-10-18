@@ -7,6 +7,7 @@
 export * from "./badges/index.js";
 export * from "./codelab/index.js";
 export * from "./constants/index.js";
+export * from "./ctf/index.js";
 export * from "./content/index.js";
 export * from "./daily-event/index.js";
 export * from "./leaderboard/index.js";

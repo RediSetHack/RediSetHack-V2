@@ -120,6 +120,13 @@
       "when": 1792284905134,
       "tag": "0016_early_katie_power",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792288372676,
+      "tag": "0017_closed_crystal",
+      "breakpoints": true
     }
   ]
 }

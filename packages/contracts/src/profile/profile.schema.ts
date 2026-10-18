@@ -47,6 +47,7 @@ const ReadingInteractionOutcomeSchema = z.object({
 });
 export const ProfileActivitySchema = z.discriminatedUnion("activityType", [
   z.object({ id: z.string().uuid(), activityType: z.literal("quest"), activityId: z.number().int().positive(), occurredAt: z.string(), outcome: QuestInteractionOutcomeSchema }),
+  z.object({ id: z.string().uuid(), activityType: z.literal("ctf"), activityId: z.number().int().positive(), occurredAt: z.string(), outcome: z.object({ status: z.enum(["solved", "wrong"]), xpAwarded: z.number().int().nonnegative() }) }),
   z.object({ id: z.string().uuid(), activityType: z.literal("reading"), activityId: z.number().int().positive(), occurredAt: z.string(), outcome: ReadingInteractionOutcomeSchema }),
 ]);
 export type ProfileActivity = z.infer<typeof ProfileActivitySchema>;

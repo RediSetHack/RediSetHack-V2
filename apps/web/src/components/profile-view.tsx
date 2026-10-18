@@ -118,8 +118,10 @@ export function ProfileView({
         {profile.activity.length === 0 ? <p className="text-sm text-muted-foreground">No learning activity yet.</p> : (
           <ul className="space-y-2">
             {profile.activity.map((event) => <li key={event.id} className="rounded-lg border border-border bg-card p-3 text-sm">
-              <span className="font-medium">{event.activityType === "quest" ? "Quest submission" : "Reading completion"}</span>
-              <p className="text-muted-foreground">{event.activityType === "quest"
+              <span className="font-medium">{event.activityType === "quest" ? "Quest submission" : event.activityType === "ctf" ? "CTF challenge" : "Reading completion"}</span>
+              <p className="text-muted-foreground">{event.activityType === "ctf"
+                ? `${event.outcome.status === "solved" ? "Solved" : "Wrong flag"} · ${event.outcome.xpAwarded} XP`
+                : event.activityType === "quest"
                 ? event.outcome.status === "expired" ? "Expired · no assessed answers" : `${event.outcome.passed ? "Passed" : "Not passed"} · ${event.outcome.score}% · ${event.outcome.xpAwarded} XP`
                 : `Completed · ${event.outcome.xpAwarded} XP · not assessed`}</p>
               <time className="ml-2 text-muted-foreground" dateTime={event.occurredAt}>{new Date(event.occurredAt).toLocaleString()}</time>
