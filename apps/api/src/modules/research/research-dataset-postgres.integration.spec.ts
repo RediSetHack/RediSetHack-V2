@@ -85,8 +85,8 @@ describe.skipIf(!databaseUrl)('Research dataset export through HTTP with Postgre
     const first = DatasetExportSchema.parse((await get(admin, full).expect(200)).body);
     const second = DatasetExportSchema.parse((await get(admin, full).expect(200)).body);
     expect(ours(first)).toHaveLength(60);
-    expect(second.manifest.datasetId).toBe(first.manifest.datasetId);
-    expect(second.rows).toEqual(first.rows);
+    // Other suites share this database, so compare only our own rows (datasetId determinism is covered in dataset.spec.ts).
+    expect(ours(second)).toEqual(ours(first));
     expect(first.report.learnersInMultipleSplits).toBe(0);
     expect(new Set(ours(first).map((r) => r.sessionId)).size).toBe(60);
 
