@@ -63,7 +63,7 @@ function report(rows: DatasetRow[], deletedLearnerRows: number, truncatedAfter: 
   for (const r of rows) splitsByLearner.set(r.learnerId, (splitsByLearner.get(r.learnerId) ?? new Set()).add(r.split));
 
   const extent = (s: DatasetSplit) => {
-    const times = rows.filter((r) => r.split === s).map((r) => r.occurredAt).sort();
+    const times = rows.filter((r) => r.split === s).map((r) => r.occurredAt).sort((a, b) => a.localeCompare(b));
     return { first: times[0], last: times[times.length - 1] };
   };
   const [train, validation, test] = SPLITS.map(extent) as [ReturnType<typeof extent>, ReturnType<typeof extent>, ReturnType<typeof extent>];
