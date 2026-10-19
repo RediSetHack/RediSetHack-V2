@@ -1,6 +1,8 @@
 import { CharacterSelector } from "@/components/character-selector";
 import { COMPETENCIES } from "@repo/contracts";
 import type { CharacterOption, LearningStreak, Profile } from "@/lib/api-client";
+import { AccomplishmentSummary } from "@/components/accomplishments";
+import { ProfileSharing } from "@/components/profile-sharing";
 import { LearningStreakGraph } from "@/components/learning-streak-graph";
 
 function CharacterSummary({ profile }: Readonly<{ profile: Profile }>) {
@@ -28,7 +30,7 @@ function CharacterSummary({ profile }: Readonly<{ profile: Profile }>) {
           {character?.name ?? "No Character selected"}
         </p>
         <p className="text-sm text-muted-foreground">
-          Level {profile.level} • {profile.totalXp} XP
+          Adventurer Rank {profile.adventurerRank} • {profile.totalXp} XP
         </p>
       </div>
     </section>
@@ -98,7 +100,11 @@ export function ProfileView({
     <div className="space-y-8">
       <CharacterSummary profile={profile} />
 
+      <AccomplishmentSummary summary={profile} />
+
       <LearningStreakGraph streak={streak} />
+
+      <ProfileSharing initialShareId={profile.sharing.shareId} apiUrl={apiUrl} />
 
       <section aria-labelledby="competency-heading" className="space-y-3">
         <h2 id="competency-heading" className="text-lg font-semibold">Initial competency baseline</h2>

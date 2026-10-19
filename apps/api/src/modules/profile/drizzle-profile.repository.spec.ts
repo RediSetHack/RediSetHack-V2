@@ -65,6 +65,8 @@ describe("DrizzleProfileRepository", () => {
     } as unknown as Database;
 
     const repo = new DrizzleProfileRepository(mockDb);
+    // Evidence counting is covered against real PostgreSQL in profile-sharing-postgres.integration.spec.ts.
+    vi.spyOn(repo as unknown as { countAccomplishments: () => Promise<unknown> }, "countAccomplishments").mockResolvedValue({ novelsCompleted: 0, sideQuestsCompleted: 0, ctfsSolved: 0 });
     const result = await repo.findProfileByUserId("user_1");
 
     expect(groupByMock).toHaveBeenCalledTimes(1);

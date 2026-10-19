@@ -21,6 +21,7 @@ import type {
   QuestResponse,
   QuestResultReviewResponse,
   QuestSessionResponse,
+  SharedProfileResponse,
   SideQuestResponse,
   SideQuestSummary,
   Region,
@@ -54,6 +55,7 @@ import {
 
 export type CharacterOption = Character;
 export type Profile = ProfileResponse;
+export type SharedProfile = SharedProfileResponse;
 export type LearningStreak = LearningStreakResponse;
 export type DailyEvent = DailyEventResponse;
 export type Leaderboard = LeaderboardResponse;
@@ -221,6 +223,38 @@ export async function getLearningStreak(
 ): Promise<LearningStreak> {
   const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/users/learning-streak`;
   return fetchAuthedJson<LearningStreak>(endpoint, token, fetchFn);
+}
+
+/** Turns the shareable profile on (returns its share id) or off (revokes it, returns null). */
+export async function setProfileSharing(
+  apiBaseUrl: string,
+  token: string,
+  enabled: boolean,
+  fetchFn: typeof fetch = fetch,
+): Promise<string | null> {
+  if (!token) {
+    throw new ApiError(401, "Authentication token is required");
+  }
+
+  const response = await fetchFn(`${apiBaseUrl.replace(/\/$/, "")}/v1/api/users/profile/sharing`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ enabled }),
+  });
+  if (!response.ok) {
+    await throwOnError(response);
+  }
+  return ((await response.json()) as { shareId: string | null }).shareId;
+}
+
+/** Public: a 404 `ApiError` means the link is unknown or has been revoked. */
+export async function getSharedProfile(
+  apiBaseUrl: string,
+  shareId: string,
+  fetchFn: typeof fetch = fetch,
+): Promise<SharedProfile> {
+  const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/shared-profiles/${encodeURIComponent(shareId)}`;
+  return fetchPublicJson<SharedProfile>(endpoint, "shared profile", fetchFn);
 }
 
 export async function getTodayEvent(

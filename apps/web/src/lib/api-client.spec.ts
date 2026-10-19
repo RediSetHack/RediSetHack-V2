@@ -6,6 +6,8 @@ import {
   getCurrentUser,
   getLearningStreak,
   getProfile,
+  getSharedProfile,
+  setProfileSharing,
   getTodayEvent,
   getRegions,
   getZones,
@@ -957,5 +959,18 @@ describe("api-client", () => {
       expect(result[0]?.lockReasons[0]?.message).toBe("Reach Adventurer Rank 2.");
       expect(mockFetch.mock.calls[0]?.[0]).toBe("http://api/v1/api/side-quests");
     });
+  });
+});
+
+describe("profile sharing", () => {
+  it("PUTs the enabled flag with the Bearer token and returns the share id", async () => {
+    const fetchFn = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ shareId: "abc" }) });
+    expect(await setProfileSharing("http://api/", "tok", true, fetchFn as unknown as typeof fetch)).toBe("abc");
+    expect(fetchFn).toHaveBeenCalledWith("http://api/v1/api/users/profile/sharing", expect.objectContaining({ method: "PUT", body: '{"enabled":true}' }));
+  });
+
+  it("surfaces a revoked link as a 404 ApiError", async () => {
+    const fetchFn = vi.fn().mockResolvedValue({ ok: false, status: 404 });
+    await expect(getSharedProfile("http://api", "gone", fetchFn as unknown as typeof fetch)).rejects.toMatchObject({ status: 404 });
   });
 });

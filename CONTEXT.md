@@ -49,6 +49,12 @@ Consecutive Learning Days. The current streak stays alive through a day that has
 **Contribution Graph**:
 The profile's calendar of daily qualifying-accomplishment counts (reading and assessed shown separately), always with text counts and summaries alongside colour.
 
+**Adventurer Rank**:
+The learner-facing name for **Level** (same XP formula, same number). Shown with completed Novel, Side Quest and CTF counts, Badges (with multiplicity) and streaks.
+
+**Shared Profile**:
+An opt-in, revocable public view of a learner's accomplishment summary (Adventurer Rank, XP, Character, Badges, evidence counts, streaks). Off by default; see ADR 0009.
+
 **Result**:
 The recorded responses, score, and pass outcome of a user's Quest submission.
 
