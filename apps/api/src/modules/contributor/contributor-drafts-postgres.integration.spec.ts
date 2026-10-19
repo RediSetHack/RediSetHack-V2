@@ -5,7 +5,7 @@ import request from 'supertest';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { contributorDrafts, contributorDraftReviews, createDb, readingSessions, regions, stages, users, zones, type Database } from '@repo/db';
-import { ContributorDraftListResponseSchema, ContributorDraftReviewListSchema, ContributorDraftSchema, ContributorReviewQueueSchema } from '@repo/contracts';
+import { ContributorDraftListResponseSchema, ContributorDraftReviewListSchema, ContributorDraftSchema, ContributorReviewQueueSchema, DiscoveryResponseSchema } from '@repo/contracts';
 import { AppModule } from '../../app.module.js';
 import { ClerkAuthPort } from '../auth/domain/ports/clerk-auth.port.js';
 
@@ -122,15 +122,25 @@ describe.skipIf(!databaseUrl)('Contributor drafts through HTTP with PostgreSQL',
     await http().get(`/v1/api/zones/${zoneId}/stages`).set(as(learner)).expect(200).then((response) => {
       expect(response.body).toEqual([]);
     });
+    const discoverBeforeReview = await http().get('/v1/api/discover').set(as(learner)).expect(200);
+    expect(JSON.stringify(discoverBeforeReview.body)).not.toContain(draft.title);
 
     const requested = await http().post(`/v1/api/admin/contributor-drafts/${draft.id}/review`).set(as(reviewer)).send({ decision: 'revision-needed', reason: 'Clarify the example.' }).expect(201);
     expect(requested.body).toMatchObject({ draftId: draft.id, revision: 1, decision: 'revision-needed', reviewerId: reviewer, reason: 'Clarify the example.' });
     const reopened = await http().put(api(`/${draft.id}`)).set(as(owner)).send({ revision: 1, title: 'Loops revised', lessonContent: body.lessonContent }).expect(200);
     expect(reopened.body).toMatchObject({ status: 'draft', revision: 2, submittedRevision: null });
     await http().post(api(`/${draft.id}/submit`)).set(as(owner)).send({ revision: 2 }).expect(201);
+    const discoverBeforeApproval = await http().get('/v1/api/discover').set(as(learner)).expect(200);
+    expect(JSON.stringify(discoverBeforeApproval.body)).not.toContain('Loops revised');
 
     const approved = await http().post(`/v1/api/admin/contributor-drafts/${draft.id}/review`).set(as(reviewer)).send({ decision: 'approved', reason: 'Ready for learners.' }).expect(201);
     expect(approved.body).toMatchObject({ revision: 2, title: 'Loops revised', decision: 'approved', publishedStageId: expect.any(Number) });
+    const discoverAfterApproval = await http().get('/v1/api/discover').set(as(learner)).expect(200);
+    const discoveredPublished = DiscoveryResponseSchema.parse(discoverAfterApproval.body).find((i) => i.kind === 'stage' && i.title === 'Loops revised');
+    expect(discoveredPublished).toBeDefined();
+    expect((discoveredPublished as Record<string, unknown>).lessonContent).toBeUndefined();
+    const zoneStagesAfterApproval = await http().get(`/v1/api/zones/${zoneId}/stages`).set(as(learner)).expect(200);
+    expect(zoneStagesAfterApproval.body.map((s: { title: string }) => s.title)).toContain('Loops revised');
     await http().put(api(`/${draft.id}`)).set(as(owner)).send({ revision: 2, ...body }).expect(409);
     const lesson = await http().get(`/v1/api/stages/${approved.body.publishedStageId}/lesson`).set(as(learner)).expect(200);
     expect(lesson.body).toMatchObject({ title: 'Loops revised', blocks: body.lessonContent });
@@ -138,6 +148,8 @@ describe.skipIf(!databaseUrl)('Contributor drafts through HTTP with PostgreSQL',
     expect(reading).toBeDefined();
 
     await http().post(`/v1/api/admin/contributor-drafts/${draft.id}/unpublish`).set(as(reviewer)).send({ reason: 'Policy update.' }).expect(201);
+    const discoverAfterUnpublish = await http().get('/v1/api/discover').set(as(learner)).expect(200);
+    expect(JSON.stringify(discoverAfterUnpublish.body)).not.toContain('Loops revised');
     await http().get(`/v1/api/zones/${zoneId}/stages`).set(as(learner)).expect(200).then((response) => expect(response.body).toEqual([]));
     await http().get(`/v1/api/stages/${approved.body.publishedStageId}/lesson`).set(as(learner)).expect(403);
     const [retained] = await database.select().from(readingSessions).where(eq(readingSessions.stageId, approved.body.publishedStageId));
@@ -150,10 +162,12 @@ describe.skipIf(!databaseUrl)('Contributor drafts through HTTP with PostgreSQL',
   });
 
   it('allows moderators to reject submissions without publishing them', async () => {
-    const draft = await create();
+    const draft = await create({ title: 'Rejected discovery draft' });
     await http().post(api(`/${draft.id}/submit`)).set(as(owner)).send({ revision: 1 }).expect(201);
     await http().post(`/v1/api/admin/contributor-drafts/${draft.id}/review`).set(as(reviewer)).send({ decision: 'rejected', reason: 'Outside the curriculum.' }).expect(201);
     expect(await http().get('/v1/api/admin/contributor-drafts/queue').set(as(reviewer)).expect(200).then((r) => r.body.map((item: { id: number }) => item.id))).not.toContain(draft.id);
+    const discoverAfterRejection = await http().get('/v1/api/discover').set(as(learner)).expect(200);
+    expect(JSON.stringify(discoverAfterRejection.body)).not.toContain('Rejected discovery draft');
     await http().get(`/v1/api/zones/${zoneId}/stages`).set(as(learner)).expect(200).then((r) => expect(r.body).toEqual([]));
     await http().put(api(`/${draft.id}`)).set(as(owner)).send({ revision: 1, ...body }).expect(409);
   });

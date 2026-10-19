@@ -49,6 +49,9 @@ describe('content browsing integration (Region → Zone → Stage)', () => {
     async findByRegionId(regionId) {
       return zonesByRegion.get(regionId) ?? [];
     },
+    async findAll() {
+      return [];
+    },
   };
 
   const fakeStages = makeFakeStageRepository(stagesByZone, completedStageIds);

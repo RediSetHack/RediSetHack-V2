@@ -22,7 +22,7 @@ export class ListStagesUseCase {
 
     const completedSet = new Set(completedIds);
 
-    const sorted = [...allStages].sort((a, b) => a.sortOrder - b.sortOrder);
+    const sorted = [...allStages].sort((a, b) => a.sortOrder - b.sortOrder || a.id - b.id);
 
     return sorted.map((stage, index) => {
       const unlocked = isUnlocked({

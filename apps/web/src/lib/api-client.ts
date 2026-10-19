@@ -29,6 +29,7 @@ import type {
   StageCompletionResponse,
   SubmitQuestResponse,
   Zone,
+  DiscoveryResponse,
 } from "@repo/contracts";
 export type {
   BadgeAward,
@@ -51,6 +52,7 @@ import {
   QuestResultReviewResponseSchema,
   QuestSessionResponseSchema,
   SubmitQuestResponseSchema,
+  DiscoveryResponseSchema,
 } from "@repo/contracts";
 
 export type CharacterOption = Character;
@@ -329,6 +331,28 @@ export async function getStages(
 ): Promise<Stage[]> {
   const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/zones/${zoneId}/stages`;
   return fetchAuthedJson<Stage[]>(endpoint, token, fetchFn);
+}
+
+/** Discovers approved catalog content, optionally filtered by search, competency, and difficulty. */
+export async function getDiscover(
+  apiBaseUrl: string,
+  token: string,
+  params: Readonly<{
+    q?: string;
+    competency?: string;
+    difficulty?: string;
+    limit?: number;
+  }>,
+  fetchFn: typeof fetch = fetch,
+): Promise<DiscoveryResponse> {
+  const url = new URL(`${apiBaseUrl.replace(/\/$/, "")}/v1/api/discover`);
+  if (params.q) url.searchParams.set("q", params.q);
+  if (params.competency) url.searchParams.set("competency", params.competency);
+  if (params.difficulty) url.searchParams.set("difficulty", params.difficulty);
+  if (params.limit !== undefined) url.searchParams.set("limit", String(params.limit));
+  return DiscoveryResponseSchema.parse(
+    await fetchAuthedJson<unknown>(url.toString(), token, fetchFn),
+  );
 }
 
 export async function getLesson(
