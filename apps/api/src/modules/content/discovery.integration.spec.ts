@@ -4,7 +4,10 @@ import type { IncomingMessage } from 'node:http';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { DiscoveryResponseSchema } from '@repo/contracts';
+import {
+  DiscoveryResponseSchema,
+  DISCOVERY_DEFAULT_LIMIT,
+} from '@repo/contracts';
 
 import {
   ClerkAuthPort,
@@ -61,8 +64,19 @@ describe('content discovery (approved catalog by interest and difficulty)', () =
       return [];
     },
     async findAllDiscoverable() {
+      // This fake mirrors DrizzleStageRepository.findAllDiscoverable: discovery
+      // reads catalog Stages only, with archived ancestors excluded. Contributor
+      // drafts and rejected revisions are kept outside this catalog.
+      const archivedRegionIds = new Set(
+        [...regions.values()].filter((r) => r.archivedAt !== null).map((r) => r.id),
+      );
+      const archivedZoneIds = new Set(
+        [...zones.values()].filter((z) => z.archivedAt !== null).map((z) => z.id),
+      );
       return [...discoverableStages.values()]
         .filter(({ stage }) => stage.archivedAt === null)
+        .filter(({ stage }) => !archivedZoneIds.has(stage.zoneId))
+        .filter(({ stage: _stage, regionId }) => !archivedRegionIds.has(regionId))
         .map(({ stage, regionId }) => ({ ...stage, regionId } as DiscoverableStage));
     },
     async findAllCompletedStageIds() {
@@ -120,6 +134,8 @@ describe('content discovery (approved catalog by interest and difficulty)', () =
   function seed() {
     regions.set(1, new Region(1, 'Foundations', 'foundations', null, 1, null, 'A story introduction.'));
     regions.set(2, new Region(2, 'Retired', 'retired', null, 2, new Date(), null));
+    // Active Region without storyIntro: discoverable as a plain Region, not a Novel.
+    regions.set(3, new Region(3, 'Plain Region', 'plain-region', null, 3, null, null));
     zones.set(1, new Zone(1, 1, 'Loops', 'loops', null, 1, null));
     zones.set(2, new Zone(2, 2, 'Retired Zone', 'retired-zone', null, 1, new Date()));
     zones.set(3, new Zone(3, 1, 'Progress', 'progress', null, 2, null));
@@ -188,6 +204,39 @@ describe('content discovery (approved catalog by interest and difficulty)', () =
       ),
       regionId: 1,
     });
+    // Even if a stale catalog row remains, an archived Region keeps its Stage
+    // out of discovery.
+    discoverableStages.set(5, {
+      stage: new Stage(
+        5,
+        2,
+        'Rejected draft lesson',
+        'rejected-draft',
+        [{ type: 'text', content: 'rejected' }],
+        10,
+        1,
+        null,
+        ['programming.control-flow'],
+        'beginner',
+      ),
+      regionId: 2,
+    });
+    // A stage under an archived Zone must never enter discovery.
+    discoverableStages.set(6, {
+      stage: new Stage(
+        6,
+        2,
+        'Retired zone lesson',
+        'retired-zone-lesson',
+        [{ type: 'text', content: 'retired zone' }],
+        10,
+        1,
+        null,
+        ['programming.control-flow'],
+        'beginner',
+      ),
+      regionId: 2,
+    });
     completedStageIds.add(3);
   }
 
@@ -207,6 +256,17 @@ describe('content discovery (approved catalog by interest and difficulty)', () =
     expect(parsed.some((i) => i.id === 2 && i.kind === 'region')).toBe(false);
     expect(parsed.some((i) => i.id === 2 && i.kind === 'zone')).toBe(false);
     expect(parsed.some((i) => i.id === 4 && i.kind === 'stage')).toBe(false);
+    // A Stage whose Region or Zone ancestor is archived never enters discovery.
+    expect(parsed.some((i) => i.id === 5 && i.kind === 'stage')).toBe(false);
+    expect(parsed.some((i) => i.id === 6 && i.kind === 'stage')).toBe(false);
+    // Only Regions carrying a story introduction are designated Novels.
+    const novels = parsed.filter((i) => i.kind === 'region' && i.storyIntro);
+    expect(novels.some((i) => i.id === 1)).toBe(true);
+    // An active Region without storyIntro is discoverable as a plain Region,
+    // never labeled a Novel.
+    expect(parsed.some((i) => i.kind === 'region' && i.id === 3)).toBe(true);
+    expect(novels.some((i) => i.id === 3)).toBe(false);
+    expect(parsed.filter((i) => i.kind === 'region' && !i.storyIntro).some((i) => i.id === 3)).toBe(true);
 
     // Stage items never carry lesson content.
     const stages = parsed.filter((i) => i.kind === 'stage');
@@ -232,6 +292,8 @@ describe('content discovery (approved catalog by interest and difficulty)', () =
     const parsed = DiscoveryResponseSchema.parse(res.body);
     const stages = parsed.filter((i) => i.kind === 'stage');
     expect(stages.map((i) => i.id)).toEqual([1, 2]);
+    expect(parsed.filter((i) => i.kind === 'region').map((i) => i.id)).toEqual([1]);
+    expect(parsed.filter((i) => i.kind === 'zone').map((i) => i.id)).toEqual([1]);
     // Archived control-flow stage excluded.
     expect(stages.map((i) => i.id)).not.toContain(4);
     // Non-matching competency stages excluded.
@@ -288,5 +350,45 @@ describe('content discovery (approved catalog by interest and difficulty)', () =
       .set(asLearner());
     const parsed = DiscoveryResponseSchema.parse(res.body);
     expect(parsed.filter((i) => i.kind === 'stage')).toEqual([]);
+  });
+
+  it('keeps stages even when many parent entry points exist', async () => {
+    seed();
+    // Add many parent entry points so they would consume a naive global cap
+    // ahead of the stages.
+    for (let i = 10; i <= 39; i += 1) {
+      regions.set(i, new Region(i, `Parent ${i}`, `parent-${i}`, null, i, null, null));
+    }
+    for (let i = 10; i <= 39; i += 1) {
+      zones.set(i, new Zone(i, 1, `Zone ${i}`, `zone-${i}`, null, i, null));
+    }
+    const res = await request(app.getHttpServer())
+      .get('/v1/api/discover?limit=25')
+      .set(asLearner());
+    const parsed = DiscoveryResponseSchema.parse(res.body);
+    const stages = parsed.filter((i) => i.kind === 'stage');
+    // Stages must not be starved by the large number of parent entry points.
+    expect(stages.map((i) => i.id)).toContain(1);
+    expect(stages.map((i) => i.id)).toContain(2);
+    expect(stages.map((i) => i.id)).toContain(3);
+    // Total results are still bounded.
+    expect(parsed.length).toBeLessThanOrEqual(25);
+  });
+
+  it('caps each kind so no single kind exhausts the limit', async () => {
+    seed();
+    const res = await request(app.getHttpServer())
+      .get('/v1/api/discover')
+      .set(asLearner());
+    const parsed = DiscoveryResponseSchema.parse(res.body);
+    const kindCounts = parsed.reduce(
+      (acc, item) => ({ ...acc, [item.kind]: (acc[item.kind] ?? 0) + 1 }),
+      {} as Record<string, number>,
+    );
+    // Default limit 50 -> each kind capped at ceil(50 / 3) = 17.
+    expect(kindCounts['region'] ?? 0).toBeLessThanOrEqual(17);
+    expect(kindCounts['zone'] ?? 0).toBeLessThanOrEqual(17);
+    expect(kindCounts['stage'] ?? 0).toBeLessThanOrEqual(17);
+    expect(parsed.length).toBeLessThanOrEqual(DISCOVERY_DEFAULT_LIMIT);
   });
 });

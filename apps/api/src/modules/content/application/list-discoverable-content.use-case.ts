@@ -57,6 +57,14 @@ export class ListDiscoverableContentUseCase {
 
     const completedSet = new Set(completedIds);
 
+    // When an activity filter (competency/difficulty) is active, only parents
+    // that contain at least one matching stage may appear as entry points.
+    // This keeps competency/difficulty from adding irrelevant parents that
+    // would consume the bounded limit and starve matching activities.
+    const hasActivityFilter = competency !== undefined || difficulty !== undefined;
+    const matchingStageZoneIds = new Set<number>();
+    const matchingStageRegionIds = new Set<number>();
+
     // Group stages by Zone so sequential unlock status is computed per Zone.
     const stagesByZone = new Map<number, typeof allStages>();
     for (const stage of allStages) {
@@ -99,6 +107,9 @@ export class ListDiscoverableContentUseCase {
           continue;
         }
 
+        matchingStageZoneIds.add(zoneId);
+        if (region) matchingStageRegionIds.add(region.id);
+
         stageItems.push({
           kind: 'stage',
           id: stage.id,
@@ -121,11 +132,16 @@ export class ListDiscoverableContentUseCase {
 
     const items: DiscoveryItem[] = [];
 
-    // Regions (Novels) appear as discovery entry points, subject to search.
+    // Regions appear as discovery entry points. A search query may match a
+    // parent entry point, but competency/difficulty must not add irrelevant
+    // parents: when an activity filter is active, only regions containing a
+    // matching stage are included.
+    const regionIncludes = (region: (typeof allRegions)[number]): boolean =>
+      (!query || matchesSearch({ title: region.name, slug: region.slug }, query)) &&
+      (!hasActivityFilter || matchingStageRegionIds.has(region.id));
+
     for (const region of allRegions) {
-      if (query && !matchesSearch({ title: region.name, slug: region.slug }, query)) {
-        continue;
-      }
+      if (!regionIncludes(region)) continue;
       items.push({
         kind: 'region',
         id: region.id,
@@ -137,12 +153,14 @@ export class ListDiscoverableContentUseCase {
       });
     }
 
-    // Zones (chapters) appear as discovery entry points, subject to search.
+    // Zones appear as discovery entry points. Same relevance rules as regions.
+    const zoneIncludes = (zone: (typeof allZones)[number]): boolean =>
+      (!query || matchesSearch({ title: zone.name, slug: zone.slug }, query)) &&
+      (!hasActivityFilter || matchingStageZoneIds.has(zone.id));
+
     for (const zone of allZones) {
       const region = regionById.get(zone.regionId);
-      if (query && !matchesSearch({ title: zone.name, slug: zone.slug }, query)) {
-        continue;
-      }
+      if (!zoneIncludes(zone)) continue;
       items.push({
         kind: 'zone',
         id: zone.id,
@@ -158,14 +176,39 @@ export class ListDiscoverableContentUseCase {
     // Stages (learning activities) appear last, already filtered above.
     items.push(...stageItems);
 
-    // Stable, bounded ordering: regions, then zones, then stages, each by sortOrder.
-    items.sort((a, b) => {
+    // Sort each kind by sortOrder then id. Reserve Stage slots first so parent
+    // entry points cannot starve matching activities, then fill with Regions
+    // and Zones in that order.
+    const kindCap = Math.ceil(limit / 3);
+    const byKind = new Map<DiscoveryItem['kind'], DiscoveryItem[]>([
+      ['region', []],
+      ['zone', []],
+      ['stage', []],
+    ]);
+    for (const item of items) {
+      byKind.get(item.kind)!.push(item);
+    }
+
+    const sortKind = (a: DiscoveryItem, b: DiscoveryItem): number => {
       const aOrder = a.sortOrder ?? 0;
       const bOrder = b.sortOrder ?? 0;
       if (aOrder !== bOrder) return aOrder - bOrder;
       return a.id - b.id;
-    });
+    };
 
-    return items.slice(0, limit);
+    const ordered: DiscoveryItem[] = [];
+    // Stages (learning activities) are guaranteed their slots before parents.
+    ordered.push(...byKind.get('stage')!.sort(sortKind).slice(0, kindCap));
+    const remaining = Math.max(0, limit - ordered.length);
+    const regionSlots = Math.ceil(remaining / 2);
+    const regionItems = byKind.get('region')!.sort(sortKind).slice(0, regionSlots);
+    // Parents fill the rest, regions then zones; use actual region count so
+    // available zones are not left unused.
+    ordered.push(...regionItems);
+    ordered.push(
+      ...byKind.get('zone')!.sort(sortKind).slice(0, remaining - regionItems.length),
+    );
+
+    return ordered.slice(0, limit);
   }
 }

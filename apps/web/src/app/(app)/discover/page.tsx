@@ -52,26 +52,46 @@ function statusClasses(status: DiscoveryItem["status"]): string {
 function RegionCard({ item }: Readonly<{ item: DiscoveryItem }>) {
   return (
     <li key={item.id} className="rounded-md border border-border/60 p-4">
-      <h2 className="font-medium">{item.title}</h2>
-      {item.description && (
-        <p className="text-sm text-muted-foreground">{item.description}</p>
-      )}
-      {item.storyIntro && (
-        <p className="mt-2 text-sm">Novel · {item.storyIntro}</p>
-      )}
+      <Link href={`/map/${item.id}`} className="block">
+        <h2 className="font-medium">{item.title}</h2>
+        {item.description && (
+          <p className="text-sm text-muted-foreground">{item.description}</p>
+        )}
+        {item.storyIntro && (
+          <p className="mt-2 text-sm">Novel · {item.storyIntro}</p>
+        )}
+      </Link>
     </li>
   );
 }
 
 function ZoneCard({ item }: Readonly<{ item: DiscoveryItem }>) {
+  const href =
+    item.regionId != null
+      ? `/map/${item.regionId}/${item.id}`
+      : undefined;
   return (
     <li key={item.id} className="rounded-md border border-border/60 p-4">
-      <h2 className="font-medium">{item.title}</h2>
-      {item.description && (
-        <p className="text-sm text-muted-foreground">{item.description}</p>
-      )}
-      {item.regionName && (
-        <p className="mt-1 text-xs text-muted-foreground">In {item.regionName}</p>
+      {href ? (
+        <Link href={href} className="block">
+          <h2 className="font-medium">{item.title}</h2>
+          {item.description && (
+            <p className="text-sm text-muted-foreground">{item.description}</p>
+          )}
+          {item.regionName && (
+            <p className="mt-1 text-xs text-muted-foreground">In {item.regionName}</p>
+          )}
+        </Link>
+      ) : (
+        <>
+          <h2 className="font-medium">{item.title}</h2>
+          {item.description && (
+            <p className="text-sm text-muted-foreground">{item.description}</p>
+          )}
+          {item.regionName && (
+            <p className="mt-1 text-xs text-muted-foreground">In {item.regionName}</p>
+          )}
+        </>
       )}
     </li>
   );
@@ -80,13 +100,13 @@ function ZoneCard({ item }: Readonly<{ item: DiscoveryItem }>) {
 function StageCard({ item }: Readonly<{ item: DiscoveryItem }>) {
   const competencies = item.competencies ?? [];
   const locked = item.status === "locked";
-  return (
-    <li
-      key={item.id}
-      className={`rounded-md border border-border/60 p-4 ${
-        locked ? "opacity-60" : ""
-      }`}
-    >
+  const href =
+    !locked && item.regionId != null && item.zoneId != null
+      ? `/map/${item.regionId}/${item.zoneId}/${item.id}`
+      : undefined;
+
+  const body = (
+    <>
       <div className="flex items-center justify-between gap-2">
         <h2 className="font-medium">{item.title}</h2>
         <span
@@ -111,6 +131,30 @@ function StageCard({ item }: Readonly<{ item: DiscoveryItem }>) {
       )}
       {locked && item.lockReason && (
         <p className="mt-2 text-sm text-muted-foreground">{item.lockReason}</p>
+      )}
+    </>
+  );
+
+  if (locked) {
+    return (
+      <li
+        key={item.id}
+        className="rounded-md border border-border/60 p-4 opacity-60"
+        aria-label={`${item.title}, locked, worth ${item.xpReward ?? 0} XP`}
+      >
+        {body}
+      </li>
+    );
+  }
+
+  return (
+    <li key={item.id} className="rounded-md border border-border/60 p-4">
+      {href ? (
+        <Link href={href} className="block" aria-label={`${item.title}, ${statusLabel(item.status)}, worth ${item.xpReward ?? 0} XP`}>
+          {body}
+        </Link>
+      ) : (
+        body
       )}
     </li>
   );
@@ -140,6 +184,9 @@ export default async function DiscoverPage({
   const stages = items.filter((i) => i.kind === "stage");
   const regions = items.filter((i) => i.kind === "region");
   const zones = items.filter((i) => i.kind === "zone");
+  // Only Regions carrying a story introduction are Novels; never label other
+  // regions as Novel.
+  const novels = regions.filter((item) => item.storyIntro);
   const hasActiveFilters =
     filters.q !== "" || filters.competency !== "" || filters.difficulty !== "";
 
@@ -247,11 +294,21 @@ export default async function DiscoverPage({
 
       {!error && items.length > 0 && (
         <>
-          {regions.length > 0 && (
+          {novels.length > 0 && (
             <section className="space-y-2">
               <h2 className="text-lg font-semibold">Novels</h2>
               <ul className="mt-4 flex flex-col gap-2">
-                {regions.map((item) => (
+                {novels.map((item) => (
+                  <RegionCard key={item.id} item={item} />
+                ))}
+              </ul>
+            </section>
+          )}
+          {regions.length > novels.length && (
+            <section className="space-y-2">
+              <h2 className="text-lg font-semibold">Regions</h2>
+              <ul className="mt-4 flex flex-col gap-2">
+                {regions.filter((item) => !item.storyIntro).map((item) => (
                   <RegionCard key={item.id} item={item} />
                 ))}
               </ul>
