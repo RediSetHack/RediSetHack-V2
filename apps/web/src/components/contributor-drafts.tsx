@@ -24,7 +24,7 @@ export function ContributorDrafts({ apiUrl, initial }: Readonly<{ apiUrl: string
   const [notice, setNotice] = useState<string | null>(null);
 
   const selected = drafts.find((d) => d.id === selectedId) ?? null;
-  const locked = selected?.status === "submitted";
+  const locked = selected !== null && selected.status !== "draft" && selected.status !== "revision-needed";
 
   const open = (draft: ContributorDraftItem | null) => {
     setSelectedId(draft?.id ?? null);
@@ -82,6 +82,7 @@ export function ContributorDrafts({ apiUrl, initial }: Readonly<{ apiUrl: string
       <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); void save(); }}>
         <h2 className="text-lg font-semibold">{selected ? `Edit draft #${selected.id}` : "New draft"}</h2>
         {locked && <p className="text-sm text-muted-foreground">This revision was submitted for review and can no longer be changed.</p>}
+        {selected?.status === "revision-needed" && <p className="text-sm text-muted-foreground">A reviewer requested changes. Save an updated revision and submit it for review again.</p>}
         <label className="block text-sm">Title
           <input value={title} onChange={(e) => setTitle(e.target.value)} disabled={locked} className="mt-1 w-full rounded border border-border bg-background p-2" />
         </label>

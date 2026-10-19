@@ -30,7 +30,7 @@ export type UpdateContributorDraft = z.infer<typeof UpdateContributorDraftSchema
 export const SubmitContributorDraftSchema = z.object({ revision: z.number().int().positive() });
 export type SubmitContributorDraft = z.infer<typeof SubmitContributorDraftSchema>;
 
-export const ContributorDraftStatusSchema = z.enum(["draft", "submitted"]);
+export const ContributorDraftStatusSchema = z.enum(["draft", "submitted", "revision-needed", "approved", "rejected"]);
 
 export const ContributorDraftSchema = z.object({
   id: z.number().int().positive(),
@@ -49,3 +49,28 @@ export type ContributorDraft = z.infer<typeof ContributorDraftSchema>;
 
 export const ContributorDraftListResponseSchema = z.array(ContributorDraftSchema);
 export type ContributorDraftListResponse = z.infer<typeof ContributorDraftListResponseSchema>;
+
+export const ReviewDecisionSchema = z.enum(["approved", "rejected", "revision-needed"]);
+export const ReviewDecisionInputSchema = z.object({ decision: ReviewDecisionSchema, reason: z.string().trim().min(1).max(2000) });
+export type ReviewDecisionInput = z.infer<typeof ReviewDecisionInputSchema>;
+
+export const ContributorReviewSchema = ContributorDraftSchema.extend({
+  ownerId: z.string(),
+});
+export const ContributorReviewQueueSchema = z.array(ContributorReviewSchema);
+export type ContributorReview = z.infer<typeof ContributorReviewSchema>;
+
+export const ContributorDraftReviewSchema = z.object({
+  id: z.number().int().positive(),
+  draftId: z.number().int().positive(),
+  revision: z.number().int().positive(),
+  title: z.string(),
+  lessonContent: z.array(AuthoredLessonBlockSchema),
+  decision: z.enum(["approved", "rejected", "revision-needed", "unpublished"]),
+  reviewerId: z.string(),
+  reason: z.string(),
+  reviewedAt: z.string(),
+  publishedStageId: z.number().int().positive().nullable(),
+});
+export const ContributorDraftReviewListSchema = z.array(ContributorDraftReviewSchema);
+export const UnpublishInputSchema = z.object({ reason: z.string().trim().min(1).max(2000) });
