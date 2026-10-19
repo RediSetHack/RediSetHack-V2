@@ -11,6 +11,7 @@ import { QuestModule } from './quest/quest.module.js';
 import { CtfModule } from './ctf/ctf.module.js';
 import { CodelabModule } from './codelab/codelab.module.js';
 import { SideQuestModule } from "./side-quest/side-quest.module.js";
+import { ContributorModule } from "./contributor/contributor.module.js";
 import { ProfileModule } from "./profile/profile.module.js";
 
 @Module({
@@ -24,7 +25,8 @@ import { ProfileModule } from "./profile/profile.module.js";
     CodelabModule,
     CtfModule,
     SideQuestModule,
-    ProfileModule
+    ProfileModule,
+    ContributorModule,
   ],
 })
 export class FeaturesModule {}

@@ -18,6 +18,7 @@ import {
 import type { IncomingHttpHeaders } from "node:http";
 import type { Request } from "express";
 import { Webhook } from "svix";
+import { roleFromPublicMetadata } from "../../domain/role.js";
 
 import { EnsureUserUseCase } from "../../application/ensure-user.use-case.js";
 import { DeleteUserUseCase } from "../../application/delete-user.use-case.js";
@@ -59,13 +60,7 @@ function toClerkAuthenticatedUser(data: Record<string, unknown>): ClerkAuthentic
   const primary = addresses.find((address) => address["id"] === primaryId) ?? addresses[0];
   const email = primary?.["email_address"];
   const metadata = data["public_metadata"];
-  const role =
-    metadata != null &&
-    typeof metadata === "object" &&
-    "role" in metadata &&
-    metadata["role"] === "admin"
-      ? "admin"
-      : "user";
+  const role = roleFromPublicMetadata(metadata);
   return {
     id: extractId(data["id"]),
     email: typeof email === "string" && email.length > 0 ? email : null,

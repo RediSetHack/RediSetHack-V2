@@ -3,6 +3,7 @@ import { createClerkClient, type ClerkClient } from "@clerk/backend";
 import type { IncomingMessage } from "node:http";
 import type { ConfigService } from "@nestjs/config";
 
+import { roleFromPublicMetadata } from "../domain/role.js";
 import { ClerkAuthPort, type ClerkAuthenticatedUser } from "../domain/ports/clerk-auth.port.js";
 
 export const CLERK_CLIENT = Symbol("CLERK_CLIENT");
@@ -22,13 +23,7 @@ export const clerkClientFactory: ClerkClientFactory = (config) =>
 type Claims = { [key: string]: unknown } | null | undefined;
 
 function readRole(claims: Claims): ClerkAuthenticatedUser["role"] {
-  const metadata = claims?.["publicMetadata"];
-  return metadata != null &&
-    typeof metadata === "object" &&
-    "role" in metadata &&
-    metadata["role"] === "admin"
-    ? "admin"
-    : "user";
+  return roleFromPublicMetadata(claims?.["publicMetadata"]);
 }
 
 function readString(claims: Claims, key: string): string | null {
