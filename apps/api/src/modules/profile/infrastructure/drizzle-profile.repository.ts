@@ -1,7 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { badgeAwards, badgeDefinitions, characters, users, learningInteractions, initialCompetencyBaselines, type Database } from "@repo/db";
-import { COMPETENCIES } from "@repo/contracts";
+import { COMPETENCIES, type LearningDay } from "@repo/contracts";
 
 import { DB } from "../../../database/database.module.js";
 import {
@@ -79,6 +79,30 @@ export class DrizzleProfileRepository implements ProfileRepository {
         }),
       } : null,
     };
+  }
+
+  // Qualifying = a persisted accomplishment: reading completed, Quest submitted and passed, or a
+  // coding/CTF/Side Quest outcome of passed/solved/completed. Failed attempts, expired Quests and
+  // wrong flags are not accomplishments. See ADR 0008.
+  async findDailyLearningActivity(userId: string): Promise<LearningDay[]> {
+    const { activityType, outcome, occurredAt, learnerId } = learningInteractions;
+    const date = sql<string>`to_char(${occurredAt} at time zone 'Asia/Manila', 'YYYY-MM-DD')`;
+    return this.database
+      .select({
+        date,
+        reading: sql<number>`(count(*) filter (where ${activityType} = 'reading'))::int`,
+        assessed: sql<number>`(count(*) filter (where ${activityType} <> 'reading'))::int`,
+      })
+      .from(learningInteractions)
+      .where(
+        and(
+          eq(learnerId, userId),
+          sql`(${outcome}->>'status' in ('completed', 'passed', 'solved')
+            or (${activityType} = 'quest' and ${outcome}->>'status' = 'submitted' and ${outcome}->>'passed' = 'true'))`,
+        ),
+      )
+      .groupBy(date)
+      .orderBy(date);
   }
 
   async findLeaderboardPage(

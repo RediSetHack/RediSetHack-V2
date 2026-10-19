@@ -161,6 +161,9 @@ describe('auth integration', () => {
     async findProfileByUserId(userId) {
       return { userId, totalXp: 0, character: null, badges: [], activity: [], initialCompetencyBaseline: null };
     },
+    async findDailyLearningActivity() {
+      return [];
+    },
     async findLeaderboardPage(page, limit) {
       const offset = (page - 1) * limit;
       return {

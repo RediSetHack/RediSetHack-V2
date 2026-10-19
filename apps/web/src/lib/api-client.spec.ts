@@ -4,6 +4,7 @@ import {
   selectUserCharacter,
   syncUser,
   getCurrentUser,
+  getLearningStreak,
   getProfile,
   getTodayEvent,
   getRegions,
@@ -265,6 +266,20 @@ describe("api-client", () => {
       await expect(
         getProfile("http://localhost:3001", "test-token", mockFetch as unknown as typeof fetch),
       ).rejects.toMatchObject({ status: 404 });
+    });
+  });
+
+  describe("getLearningStreak", () => {
+    it("sends the Bearer token to the learning-streak endpoint", async () => {
+      const body = { timeZone: "Asia/Manila", today: "2026-10-19", from: "2026-10-19", to: "2026-10-19", currentStreak: 0, longestStreak: 0, days: [] };
+      const mockFetch = vi.fn().mockResolvedValue({ ok: true, json: async () => body });
+
+      const result = await getLearningStreak("http://localhost:3001/", "test-token", mockFetch as unknown as typeof fetch);
+
+      expect(mockFetch).toHaveBeenCalledWith("http://localhost:3001/v1/api/users/learning-streak", {
+        headers: { Authorization: "Bearer test-token" },
+      });
+      expect(result).toEqual(body);
     });
   });
 

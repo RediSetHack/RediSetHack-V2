@@ -18,6 +18,7 @@ describe("GetProfileUseCase", () => {
   it("aggregates character, xp, level, and badge multiplicity into a profile", async () => {
     const profiles: ProfileRepository = {
       findProfileByUserId: vi.fn().mockResolvedValue(profileData),
+      findDailyLearningActivity: vi.fn(),
       findLeaderboardPage: vi.fn(),
     };
     const useCase = new GetProfileUseCase(profiles);
@@ -36,6 +37,7 @@ describe("GetProfileUseCase", () => {
   it("throws UserNotFoundError when the user does not exist", async () => {
     const profiles: ProfileRepository = {
       findProfileByUserId: vi.fn().mockResolvedValue(null),
+      findDailyLearningActivity: vi.fn(),
       findLeaderboardPage: vi.fn(),
     };
     const useCase = new GetProfileUseCase(profiles);

@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { ProfileView } from "@/components/profile-view";
-import { getCharacters, getProfile, type CharacterOption, type Profile } from "@/lib/api-client";
+import { getCharacters, getLearningStreak, getProfile, type CharacterOption, type LearningStreak, type Profile } from "@/lib/api-client";
 
 // The parent (app)/layout.tsx already redirects unauthenticated learners to
 // /sign-in before this page renders, so no auth guard is needed here.
@@ -9,9 +9,10 @@ export default async function ProfilePage() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
   const token = await getToken();
 
-  const [profileResult, charactersResult] = await Promise.allSettled([
+  const [profileResult, charactersResult, streakResult] = await Promise.allSettled([
     token ? getProfile(apiUrl, token) : Promise.resolve(null),
     getCharacters(apiUrl),
+    token ? getLearningStreak(apiUrl, token) : Promise.resolve(null),
   ]);
 
   const profile: Profile | null =
@@ -19,6 +20,7 @@ export default async function ProfilePage() {
   const profileError = profileResult.status === "rejected";
   const characters: CharacterOption[] =
     charactersResult.status === "fulfilled" ? charactersResult.value : [];
+  const streak: LearningStreak | null = streakResult.status === "fulfilled" ? streakResult.value : null;
   const charactersError = charactersResult.status === "rejected";
 
   return (
@@ -27,6 +29,7 @@ export default async function ProfilePage() {
       <ProfileView
         profile={profile}
         profileError={profileError}
+        streak={streak}
         characters={characters}
         charactersError={charactersError}
         apiUrl={apiUrl}

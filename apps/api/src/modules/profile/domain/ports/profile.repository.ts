@@ -1,6 +1,6 @@
 import { BadgeAwardSummary } from "../entities/badge-award-summary.entity.js";
 import { ProfileCharacter } from "../entities/user-profile.entity.js";
-import type { InitialCompetencyBaseline } from "@repo/contracts";
+import type { InitialCompetencyBaseline, LearningDay } from "@repo/contracts";
 
 export interface ProfileData {
   userId: string;
@@ -19,6 +19,8 @@ export interface LeaderboardRow {
 
 export abstract class ProfileRepository {
   abstract findProfileByUserId(userId: string): Promise<ProfileData | null>;
+  /** Qualifying accomplishments per Asia/Manila day over the learner's whole history (active days only). */
+  abstract findDailyLearningActivity(userId: string): Promise<LearningDay[]>;
   abstract findLeaderboardPage(
     page: number,
     limit: number,
