@@ -7,6 +7,9 @@ export class ProfilePresenter {
       character: profile.character,
       totalXp: profile.totalXp,
       level: profile.level,
+      adventurerRank: profile.level,
+      accomplishments: profile.accomplishments,
+      sharing: { shareId: profile.shareId },
       badges: profile.badges.map((badge) => ({
         badgeDefinitionId: badge.badgeDefinitionId,
         name: badge.name,

@@ -8,6 +8,8 @@ describe("GetLeaderboardUseCase", () => {
     const profiles: ProfileRepository = {
       findProfileByUserId: vi.fn(),
       findDailyLearningActivity: vi.fn(),
+      findUserIdByShareId: vi.fn(),
+      setSharing: vi.fn(),
       findLeaderboardPage: vi.fn().mockResolvedValue({
         rows: [
           { userId: "user_1", name: "Top Learner", totalXp: 900 },

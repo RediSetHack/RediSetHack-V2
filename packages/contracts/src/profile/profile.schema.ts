@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { CompetencyIdSchema } from "../content/competency.schema.js";
+import { AccomplishmentCountsSchema, ProfileSharingSchema } from "./sharing.schema.js";
 
 export const InitialCompetencyBaselineSchema = z.object({
   assessmentId: z.number().int().positive(),
@@ -62,8 +63,27 @@ export const ProfileResponseSchema = z.object({
   character: ProfileCharacterSchema.nullable(),
   totalXp: z.number().int().nonnegative(),
   level: z.number().int().positive(),
+  /** The approved learner-facing name for `level` (same formula). */
+  adventurerRank: z.number().int().positive(),
+  accomplishments: AccomplishmentCountsSchema,
+  sharing: ProfileSharingSchema,
   badges: z.array(ProfileBadgeSchema),
   activity: z.array(ProfileActivitySchema),
   initialCompetencyBaseline: InitialCompetencyBaselineSchema.nullable(),
 });
 export type ProfileResponse = z.infer<typeof ProfileResponseSchema>;
+
+/**
+ * The approved public accomplishment summary (`GET /v1/api/shared-profiles/:shareId`).
+ * Deliberately an allowlist: no user id, name, email, activity log, code, conversations or baseline.
+ */
+export const SharedProfileResponseSchema = z.object({
+  adventurerRank: z.number().int().positive(),
+  totalXp: z.number().int().nonnegative(),
+  character: ProfileCharacterSchema.pick({ name: true, slug: true, imageUrl: true }).nullable(),
+  badges: z.array(ProfileBadgeSchema.pick({ name: true, slug: true, imageUrl: true, count: true })),
+  accomplishments: AccomplishmentCountsSchema,
+  currentStreak: z.number().int().nonnegative(),
+  longestStreak: z.number().int().nonnegative(),
+});
+export type SharedProfileResponse = z.infer<typeof SharedProfileResponseSchema>;

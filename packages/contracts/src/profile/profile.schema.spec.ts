@@ -8,6 +8,9 @@ describe("ProfileResponseSchema", () => {
       character: { id: 1, name: "Binary Knight", slug: "binary-knight", imageUrl: null },
       totalXp: 450,
       level: 3,
+      adventurerRank: 3,
+      accomplishments: { novelsCompleted: 1, sideQuestsCompleted: 0, ctfsSolved: 2 },
+      sharing: { shareId: null },
       badges: [
         {
           badgeDefinitionId: 1,
@@ -31,6 +34,9 @@ describe("ProfileResponseSchema", () => {
       character: null,
       totalXp: 0,
       level: 1,
+      adventurerRank: 1,
+      accomplishments: { novelsCompleted: 0, sideQuestsCompleted: 0, ctfsSolved: 0 },
+      sharing: { shareId: null },
       badges: [],
       activity: [],
       initialCompetencyBaseline: null,
