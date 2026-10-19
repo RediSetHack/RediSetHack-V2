@@ -16,6 +16,8 @@ function makeRepo(completedIds: number[]): StageRepository {
     findByZoneId: vi.fn().mockResolvedValue(stages),
     hasArchivedAncestor: vi.fn().mockResolvedValue(false),
     findCompletedStageIds: vi.fn().mockResolvedValue(completedIds),
+    findAllDiscoverable: vi.fn().mockResolvedValue([]),
+    findAllCompletedStageIds: vi.fn().mockResolvedValue([]),
   };
 }
 
@@ -75,6 +77,8 @@ describe('ListStagesUseCase', () => {
       findByZoneId: vi.fn().mockResolvedValue(unsorted),
       hasArchivedAncestor: vi.fn().mockResolvedValue(false),
       findCompletedStageIds: vi.fn().mockResolvedValue([]),
+      findAllDiscoverable: vi.fn().mockResolvedValue([]),
+      findAllCompletedStageIds: vi.fn().mockResolvedValue([]),
     };
     const useCase = new ListStagesUseCase(repo);
 

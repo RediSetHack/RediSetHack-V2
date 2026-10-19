@@ -22,6 +22,7 @@ import {
   executeCode,
   evaluateBadges,
   getSideQuests,
+  getDiscover,
   ApiError,
 } from "./api-client.js";
 
@@ -434,6 +435,64 @@ describe("api-client", () => {
       await expect(
         getStages("http://localhost:3001", "test-token", 1, mockFetch as unknown as typeof fetch),
       ).rejects.toMatchObject({ status: 403 });
+    });
+  });
+
+  describe("getDiscover", () => {
+    it("sends Bearer token and query params to the discover endpoint", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [
+          {
+            kind: "stage",
+            id: 1,
+            title: "For loops",
+            slug: "for-loops",
+            description: null,
+            status: "available",
+            lockReason: null,
+          },
+        ],
+      });
+      const result = await getDiscover(
+        "http://localhost:3001/",
+        "test-token",
+        { q: "loops", competency: "programming.control-flow", difficulty: "beginner", limit: 5 },
+        mockFetch as unknown as typeof fetch,
+      );
+      expect(mockFetch).toHaveBeenCalledWith(
+        "http://localhost:3001/v1/api/discover?q=loops&competency=programming.control-flow&difficulty=beginner&limit=5",
+        { headers: { Authorization: "Bearer test-token" } },
+      );
+      expect(result).toHaveLength(1);
+      expect(result[0]?.kind).toBe("stage");
+    });
+
+    it("omits unset optional query params", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [],
+      });
+      await getDiscover("http://localhost:3001", "test-token", {}, mockFetch as unknown as typeof fetch);
+      expect(mockFetch).toHaveBeenCalledWith(
+        "http://localhost:3001/v1/api/discover",
+        { headers: { Authorization: "Bearer test-token" } },
+      );
+    });
+
+    it("throws ApiError 401 when token is missing", async () => {
+      await expect(getDiscover("http://localhost:3001", "", {})).rejects.toThrowError(ApiError);
+    });
+
+    it("throws ApiError on a non-200 response", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        json: async () => ({ message: "boom" }),
+      });
+      await expect(
+        getDiscover("http://localhost:3001", "test-token", {}, mockFetch as unknown as typeof fetch),
+      ).rejects.toMatchObject({ status: 500 });
     });
   });
 

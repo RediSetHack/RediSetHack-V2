@@ -18,7 +18,7 @@ export async function getStageAccess(
     repo.findByZoneId(stage.zoneId),
     repo.findCompletedStageIds(userId, stage.zoneId),
   ]);
-  const sorted = [...allStages].sort((a, b) => a.sortOrder - b.sortOrder);
+  const sorted = [...allStages].sort((a, b) => a.sortOrder - b.sortOrder || a.id - b.id);
   return {
     sorted,
     index: sorted.findIndex((s) => s.id === stage.id),

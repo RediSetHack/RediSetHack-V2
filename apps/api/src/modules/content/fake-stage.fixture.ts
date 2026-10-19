@@ -1,5 +1,5 @@
 import { Stage } from './domain/entities/stage.entity.js';
-import { StageRepository } from './domain/ports/stage.repository.js';
+import { StageRepository, DiscoverableStage } from './domain/ports/stage.repository.js';
 
 // Shared test double: every integration spec that drives Stage lookups off
 // its own `stagesByZone`/`completedStageIds` maps needs the same fake, so it
@@ -25,6 +25,24 @@ export function makeFakeStageRepository(
     async findCompletedStageIds(_userId, zoneId) {
       const stages = stagesByZone.get(zoneId) ?? [];
       return stages.filter((s) => completedStageIds.has(s.id)).map((s) => s.id);
+    },
+    async findAllDiscoverable() {
+      const allStages: Stage[] = [];
+      for (const stages of stagesByZone.values()) {
+        allStages.push(...stages);
+      }
+      return allStages
+        .filter((s) => s.archivedAt === null)
+        .map((stage) => ({ ...stage, regionId: 1 } as DiscoverableStage));
+    },
+    async findAllCompletedStageIds(_userId) {
+      const allStages: Stage[] = [];
+      for (const stages of stagesByZone.values()) {
+        allStages.push(...stages);
+      }
+      return allStages
+        .filter((s) => s.archivedAt === null && completedStageIds.has(s.id))
+        .map((s) => s.id);
     },
   };
 }
