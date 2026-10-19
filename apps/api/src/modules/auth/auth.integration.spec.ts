@@ -159,7 +159,13 @@ describe('auth integration', () => {
 
   const fakeProfiles: ProfileRepository = {
     async findProfileByUserId(userId) {
-      return { userId, totalXp: 0, character: null, badges: [], activity: [], initialCompetencyBaseline: null };
+      return { userId, totalXp: 0, character: null, badges: [], activity: [], initialCompetencyBaseline: null, accomplishments: { novelsCompleted: 0, sideQuestsCompleted: 0, ctfsSolved: 0 }, shareId: null };
+    },
+    async findUserIdByShareId() {
+      return null;
+    },
+    async setSharing() {
+      return null;
     },
     async findDailyLearningActivity() {
       return [];
@@ -367,6 +373,9 @@ describe('auth integration', () => {
       totalXp: 0,
       character: null,
       level: 1,
+      adventurerRank: 1,
+      accomplishments: { novelsCompleted: 0, sideQuestsCompleted: 0, ctfsSolved: 0 },
+      sharing: { shareId: null },
       badges: [],
       activity: [],
       initialCompetencyBaseline: null,

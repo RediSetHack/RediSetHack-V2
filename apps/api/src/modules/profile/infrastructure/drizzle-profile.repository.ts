@@ -1,6 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
+import { randomUUID } from "node:crypto";
 import { and, desc, eq, sql } from "drizzle-orm";
-import { badgeAwards, badgeDefinitions, characters, users, learningInteractions, initialCompetencyBaselines, type Database } from "@repo/db";
+import { badgeAwards, badgeDefinitions, characters, users, learningInteractions, initialCompetencyBaselines, ctfSolves, sideQuestCompletions, regions, zones, stages, userProgress, type Database } from "@repo/db";
 import { COMPETENCIES, type LearningDay } from "@repo/contracts";
 
 import { DB } from "../../../database/database.module.js";
@@ -9,6 +10,7 @@ import {
   type LeaderboardRow,
   type ProfileData,
 } from "../domain/ports/profile.repository.js";
+import { UserNotFoundError } from "../../auth/domain/errors.js";
 import { BadgeAwardSummary } from "../domain/entities/badge-award-summary.entity.js";
 
 @Injectable()
@@ -49,11 +51,14 @@ export class DrizzleProfileRepository implements ProfileRepository {
       limit: 10,
       columns: { id: true, activityType: true, activityId: true, occurredAt: true, outcome: true },
     });
+    const accomplishments = await this.countAccomplishments(userId);
     const baseline = await this.database.query.initialCompetencyBaselines.findFirst({ where: eq(initialCompetencyBaselines.userId, userId) });
 
     return {
       userId: user.id,
       totalXp: user.totalXp,
+      shareId: user.shareToken,
+      accomplishments,
       character: character
         ? { id: character.id, name: character.name, slug: character.slug, imageUrl: character.imageUrl }
         : null,
@@ -79,6 +84,48 @@ export class DrizzleProfileRepository implements ProfileRepository {
         }),
       } : null,
     };
+  }
+
+  async findUserIdByShareId(shareId: string): Promise<string | null> {
+    const [row] = await this.database.select({ id: users.id }).from(users).where(eq(users.shareToken, shareId));
+    return row?.id ?? null;
+  }
+
+  async setSharing(userId: string, enabled: boolean): Promise<string | null> {
+    const [row] = await this.database
+      .update(users)
+      .set({ shareToken: enabled ? sql`coalesce(${users.shareToken}, ${randomUUID()}::uuid)` : null })
+      .where(eq(users.id, userId))
+      .returning({ shareToken: users.shareToken });
+    if (!row) throw new UserNotFoundError(userId);
+    return row.shareToken;
+  }
+
+  // Evidence comes from completion records, not live content, so retiring content never lowers a count (ADR 0005).
+  private async countAccomplishments(userId: string) {
+    const count = sql<number>`count(*)::int`;
+    const [[ctf], [sideQuest], novelRows] = await Promise.all([
+      this.database.select({ n: count }).from(ctfSolves).where(eq(ctfSolves.learnerId, userId)),
+      this.database.select({ n: count }).from(sideQuestCompletions).where(eq(sideQuestCompletions.learnerId, userId)),
+      // A Novel (Region with a story intro) is complete when every Stage that is still active is done; once the
+      // Novel itself is retired, every Stage ever in it must have been completed.
+      this.database
+        .select({
+          retired: sql<boolean>`${regions.archivedAt} is not null`,
+          active: sql<number>`count(*) filter (where ${stages.archivedAt} is null and ${zones.archivedAt} is null)::int`,
+          activeDone: sql<number>`count(*) filter (where ${stages.archivedAt} is null and ${zones.archivedAt} is null and ${userProgress.completed})::int`,
+          all: count,
+          allDone: sql<number>`count(*) filter (where ${userProgress.completed})::int`,
+        })
+        .from(regions)
+        .innerJoin(zones, eq(zones.regionId, regions.id))
+        .innerJoin(stages, eq(stages.zoneId, zones.id))
+        .leftJoin(userProgress, and(eq(userProgress.stageId, stages.id), eq(userProgress.userId, userId)))
+        .where(sql`${regions.storyIntro} is not null`)
+        .groupBy(regions.id),
+    ]);
+    const novelsCompleted = novelRows.filter((r) => (r.retired ? r.all > 0 && r.allDone === r.all : r.active > 0 && r.activeDone === r.active)).length;
+    return { novelsCompleted, sideQuestsCompleted: sideQuest?.n ?? 0, ctfsSolved: ctf?.n ?? 0 };
   }
 
   // Qualifying = a persisted accomplishment: reading completed, Quest submitted and passed, or a

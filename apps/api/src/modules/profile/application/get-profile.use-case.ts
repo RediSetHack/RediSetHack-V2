@@ -22,6 +22,8 @@ export class GetProfileUseCase {
       data.badges,
       data.activity,
       data.initialCompetencyBaseline,
+      data.accomplishments,
+      data.shareId,
     );
   }
 }

@@ -12,6 +12,8 @@ const profileData: ProfileData = {
   badges: [new BadgeAwardSummary(1, "Pull Shark", "pull-shark", null, 3, new Date("2026-01-01"))],
   activity: [],
   initialCompetencyBaseline: null,
+  accomplishments: { novelsCompleted: 1, sideQuestsCompleted: 2, ctfsSolved: 3 },
+  shareId: null,
 };
 
 describe("GetProfileUseCase", () => {
@@ -19,6 +21,8 @@ describe("GetProfileUseCase", () => {
     const profiles: ProfileRepository = {
       findProfileByUserId: vi.fn().mockResolvedValue(profileData),
       findDailyLearningActivity: vi.fn(),
+      findUserIdByShareId: vi.fn(),
+      setSharing: vi.fn(),
       findLeaderboardPage: vi.fn(),
     };
     const useCase = new GetProfileUseCase(profiles);
@@ -38,6 +42,8 @@ describe("GetProfileUseCase", () => {
     const profiles: ProfileRepository = {
       findProfileByUserId: vi.fn().mockResolvedValue(null),
       findDailyLearningActivity: vi.fn(),
+      findUserIdByShareId: vi.fn(),
+      setSharing: vi.fn(),
       findLeaderboardPage: vi.fn(),
     };
     const useCase = new GetProfileUseCase(profiles);

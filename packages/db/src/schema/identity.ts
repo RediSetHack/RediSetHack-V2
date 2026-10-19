@@ -1,4 +1,4 @@
-import { integer, pgTable, serial, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { integer, pgTable, serial, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 // ---------------------------------------------------------------------------
 // Identity
@@ -16,10 +16,12 @@ export const users = pgTable(
       onDelete: "set null",
     }),
     totalXp: integer("total_xp").notNull().default(0),
+    // Null = profile sharing off (default). A random token is the public link; revoking nulls it, so old links die.
+    shareToken: uuid("share_token"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [uniqueIndex("users_email_unique").on(table.email)],
+  (table) => [uniqueIndex("users_email_unique").on(table.email), uniqueIndex("users_share_token_unique").on(table.shareToken)],
 );
 
 // A Clerk ID is terminally retired after deletion; keep no personal data here.

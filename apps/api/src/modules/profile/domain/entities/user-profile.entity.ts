@@ -1,5 +1,5 @@
 import { BadgeAwardSummary } from "./badge-award-summary.entity.js";
-import type { InitialCompetencyBaseline } from "@repo/contracts";
+import type { AccomplishmentCounts, InitialCompetencyBaseline } from "@repo/contracts";
 
 export interface ProfileCharacter {
   id: number;
@@ -17,6 +17,8 @@ export class UserProfile {
     public readonly badges: BadgeAwardSummary[],
     public readonly activity: ProfileDataActivity[],
     public readonly initialCompetencyBaseline: InitialCompetencyBaseline | null,
+    public readonly accomplishments: AccomplishmentCounts,
+    public readonly shareId: string | null,
   ) {}
 }
 
