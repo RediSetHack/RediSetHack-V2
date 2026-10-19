@@ -28,3 +28,7 @@ Use Clerk for all authentication in V2: signup, login, email verification, passw
      - Creating a new user record requires a valid email address; attempting to create a user without a Clerk-verified email throws an `InvalidUserEmailError` (HTTP 503 from the sync route).
      - Updating an existing user record with empty token claims preserves the user's previously stored email address.
 
+
+## Roles
+
+The session's role comes only from Clerk `publicMetadata.role` (writable from the Clerk Dashboard/Backend API, never by the user): `admin` (unchanged, still administered in the Dashboard), `contributor` (may author Drafts), otherwise `user`. `unsafeMetadata` is ignored. Contributor routes accept `contributor` and `admin`.

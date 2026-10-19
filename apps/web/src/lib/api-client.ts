@@ -9,6 +9,9 @@ import type {
   CtfAttemptResponse,
   CtfChallengeResponse,
   CtfChallengeSummary,
+  ContributorDraft,
+  CreateContributorDraft,
+  UpdateContributorDraft,
   Language,
   LeaderboardResponse,
   LearningStreakResponse,
@@ -33,6 +36,8 @@ export type {
   LessonBlock,
 } from "@repo/contracts";
 import {
+  ContributorDraftListResponseSchema,
+  ContributorDraftSchema,
   ExecuteCodeResponseSchema,
   CodingActivityResponseSchema,
   CodingAttemptResponseSchema,
@@ -516,4 +521,43 @@ export async function getSideQuests(apiBaseUrl: string, token: string, fetchFn: 
 /** Opens a Side Quest, `GET /v1/api/side-quests/:id`. */
 export async function getSideQuest(apiBaseUrl: string, token: string, id: number, fetchFn: typeof fetch = fetch): Promise<SideQuest> {
   return SideQuestResponseSchema.parse(await fetchAuthedJson<unknown>(sideQuestEndpoint(apiBaseUrl, `/${id}`), token, fetchFn));
+}
+
+export type ContributorDraftItem = ContributorDraft;
+
+const contributorEndpoint = (apiBaseUrl: string, path = "") => `${apiBaseUrl.replace(/\/$/, "")}/v1/api/contributor/drafts${path}`;
+
+/** Sends a contributor draft request; a 400 surfaces every `path: message` validation issue in the error. */
+async function contributorRequest(method: string, endpoint: string, token: string, body: unknown, fetchFn: typeof fetch): Promise<unknown> {
+  if (!token) throw new ApiError(401, "Authentication token is required");
+  const response = await fetchFn(endpoint, {
+    method,
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (response.ok) return response.json();
+  const error = await response.json().catch(() => ({}));
+  const issues: { path: string; message: string }[] = Array.isArray(error?.issues) ? error.issues : [];
+  if (issues.length > 0) throw new ApiError(response.status, issues.map((i) => (i.path ? `${i.path}: ${i.message}` : i.message)).join("; "));
+  throw new ApiError(response.status, typeof error?.message === "string" ? error.message : `Request failed with status ${response.status}`);
+}
+
+/** Lists the caller's drafts, `GET /v1/api/contributor/drafts`. */
+export async function getContributorDrafts(apiBaseUrl: string, token: string, fetchFn: typeof fetch = fetch): Promise<ContributorDraftItem[]> {
+  return ContributorDraftListResponseSchema.parse(await contributorRequest("GET", contributorEndpoint(apiBaseUrl), token, undefined, fetchFn));
+}
+
+/** Creates a draft, `POST /v1/api/contributor/drafts`. */
+export async function createContributorDraft(apiBaseUrl: string, token: string, input: CreateContributorDraft, fetchFn: typeof fetch = fetch): Promise<ContributorDraftItem> {
+  return ContributorDraftSchema.parse(await contributorRequest("POST", contributorEndpoint(apiBaseUrl), token, input, fetchFn));
+}
+
+/** Revises a draft against the revision being edited, `PUT /v1/api/contributor/drafts/:id`. */
+export async function updateContributorDraft(apiBaseUrl: string, token: string, id: number, input: UpdateContributorDraft, fetchFn: typeof fetch = fetch): Promise<ContributorDraftItem> {
+  return ContributorDraftSchema.parse(await contributorRequest("PUT", contributorEndpoint(apiBaseUrl, `/${id}`), token, input, fetchFn));
+}
+
+/** Submits one revision for review, `POST /v1/api/contributor/drafts/:id/submit`. */
+export async function submitContributorDraft(apiBaseUrl: string, token: string, id: number, revision: number, fetchFn: typeof fetch = fetch): Promise<ContributorDraftItem> {
+  return ContributorDraftSchema.parse(await contributorRequest("POST", contributorEndpoint(apiBaseUrl, `/${id}/submit`), token, { revision }, fetchFn));
 }

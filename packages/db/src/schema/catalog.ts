@@ -275,3 +275,36 @@ export const ctfChallenges = pgTable(
     check("ctf_challenges_difficulty_check", sql`${table.difficulty} in ('beginner', 'intermediate', 'advanced')`),
   ],
 );
+
+// A contributor-owned draft Lesson for a Stage-to-be inside a Zone (chapter).
+// It lives apart from `stages`, so no learner query can ever see it. Edits
+// bump `revision` through a conditional UPDATE (optimistic concurrency);
+// submitting freezes that revision: `submitted` rows are never updated again.
+export const contributorDrafts = pgTable(
+  "contributor_drafts",
+  {
+    id: serial("id").primaryKey(),
+    ownerId: text("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    zoneId: integer("zone_id")
+      .notNull()
+      .references(() => zones.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    lessonContent: jsonb("lesson_content").notNull().default([]),
+    status: text("status").notNull().default("draft"),
+    revision: integer("revision").notNull().default(1),
+    submittedRevision: integer("submitted_revision"),
+    submittedAt: timestamp("submitted_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("contributor_drafts_owner_id_index").on(table.ownerId),
+    index("contributor_drafts_zone_id_index").on(table.zoneId),
+    check(
+      "contributor_drafts_state_check",
+      sql`(${table.status} = 'draft' and ${table.submittedRevision} is null and ${table.submittedAt} is null) or (${table.status} = 'submitted' and ${table.submittedRevision} = ${table.revision} and ${table.submittedAt} is not null)`,
+    ),
+  ],
+);

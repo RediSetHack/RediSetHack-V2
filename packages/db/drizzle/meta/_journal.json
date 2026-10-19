@@ -141,6 +141,13 @@
       "when": 1792373743895,
       "tag": "0019_strange_silver_samurai",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1792374065596,
+      "tag": "0020_previous_tusk",
+      "breakpoints": true
     }
   ]
 }
