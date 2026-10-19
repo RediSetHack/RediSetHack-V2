@@ -14,7 +14,7 @@ export class DraftNotOwnedError extends Error {
 
 export class DraftSubmittedError extends Error {
   constructor() {
-    super("This draft has been submitted for review and can no longer be changed");
+    super("This draft is submitted or has a final decision and can no longer be changed");
     this.name = "DraftSubmittedError";
   }
 }
@@ -38,4 +38,8 @@ export class ActivityNotFoundError extends Error {
     super(`Exercise activity ${activityIds.join(", ")} does not exist`);
     this.name = "ActivityNotFoundError";
   }
+}
+
+export class DraftReviewConflictError extends Error {
+  constructor() { super("This review action is no longer available"); this.name = "DraftReviewConflictError"; }
 }

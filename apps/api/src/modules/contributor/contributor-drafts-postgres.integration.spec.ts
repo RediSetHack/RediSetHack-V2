@@ -4,8 +4,8 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { contributorDrafts, createDb, regions, users, zones, type Database } from '@repo/db';
-import { ContributorDraftListResponseSchema, ContributorDraftSchema } from '@repo/contracts';
+import { contributorDrafts, contributorDraftReviews, createDb, readingSessions, regions, stages, users, zones, type Database } from '@repo/db';
+import { ContributorDraftListResponseSchema, ContributorDraftReviewListSchema, ContributorDraftSchema, ContributorReviewQueueSchema } from '@repo/contracts';
 import { AppModule } from '../../app.module.js';
 import { ClerkAuthPort } from '../auth/domain/ports/clerk-auth.port.js';
 
@@ -13,8 +13,8 @@ const databaseUrl = process.env.DATABASE_URL;
 
 describe.skipIf(!databaseUrl)('Contributor drafts through HTTP with PostgreSQL', () => {
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  const [owner, other, learner] = ['o', 'p', 'l'].map((n) => `cd-${n}-${suffix}`) as [string, string, string];
-  const roles: Record<string, 'contributor' | 'user'> = { [owner]: 'contributor', [other]: 'contributor', [learner]: 'user' };
+  const [owner, other, learner, reviewer] = ['o', 'p', 'l', 'r'].map((n) => `cd-${n}-${suffix}`) as [string, string, string, string];
+  const roles: Record<string, 'contributor' | 'user' | 'admin'> = { [owner]: 'contributor', [other]: 'contributor', [learner]: 'user', [reviewer]: 'admin' };
   let app: INestApplication;
   let database: Database;
   let regionId: number;
@@ -110,5 +110,51 @@ describe.skipIf(!databaseUrl)('Contributor drafts through HTTP with PostgreSQL',
     await http().post(api()).set(as(owner)).send({ zoneId: 999999999, ...body }).expect(404);
     const exercise = [{ type: 'exercise', prompt: 'Do it', language: 'python', starterCode: '', activityId: 999999999 }];
     await http().post(api()).set(as(owner)).send({ zoneId, title: 'T', lessonContent: exercise }).expect(400);
+  });
+
+  it('reviews one submitted revision, publishes it to learners, and unpublishes without deleting learner history', async () => {
+    const draft = await create();
+    await http().post(api(`/${draft.id}/submit`)).set(as(owner)).send({ revision: 1 }).expect(201);
+
+    const queue = await http().get('/v1/api/admin/contributor-drafts/queue').set(as(reviewer)).expect(200);
+    expect(ContributorReviewQueueSchema.parse(queue.body).map((item) => item.id)).toContain(draft.id);
+    await http().get('/v1/api/admin/contributor-drafts/queue').set(as(owner)).expect(403);
+    await http().get(`/v1/api/zones/${zoneId}/stages`).set(as(learner)).expect(200).then((response) => {
+      expect(response.body).toEqual([]);
+    });
+
+    const requested = await http().post(`/v1/api/admin/contributor-drafts/${draft.id}/review`).set(as(reviewer)).send({ decision: 'revision-needed', reason: 'Clarify the example.' }).expect(201);
+    expect(requested.body).toMatchObject({ draftId: draft.id, revision: 1, decision: 'revision-needed', reviewerId: reviewer, reason: 'Clarify the example.' });
+    const reopened = await http().put(api(`/${draft.id}`)).set(as(owner)).send({ revision: 1, title: 'Loops revised', lessonContent: body.lessonContent }).expect(200);
+    expect(reopened.body).toMatchObject({ status: 'draft', revision: 2, submittedRevision: null });
+    await http().post(api(`/${draft.id}/submit`)).set(as(owner)).send({ revision: 2 }).expect(201);
+
+    const approved = await http().post(`/v1/api/admin/contributor-drafts/${draft.id}/review`).set(as(reviewer)).send({ decision: 'approved', reason: 'Ready for learners.' }).expect(201);
+    expect(approved.body).toMatchObject({ revision: 2, title: 'Loops revised', decision: 'approved', publishedStageId: expect.any(Number) });
+    await http().put(api(`/${draft.id}`)).set(as(owner)).send({ revision: 2, ...body }).expect(409);
+    const lesson = await http().get(`/v1/api/stages/${approved.body.publishedStageId}/lesson`).set(as(learner)).expect(200);
+    expect(lesson.body).toMatchObject({ title: 'Loops revised', blocks: body.lessonContent });
+    const [reading] = await database.select().from(readingSessions).where(eq(readingSessions.stageId, approved.body.publishedStageId));
+    expect(reading).toBeDefined();
+
+    await http().post(`/v1/api/admin/contributor-drafts/${draft.id}/unpublish`).set(as(reviewer)).send({ reason: 'Policy update.' }).expect(201);
+    await http().get(`/v1/api/zones/${zoneId}/stages`).set(as(learner)).expect(200).then((response) => expect(response.body).toEqual([]));
+    await http().get(`/v1/api/stages/${approved.body.publishedStageId}/lesson`).set(as(learner)).expect(403);
+    const [retained] = await database.select().from(readingSessions).where(eq(readingSessions.stageId, approved.body.publishedStageId));
+    expect(retained?.id).toBe(reading?.id);
+    const history = await http().get(api(`/${draft.id}/reviews`)).set(as(owner)).expect(200);
+    expect(ContributorDraftReviewListSchema.parse(history.body).map((item) => item.decision)).toEqual(['revision-needed', 'approved', 'unpublished']);
+    await http().post(`/v1/api/admin/contributor-drafts/${draft.id}/review`).set(as(reviewer)).send({ decision: 'approved', reason: '' }).expect(400);
+    expect(await database.select().from(contributorDraftReviews).where(eq(contributorDraftReviews.draftId, draft.id))).toHaveLength(3);
+    expect(await database.select().from(stages).where(eq(stages.id, approved.body.publishedStageId))).toHaveLength(1);
+  });
+
+  it('allows moderators to reject submissions without publishing them', async () => {
+    const draft = await create();
+    await http().post(api(`/${draft.id}/submit`)).set(as(owner)).send({ revision: 1 }).expect(201);
+    await http().post(`/v1/api/admin/contributor-drafts/${draft.id}/review`).set(as(reviewer)).send({ decision: 'rejected', reason: 'Outside the curriculum.' }).expect(201);
+    expect(await http().get('/v1/api/admin/contributor-drafts/queue').set(as(reviewer)).expect(200).then((r) => r.body.map((item: { id: number }) => item.id))).not.toContain(draft.id);
+    await http().get(`/v1/api/zones/${zoneId}/stages`).set(as(learner)).expect(200).then((r) => expect(r.body).toEqual([]));
+    await http().put(api(`/${draft.id}`)).set(as(owner)).send({ revision: 1, ...body }).expect(409);
   });
 });

@@ -1,4 +1,10 @@
 import type { AuthoredLessonBlock } from "../draft.js";
+import type { ReviewDecisionInput } from "@repo/contracts";
+
+export type DraftReviewRecord = {
+  id: number; draftId: number; revision: number; title: string; lessonContent: AuthoredLessonBlock[];
+  decision: ReviewDecisionInput["decision"] | "unpublished"; reviewerId: string; reason: string; reviewedAt: Date; publishedStageId: number | null;
+};
 
 export type DraftRecord = {
   id: number;
@@ -6,7 +12,7 @@ export type DraftRecord = {
   zoneId: number;
   title: string;
   lessonContent: AuthoredLessonBlock[];
-  status: "draft" | "submitted";
+  status: "draft" | "submitted" | "revision-needed" | "approved" | "rejected";
   revision: number;
   submittedRevision: number | null;
   createdAt: Date;
@@ -26,4 +32,8 @@ export abstract class DraftRepository {
   abstract update(id: number, expectedRevision: number, data: { title: string; lessonContent: AuthoredLessonBlock[] }): Promise<DraftRecord | null>;
   /** Freezes `expectedRevision`; null when the draft is no longer a `draft` at that revision. */
   abstract submit(id: number, expectedRevision: number): Promise<DraftRecord | null>;
+  abstract reviewQueue(): Promise<DraftRecord[]>;
+  abstract review(id: number, reviewerId: string, input: ReviewDecisionInput): Promise<DraftReviewRecord | null>;
+  abstract unpublish(id: number, reviewerId: string, reason: string): Promise<DraftReviewRecord | null>;
+  abstract reviews(id: number): Promise<DraftReviewRecord[]>;
 }

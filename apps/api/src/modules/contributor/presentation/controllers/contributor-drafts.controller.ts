@@ -16,6 +16,7 @@ import { ApiBearerAuth, ApiConflictResponse, ApiForbiddenResponse, ApiNotFoundRe
 import {
   ContributorDraftListResponseSchema,
   ContributorDraftSchema,
+  ContributorDraftReviewListSchema,
   CreateContributorDraftSchema,
   SubmitContributorDraftSchema,
   UpdateContributorDraftSchema,
@@ -35,6 +36,7 @@ import {
   DraftRevisionConflictError,
   DraftSubmittedError,
   ParentZoneNotFoundError,
+  DraftReviewConflictError,
 } from "../../domain/errors.js";
 import type { DraftRecord } from "../../domain/ports/draft.repository.js";
 import { ContributorGuard } from "../guards/contributor.guard.js";
@@ -65,7 +67,7 @@ function parse<T>(schema: ZodType<T>, body: unknown): T {
 function translate(error: unknown): never {
   if (error instanceof DraftNotFoundError) throw new NotFoundException(error.message);
   if (error instanceof DraftNotOwnedError) throw new ForbiddenException(error.message);
-  if (error instanceof DraftSubmittedError || error instanceof DraftRevisionConflictError) throw new ConflictException(error.message);
+  if (error instanceof DraftSubmittedError || error instanceof DraftRevisionConflictError || error instanceof DraftReviewConflictError) throw new ConflictException(error.message);
   if (error instanceof ParentZoneNotFoundError) throw new NotFoundException(error.message);
   if (error instanceof ActivityNotFoundError) {
     throw new BadRequestException({ message: error.message, issues: [{ path: "lessonContent", message: error.message }] });
@@ -95,6 +97,18 @@ export class ContributorDraftsController {
   async get(@Param("draftId", ParseIntPipe) id: number, @CurrentUser() user: ClerkAuthenticatedUser) {
     try {
       return present(await this.drafts.get(user.id, id));
+    } catch (error) {
+      return translate(error);
+    }
+  }
+
+  @Get(":draftId/reviews")
+  @ApiOperation({ summary: "List moderation decisions for the caller's own draft." })
+  @ApiZodResponse(ContributorDraftReviewListSchema)
+  async reviews(@Param("draftId", ParseIntPipe) id: number, @CurrentUser() user: ClerkAuthenticatedUser) {
+    try {
+      const records = await this.drafts.reviews(user.id, id);
+      return records.map((r) => ({ ...r, reviewedAt: r.reviewedAt.toISOString() }));
     } catch (error) {
       return translate(error);
     }

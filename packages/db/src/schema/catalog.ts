@@ -304,7 +304,30 @@ export const contributorDrafts = pgTable(
     index("contributor_drafts_zone_id_index").on(table.zoneId),
     check(
       "contributor_drafts_state_check",
-      sql`(${table.status} = 'draft' and ${table.submittedRevision} is null and ${table.submittedAt} is null) or (${table.status} = 'submitted' and ${table.submittedRevision} = ${table.revision} and ${table.submittedAt} is not null)`,
+      sql`(${table.status} in ('draft', 'revision-needed') and ${table.submittedRevision} is null and ${table.submittedAt} is null) or (${table.status} in ('submitted', 'approved', 'rejected') and ${table.submittedRevision} = ${table.revision} and ${table.submittedAt} is not null)`,
     ),
+  ],
+);
+
+// Every moderator action snapshots the exact submitted revision so later
+// revision requests cannot alter the record of what was reviewed.
+export const contributorDraftReviews = pgTable(
+  "contributor_draft_reviews",
+  {
+    id: serial("id").primaryKey(),
+    draftId: integer("draft_id").notNull().references(() => contributorDrafts.id, { onDelete: "cascade" }),
+    revision: integer("revision").notNull(),
+    title: text("title").notNull(),
+    lessonContent: jsonb("lesson_content").notNull(),
+    decision: text("decision").notNull(),
+    reviewerId: text("reviewer_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+    reason: text("reason").notNull(),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }).notNull().defaultNow(),
+    publishedStageId: integer("published_stage_id").references(() => stages.id, { onDelete: "set null" }),
+  },
+  (table) => [
+    index("contributor_draft_reviews_draft_id_index").on(table.draftId),
+    index("contributor_draft_reviews_decision_index").on(table.decision),
+    check("contributor_draft_reviews_decision_check", sql`${table.decision} in ('approved', 'rejected', 'revision-needed', 'unpublished')`),
   ],
 );

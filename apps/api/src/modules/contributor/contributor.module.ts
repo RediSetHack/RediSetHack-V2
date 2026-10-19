@@ -4,10 +4,11 @@ import { ContributorDraftsUseCase } from "./application/contributor-drafts.use-c
 import { DraftRepository } from "./domain/ports/draft.repository.js";
 import { DrizzleDraftRepository } from "./infrastructure/drizzle-draft.repository.js";
 import { ContributorDraftsController } from "./presentation/controllers/contributor-drafts.controller.js";
+import { ContributorReviewController } from "./presentation/controllers/contributor-review.controller.js";
 import { ContributorGuard } from "./presentation/guards/contributor.guard.js";
 
 @Module({
-  controllers: [ContributorDraftsController],
+  controllers: [ContributorDraftsController, ContributorReviewController],
   providers: [{ provide: DraftRepository, useClass: DrizzleDraftRepository }, ContributorDraftsUseCase, ContributorGuard],
 })
 export class ContributorModule {}

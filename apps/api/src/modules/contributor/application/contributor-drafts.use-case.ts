@@ -1,15 +1,16 @@
 import { Injectable } from "@nestjs/common";
-import type { CreateContributorDraft, SubmitContributorDraft, UpdateContributorDraft } from "@repo/contracts";
+import type { CreateContributorDraft, ReviewDecisionInput, SubmitContributorDraft, UpdateContributorDraft } from "@repo/contracts";
 
 import {
   ActivityNotFoundError,
   DraftNotFoundError,
   DraftNotOwnedError,
+  DraftReviewConflictError,
   DraftRevisionConflictError,
   DraftSubmittedError,
   ParentZoneNotFoundError,
 } from "../domain/errors.js";
-import { DraftRepository, type DraftRecord } from "../domain/ports/draft.repository.js";
+import { DraftRepository, type DraftRecord, type DraftReviewRecord } from "../domain/ports/draft.repository.js";
 
 @Injectable()
 export class ContributorDraftsUseCase {
@@ -31,7 +32,7 @@ export class ContributorDraftsUseCase {
 
   async update(ownerId: string, id: number, input: UpdateContributorDraft): Promise<DraftRecord> {
     const draft = await this.owned(ownerId, id);
-    if (draft.status === "submitted") throw new DraftSubmittedError();
+    if (draft.status !== "draft" && draft.status !== "revision-needed") throw new DraftSubmittedError();
     await this.assertActivities(input.lessonContent);
     const updated = await this.drafts.update(id, input.revision, { title: input.title, lessonContent: input.lessonContent });
     if (!updated) throw await this.whyRejected(id);
@@ -40,10 +41,36 @@ export class ContributorDraftsUseCase {
 
   async submit(ownerId: string, id: number, input: SubmitContributorDraft): Promise<DraftRecord> {
     const draft = await this.owned(ownerId, id);
-    if (draft.status === "submitted") throw new DraftSubmittedError();
+    if (draft.status !== "draft" && draft.status !== "revision-needed") throw new DraftSubmittedError();
     const submitted = await this.drafts.submit(id, input.revision);
     if (!submitted) throw await this.whyRejected(id);
     return submitted;
+  }
+
+  reviewQueue(): Promise<DraftRecord[]> { return this.drafts.reviewQueue(); }
+
+  async review(id: number, reviewerId: string, input: ReviewDecisionInput): Promise<DraftReviewRecord> {
+    if (!(await this.drafts.findById(id))) throw new DraftNotFoundError(id);
+    const review = await this.drafts.review(id, reviewerId, input);
+    if (!review) throw new DraftReviewConflictError();
+    return review;
+  }
+
+  async unpublish(id: number, reviewerId: string, reason: string): Promise<DraftReviewRecord> {
+    if (!(await this.drafts.findById(id))) throw new DraftNotFoundError(id);
+    const review = await this.drafts.unpublish(id, reviewerId, reason);
+    if (!review) throw new DraftReviewConflictError();
+    return review;
+  }
+
+  async reviews(ownerId: string, id: number): Promise<DraftReviewRecord[]> {
+    await this.owned(ownerId, id);
+    return this.drafts.reviews(id);
+  }
+
+  async reviewHistory(id: number): Promise<DraftReviewRecord[]> {
+    if (!(await this.drafts.findById(id))) throw new DraftNotFoundError(id);
+    return this.drafts.reviews(id);
   }
 
   private async owned(ownerId: string, id: number): Promise<DraftRecord> {
