@@ -41,7 +41,7 @@ export function resolveRange(today: string, from?: string, to?: string): { from:
  */
 export function buildLearningStreak(history: readonly LearningDay[], today: string, range: { from: string; to: string }) {
   const byDay = new Map(history.map((d) => [d.date, d]));
-  const active = [...byDay.keys()].filter((d) => d <= today).sort();
+  const active = [...byDay.keys()].filter((d) => d <= today).sort((a, b) => a.localeCompare(b));
 
   let longestStreak = 0;
   let run = 0;
