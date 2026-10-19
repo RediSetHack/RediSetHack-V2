@@ -4,6 +4,7 @@ import { EventBanner } from "@/components/event-banner";
 
 const NAV_LINKS = [
   { href: "/map", label: "Map" },
+  { href: "/discover", label: "Discover" },
   { href: "/quests", label: "Quests" },
   { href: "/codelab", label: "Codelab" },
   { href: "/ctf", label: "CTF" },

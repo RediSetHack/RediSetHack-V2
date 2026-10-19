@@ -31,4 +31,12 @@ export class DrizzleZoneRepository implements ZoneRepository {
       .orderBy(asc(zones.sortOrder));
     return rows.map(({ zone }) => toDomain(zone));
   }
+
+  async findAll(): Promise<Zone[]> {
+    const rows = await this.database.select({ zone: zones }).from(zones)
+      .innerJoin(regions, eq(zones.regionId, regions.id))
+      .where(and(isNull(zones.archivedAt), isNull(regions.archivedAt)))
+      .orderBy(asc(regions.sortOrder), asc(zones.sortOrder));
+    return rows.map(({ zone }) => toDomain(zone));
+  }
 }
