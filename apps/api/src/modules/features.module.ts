@@ -13,6 +13,7 @@ import { CodelabModule } from './codelab/codelab.module.js';
 import { SideQuestModule } from "./side-quest/side-quest.module.js";
 import { ContributorModule } from "./contributor/contributor.module.js";
 import { ProfileModule } from "./profile/profile.module.js";
+import { ResearchModule } from "./research/research.module.js";
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { ProfileModule } from "./profile/profile.module.js";
     SideQuestModule,
     ProfileModule,
     ContributorModule,
+    ResearchModule,
   ],
 })
 export class FeaturesModule {}
