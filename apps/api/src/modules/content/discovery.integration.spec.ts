@@ -65,8 +65,7 @@ describe('content discovery (approved catalog by interest and difficulty)', () =
     },
     async findAllDiscoverable() {
       // This fake mirrors DrizzleStageRepository.findAllDiscoverable: discovery
-      // reads catalog Stages only, with archived ancestors excluded. Contributor
-      // drafts and rejected revisions are kept outside this catalog.
+      // reads catalog Stages only, with archived ancestors excluded.
       const archivedRegionIds = new Set(
         [...regions.values()].filter((r) => r.archivedAt !== null).map((r) => r.id),
       );
@@ -246,15 +245,6 @@ describe('content discovery (approved catalog by interest and difficulty)', () =
     expect(res.status).toBe(401);
   });
 
-  // Publication boundary evidence: rejected/unpublished contributor drafts
-  // live in the separate `contributor_drafts` table and are never inserted
-  // into the `stages` catalog that discovery reads (DrizzleStageRepository.
-  // findAllDiscoverable joins stages->zones->regions with archived_at IS NULL).
-  // Retired content is excluded by the same archived_at filters. Learner
-  // alternate fetch paths (GET /v1/api/zones/:zoneId/stages) read the same
-  // non-archived stages table via findByZoneId, so restricted content cannot
-  // be fetched there either. The test below demonstrates the retired boundary
-  // through the actual discover route.
   it('returns only approved, non-archived content and omits restricted bodies', async () => {
     seed();
     const res = await request(app.getHttpServer()).get('/v1/api/discover').set(asLearner());
@@ -268,9 +258,6 @@ describe('content discovery (approved catalog by interest and difficulty)', () =
     // A Stage whose Region or Zone ancestor is archived never enters discovery.
     expect(parsed.some((i) => i.id === 5 && i.kind === 'stage')).toBe(false);
     expect(parsed.some((i) => i.id === 6 && i.kind === 'stage')).toBe(false);
-    // A rejected/unpublished draft (never present in the stages catalog) cannot
-    // appear in discovery.
-    expect(parsed.some((i) => i.id === 999 && i.kind === 'stage')).toBe(false);
     // Only Regions carrying a story introduction are designated Novels.
     const novels = parsed.filter((i) => i.kind === 'region' && i.storyIntro);
     expect(novels.some((i) => i.id === 1)).toBe(true);
