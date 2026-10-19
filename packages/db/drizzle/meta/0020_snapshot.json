@@ -1,6 +1,6 @@
 {
-  "id": "80eb1389-5a94-43fd-a8a4-f7488c82e608",
-  "prevId": "2211d3e8-1d62-4684-8d0d-f4c3805ba47d",
+  "id": "096e2f70-8df4-403a-9b93-fea695ebd3d6",
+  "prevId": "f7937983-1dc2-4cc9-a45e-6d2884137142",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -383,153 +383,6 @@
         "coding_activities_difficulty_check": {
           "name": "coding_activities_difficulty_check",
           "value": "\"coding_activities\".\"difficulty\" is null or \"coding_activities\".\"difficulty\" in ('beginner', 'intermediate', 'advanced')"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.contributor_drafts": {
-      "name": "contributor_drafts",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "owner_id": {
-          "name": "owner_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "zone_id": {
-          "name": "zone_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "title": {
-          "name": "title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "lesson_content": {
-          "name": "lesson_content",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'[]'::jsonb"
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'draft'"
-        },
-        "revision": {
-          "name": "revision",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 1
-        },
-        "submitted_revision": {
-          "name": "submitted_revision",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "submitted_at": {
-          "name": "submitted_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "contributor_drafts_owner_id_index": {
-          "name": "contributor_drafts_owner_id_index",
-          "columns": [
-            {
-              "expression": "owner_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "contributor_drafts_zone_id_index": {
-          "name": "contributor_drafts_zone_id_index",
-          "columns": [
-            {
-              "expression": "zone_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "contributor_drafts_owner_id_users_id_fk": {
-          "name": "contributor_drafts_owner_id_users_id_fk",
-          "tableFrom": "contributor_drafts",
-          "tableTo": "users",
-          "columnsFrom": [
-            "owner_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "contributor_drafts_zone_id_zones_id_fk": {
-          "name": "contributor_drafts_zone_id_zones_id_fk",
-          "tableFrom": "contributor_drafts",
-          "tableTo": "zones",
-          "columnsFrom": [
-            "zone_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "contributor_drafts_state_check": {
-          "name": "contributor_drafts_state_check",
-          "value": "(\"contributor_drafts\".\"status\" = 'draft' and \"contributor_drafts\".\"submitted_revision\" is null and \"contributor_drafts\".\"submitted_at\" is null) or (\"contributor_drafts\".\"status\" = 'submitted' and \"contributor_drafts\".\"submitted_revision\" = \"contributor_drafts\".\"revision\" and \"contributor_drafts\".\"submitted_at\" is not null)"
         }
       },
       "isRLSEnabled": false
@@ -1904,6 +1757,12 @@
           "notNull": true,
           "default": 0
         },
+        "share_token": {
+          "name": "share_token",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -1925,6 +1784,21 @@
           "columns": [
             {
               "expression": "email",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "users_share_token_unique": {
+          "name": "users_share_token_unique",
+          "columns": [
+            {
+              "expression": "share_token",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -3163,6 +3037,153 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.contributor_drafts": {
+      "name": "contributor_drafts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "owner_id": {
+          "name": "owner_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "zone_id": {
+          "name": "zone_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lesson_content": {
+          "name": "lesson_content",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'draft'"
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "submitted_revision": {
+          "name": "submitted_revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "submitted_at": {
+          "name": "submitted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "contributor_drafts_owner_id_index": {
+          "name": "contributor_drafts_owner_id_index",
+          "columns": [
+            {
+              "expression": "owner_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "contributor_drafts_zone_id_index": {
+          "name": "contributor_drafts_zone_id_index",
+          "columns": [
+            {
+              "expression": "zone_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "contributor_drafts_owner_id_users_id_fk": {
+          "name": "contributor_drafts_owner_id_users_id_fk",
+          "tableFrom": "contributor_drafts",
+          "tableTo": "users",
+          "columnsFrom": [
+            "owner_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "contributor_drafts_zone_id_zones_id_fk": {
+          "name": "contributor_drafts_zone_id_zones_id_fk",
+          "tableFrom": "contributor_drafts",
+          "tableTo": "zones",
+          "columnsFrom": [
+            "zone_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "contributor_drafts_state_check": {
+          "name": "contributor_drafts_state_check",
+          "value": "(\"contributor_drafts\".\"status\" = 'draft' and \"contributor_drafts\".\"submitted_revision\" is null and \"contributor_drafts\".\"submitted_at\" is null) or (\"contributor_drafts\".\"status\" = 'submitted' and \"contributor_drafts\".\"submitted_revision\" = \"contributor_drafts\".\"revision\" and \"contributor_drafts\".\"submitted_at\" is not null)"
+        }
+      },
       "isRLSEnabled": false
     }
   },
