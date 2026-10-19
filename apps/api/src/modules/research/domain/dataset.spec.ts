@@ -7,6 +7,7 @@ const KEY = "k".repeat(32);
 const records: InteractionRecord[] = Array.from({ length: 200 }, (_, i) => ({
   id: `00000000-0000-0000-0000-${String(i).padStart(12, "0")}`,
   learnerId: `user_secret_${i % 40}`,
+  sessionId: i % 6 === 0 ? null : `coding:attempt-secret-${i}`,
   activityType: i % 5 === 0 ? "reading" : "coding",
   activityId: i % 7,
   occurredAt: new Date(Date.UTC(2026, 0, 1, 0, 0, i)),
@@ -48,6 +49,9 @@ describe("buildDataset", () => {
     const text = JSON.stringify(rows);
     expect(text).not.toContain("user_secret");
     expect(text).not.toContain("print(1)");
+    expect(text).not.toContain("attempt-secret");
+    expect(rows.filter((r) => r.sessionId === null)).toHaveLength(records.filter((r) => r.sessionId === null).length);
+    expect(new Set(rows.filter((r) => r.sessionId).map((r) => r.sessionId)).size).toBe(records.filter((r) => r.sessionId).length);
     expect(rows.some((r) => r.elapsedMs === null)).toBe(true);
     expect(report.missingValues.elapsedMs).toBe(rows.filter((r) => r.elapsedMs === null).length);
   });
@@ -58,5 +62,22 @@ describe("buildDataset", () => {
     const cut = buildDataset(records, { ...learnerQuery, limit: 50 }, KEY, 0);
     expect(cut.rows).toHaveLength(50);
     expect(cut.report.exclusions.truncatedByLimit).toBe(true);
+    expect(cut.report.exclusions.truncatedAfter).toBe(cut.rows[49]!.occurredAt);
+    expect(buildDataset(records, learnerQuery, KEY, 0).report.exclusions.truncatedAfter).toBeNull();
+  });
+
+  it("keeps all three time windows populated when events share timestamps", () => {
+    const tied = records.map((r, i) => ({ ...r, occurredAt: new Date(Date.UTC(2026, 0, 1, 0, 0, Math.floor(i / 5))) }));
+    const { report } = buildDataset(tied, { ...learnerQuery, strategy: "time" }, KEY, 0);
+    expect(report.chronologicallySeparated).toBe(true);
+    expect(report.counts.train.rows).toBeGreaterThan(0);
+    expect(report.counts.validation.rows).toBeGreaterThan(0);
+    expect(report.counts.test.rows).toBeGreaterThan(0);
+  });
+
+  it("ignores the seed for the identity of a time-split dataset", () => {
+    const time = { ...learnerQuery, strategy: "time" } as const;
+    expect(buildDataset(records, { ...time, seed: "other" }, KEY, 0).manifest.datasetId).toBe(buildDataset(records, time, KEY, 0).manifest.datasetId);
+    expect(buildDataset(records, { ...learnerQuery, seed: "other" }, KEY, 0).manifest.datasetId).not.toBe(buildDataset(records, learnerQuery, KEY, 0).manifest.datasetId);
   });
 });

@@ -1,6 +1,7 @@
 export interface InteractionRecord {
   id: string;
   learnerId: string;
+  sessionId: string | null;
   activityType: "quest" | "reading" | "coding" | "ctf" | "side_quest";
   activityId: number;
   occurredAt: Date;

@@ -13,7 +13,7 @@ export class DrizzleInteractionSourceRepository implements InteractionSourceRepo
     const i = learningInteractions;
     // Inner join drops orphaned learners; the marker anti-join is a second guard if a deletion ever races a cascade.
     const rows = await this.database
-      .select({ id: i.id, learnerId: i.learnerId, activityType: i.activityType, activityId: i.activityId, occurredAt: i.occurredAt, elapsedMs: i.elapsedMs, elapsedDefinition: i.elapsedDefinition, contentVersion: i.contentVersion, skills: i.skills, difficulty: i.difficulty, correctness: i.correctness, outcome: i.outcome, errors: i.errors, hints: i.hints })
+      .select({ id: i.id, learnerId: i.learnerId, sessionId: i.sessionId, activityType: i.activityType, activityId: i.activityId, occurredAt: i.occurredAt, elapsedMs: i.elapsedMs, elapsedDefinition: i.elapsedDefinition, contentVersion: i.contentVersion, skills: i.skills, difficulty: i.difficulty, correctness: i.correctness, outcome: i.outcome, errors: i.errors, hints: i.hints })
       .from(i)
       .innerJoin(users, eq(users.id, i.learnerId))
       .where(notInArray(i.learnerId, this.database.select({ id: deletedUsers.id }).from(deletedUsers)))

@@ -19,6 +19,7 @@ function project(record: InteractionRecord, key: string): Omit<DatasetRow, "spli
   return {
     eventId: pseudonym(key, "event", record.id),
     learnerId: pseudonym(key, "learner", record.learnerId),
+    sessionId: record.sessionId === null ? null : pseudonym(key, "session", record.sessionId),
     activityType: record.activityType,
     activityId: record.activityId,
     skills: record.skills,
@@ -38,13 +39,15 @@ function project(record: InteractionRecord, key: string): Omit<DatasetRow, "spli
 function assignSplits(rows: Omit<DatasetRow, "split">[], records: InteractionRecord[], query: DatasetExportQuery, key: string): DatasetSplit[] {
   if (query.strategy === "learner") return records.map((r) => bucket(unit(key, `split:${query.seed}`, r.learnerId)));
   // Time-aware: cut at event timestamps so equal timestamps can never straddle a boundary.
-  const at = (fraction: number) => rows[Math.min(rows.length - 1, Math.floor(rows.length * fraction))]?.occurredAt ?? "";
-  const trainEnd = at(TRAIN_FRACTION);
-  const validationEnd = at(TRAIN_FRACTION + VALIDATION_FRACTION);
+  const times = rows.map((r) => r.occurredAt);
+  const from = (fraction: number) => Math.min(times.length - 1, Math.floor(times.length * fraction));
+  const trainEnd = times[from(TRAIN_FRACTION)] ?? "";
+  // Skip ties with trainEnd so a run of equal timestamps cannot make the validation window empty; if none remain, validation takes the rest.
+  const validationEnd = times.slice(from(TRAIN_FRACTION + VALIDATION_FRACTION)).find((t) => t > trainEnd) ?? "\uffff";
   return rows.map((r) => (r.occurredAt < trainEnd ? "train" : r.occurredAt < validationEnd ? "validation" : "test"));
 }
 
-function report(rows: DatasetRow[], deletedLearnerRows: number, truncatedByLimit: boolean): DatasetReport {
+function report(rows: DatasetRow[], deletedLearnerRows: number, truncatedAfter: string | null): DatasetReport {
   const counts = Object.fromEntries(SPLITS.map((s) => {
     const part = rows.filter((r) => r.split === s);
     return [s, {
@@ -72,27 +75,29 @@ function report(rows: DatasetRow[], deletedLearnerRows: number, truncatedByLimit
     learnersInMultipleSplits: [...splitsByLearner.values()].filter((s) => s.size > 1).length,
     chronologicallySeparated: before(train, validation) && before(validation, test) && before(train, test),
     missingValues: Object.fromEntries((["difficulty", "elapsedMs", "assessed", "correctness", "status", "hintCount"] as const).map((f) => [f, missing(f)])),
-    exclusions: { deletedLearnerRows, truncatedByLimit },
+    exclusions: { deletedLearnerRows, truncatedByLimit: truncatedAfter !== null, truncatedAfter },
   };
 }
 
 /** Pure and deterministic: the same records, query and key always produce the same `datasetId`, rows and report. */
 export function buildDataset(source: InteractionRecord[], query: DatasetExportQuery, key: string, deletedLearnerRows: number, now = new Date()): DatasetExport {
-  const truncatedByLimit = source.length > query.limit;
+  const truncated = source.length > query.limit;
   const records = source.slice(0, query.limit);
   const projected = records.map((r) => project(r, key));
   const splits = assignSplits(projected, records, query, key);
   const rows: DatasetRow[] = projected.map((r, i) => ({ ...r, split: splits[i]! }));
+  // `seed` only drives the learner strategy, so it must not change the identity of a time-split dataset.
+  const identity = { ...query, seed: query.strategy === "learner" ? query.seed : null };
   return {
     manifest: {
       schemaVersion: 1,
-      datasetId: createHash("sha256").update(JSON.stringify([query, rows])).digest("hex").slice(0, 16),
+      datasetId: createHash("sha256").update(JSON.stringify([identity, rows])).digest("hex").slice(0, 16),
       strategy: query.strategy,
       seed: query.seed,
       limit: query.limit,
       generatedAt: now.toISOString(),
     },
-    report: report(rows, deletedLearnerRows, truncatedByLimit),
+    report: report(rows, deletedLearnerRows, truncated ? (rows[rows.length - 1]?.occurredAt ?? null) : null),
     rows,
   };
 }

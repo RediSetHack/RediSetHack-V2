@@ -15,6 +15,8 @@ export type DatasetSplit = z.infer<typeof DatasetSplitSchema>;
 export const DatasetRowSchema = z.object({
   eventId: z.string(),
   learnerId: z.string(),
+  /** Pseudonymous attempt/session identity; groups events of one attempt. `null` when the source event has none. */
+  sessionId: z.string().nullable(),
   split: DatasetSplitSchema,
   activityType: z.enum(["quest", "reading", "coding", "ctf", "side_quest"]),
   activityId: z.number().int(),
@@ -41,7 +43,7 @@ export const DatasetReportSchema = z.object({
   /** Every train event strictly precedes every validation event, which strictly precede every test event. Only guaranteed for `time`. */
   chronologicallySeparated: z.boolean(),
   missingValues: z.record(z.string(), z.number().int()),
-  exclusions: z.object({ deletedLearnerRows: z.number().int(), truncatedByLimit: z.boolean() }),
+  exclusions: z.object({ deletedLearnerRows: z.number().int(), truncatedByLimit: z.boolean(), /** Timestamp of the last included event when truncated: later events are absent (the oldest are kept). */ truncatedAfter: z.string().nullable() }),
 });
 export type DatasetReport = z.infer<typeof DatasetReportSchema>;
 
