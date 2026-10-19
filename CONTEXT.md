@@ -55,6 +55,9 @@ The learner-facing name for **Level** (same XP formula, same number). Shown with
 **Shared Profile**:
 An opt-in, revocable public view of a learner's accomplishment summary (Adventurer Rank, XP, Character, Badges, evidence counts, streaks). Off by default; see ADR 0009.
 
+**Research Dataset**:
+An admin-only export of accepted learning interactions with keyed pseudonymous ids, derived fields only, learner- or time-separated splits and a quality report. See ADR 0010.
+
 **Result**:
 The recorded responses, score, and pass outcome of a user's Quest submission.
 
