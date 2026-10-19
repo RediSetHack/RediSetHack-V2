@@ -246,6 +246,15 @@ describe('content discovery (approved catalog by interest and difficulty)', () =
     expect(res.status).toBe(401);
   });
 
+  // Publication boundary evidence: rejected/unpublished contributor drafts
+  // live in the separate `contributor_drafts` table and are never inserted
+  // into the `stages` catalog that discovery reads (DrizzleStageRepository.
+  // findAllDiscoverable joins stages->zones->regions with archived_at IS NULL).
+  // Retired content is excluded by the same archived_at filters. Learner
+  // alternate fetch paths (GET /v1/api/zones/:zoneId/stages) read the same
+  // non-archived stages table via findByZoneId, so restricted content cannot
+  // be fetched there either. The test below demonstrates the retired boundary
+  // through the actual discover route.
   it('returns only approved, non-archived content and omits restricted bodies', async () => {
     seed();
     const res = await request(app.getHttpServer()).get('/v1/api/discover').set(asLearner());
@@ -259,6 +268,9 @@ describe('content discovery (approved catalog by interest and difficulty)', () =
     // A Stage whose Region or Zone ancestor is archived never enters discovery.
     expect(parsed.some((i) => i.id === 5 && i.kind === 'stage')).toBe(false);
     expect(parsed.some((i) => i.id === 6 && i.kind === 'stage')).toBe(false);
+    // A rejected/unpublished draft (never present in the stages catalog) cannot
+    // appear in discovery.
+    expect(parsed.some((i) => i.id === 999 && i.kind === 'stage')).toBe(false);
     // Only Regions carrying a story introduction are designated Novels.
     const novels = parsed.filter((i) => i.kind === 'region' && i.storyIntro);
     expect(novels.some((i) => i.id === 1)).toBe(true);
@@ -320,6 +332,70 @@ describe('content discovery (approved catalog by interest and difficulty)', () =
     expect(titles).toContain('For loops');
     expect(titles).toContain('While loops');
     expect(titles).not.toContain('Recursion');
+  });
+
+  it('search that matches a locked stage pulls in its Region and Zone ancestors as entry points', async () => {
+    seed();
+    // Region/Zone names do not themselves contain "while", so without ancestor
+    // pull-in they would be omitted from the search results.
+    const res = await request(app.getHttpServer())
+      .get('/v1/api/discover?q=while')
+      .set(asLearner());
+    const parsed = DiscoveryResponseSchema.parse(res.body);
+    const titles = parsed.map((i) => i.title);
+    // The locked stage matches the query.
+    expect(titles).toContain('While loops');
+    // Its parent Region and Zone are included as entry points.
+    expect(titles).toContain('Foundations');
+    expect(titles).toContain('Loops');
+  });
+
+  it('breaks equal sortOrder ties by stage id when computing unlock status', async () => {
+    seed();
+    // Isolated zone/region so the tie-break stages are the only stages in
+    // their zone and unlock ordering depends solely on the id tie-breaker.
+    regions.set(99, new Region(99, 'Tie Region', 'tie-region', null, 99, null, null));
+    zones.set(99, new Zone(99, 99, 'Tie Zone', 'tie-zone', null, 99, null));
+    // Insert the higher id first to prove input order does not drive status.
+    discoverableStages.set(20, {
+      stage: new Stage(
+        20,
+        99,
+        'Tie B',
+        'tie-b',
+        [{ type: 'text', content: 'b' }],
+        10,
+        5,
+        null,
+        ['programming.control-flow'],
+        'beginner',
+      ),
+      regionId: 99,
+    });
+    discoverableStages.set(10, {
+      stage: new Stage(
+        10,
+        99,
+        'Tie A',
+        'tie-a',
+        [{ type: 'text', content: 'a' }],
+        10,
+        5,
+        null,
+        ['programming.control-flow'],
+        'beginner',
+      ),
+      regionId: 99,
+    });
+    const res = await request(app.getHttpServer())
+      .get('/v1/api/discover')
+      .set(asLearner());
+    const parsed = DiscoveryResponseSchema.parse(res.body);
+    const stages = parsed.filter((i) => i.kind === 'stage');
+    const tieA = stages.find((i) => i.id === 10);
+    const tieB = stages.find((i) => i.id === 20);
+    expect(tieA?.status).toBe('available');
+    expect(tieB?.status).toBe('locked');
   });
 
   it('bounds results to the requested limit', async () => {

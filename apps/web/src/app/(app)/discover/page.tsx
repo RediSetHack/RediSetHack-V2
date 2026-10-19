@@ -186,16 +186,13 @@ export default async function DiscoverPage({
   const zones = items.filter((i) => i.kind === "zone");
   // Only Regions carrying a story introduction are Novels; never label other
   // regions as Novel.
-  const novels = regions.filter((item) => item.storyIntro);
+  const novels = regions.filter((item) => item.storyIntro !== null);
   const hasActiveFilters =
     filters.q !== "" || filters.competency !== "" || filters.difficulty !== "";
 
-  const relevantCompetencies = COMPETENCIES.filter((competency) =>
-    stages.some(
-      (stage) =>
-        stage.competencies?.some((tagged) => tagged.id === competency.id) ?? false,
-    ),
-  );
+  // Use the complete supported competency taxonomy so interest filters are not
+  // hidden by the capped discovery result set (page limit 25).
+  const relevantCompetencies = COMPETENCIES;
 
   return (
     <div className="mx-auto w-full max-w-5xl p-6 sm:p-10 space-y-6">
@@ -254,6 +251,7 @@ export default async function DiscoverPage({
           </div>
           <div className="flex items-end gap-2">
             <button
+              type="submit"
               className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90"
             >
               Apply
@@ -308,7 +306,7 @@ export default async function DiscoverPage({
             <section className="space-y-2">
               <h2 className="text-lg font-semibold">Regions</h2>
               <ul className="mt-4 flex flex-col gap-2">
-                {regions.filter((item) => !item.storyIntro).map((item) => (
+                {regions.filter((item) => item.storyIntro === null).map((item) => (
                   <RegionCard key={item.id} item={item} />
                 ))}
               </ul>
