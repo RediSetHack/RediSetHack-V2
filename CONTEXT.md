@@ -36,6 +36,15 @@ _Avoid_: Quest when referring to an optional objective (a Quest is the multiple-
 A learner-owned, timed attempt at a Quest, persisted with a snapshot of the questions assessed (correct answers withheld while active) and a server-set deadline. It ends exactly once, submitted or expired, and starting again after that is a retake. A submission after the deadline earns no credit.
 _Avoid_: Attempt, run, active quest.
 
+**Learning Day**:
+An Asia/Manila calendar day with at least one qualifying accomplishment (completed Reading, or a passed/solved assessed activity). Logins, page views, replays, failed attempts and expired Quests never qualify. See ADR 0008.
+
+**Learning Streak**:
+Consecutive Learning Days. The current streak stays alive through a day that has not ended yet; the longest streak spans the learner's whole history.
+
+**Contribution Graph**:
+The profile's calendar of daily qualifying-accomplishment counts (reading and assessed shown separately), always with text counts and summaries alongside colour.
+
 **Result**:
 The recorded responses, score, and pass outcome of a user's Quest submission.
 

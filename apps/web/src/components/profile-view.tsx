@@ -1,6 +1,7 @@
 import { CharacterSelector } from "@/components/character-selector";
 import { COMPETENCIES } from "@repo/contracts";
-import type { CharacterOption, Profile } from "@/lib/api-client";
+import type { CharacterOption, LearningStreak, Profile } from "@/lib/api-client";
+import { LearningStreakGraph } from "@/components/learning-streak-graph";
 
 function CharacterSummary({ profile }: Readonly<{ profile: Profile }>) {
   const character = profile.character;
@@ -73,12 +74,14 @@ function BadgeList({ badges }: Readonly<{ badges: Profile["badges"] }>) {
 export function ProfileView({
   profile,
   profileError,
+  streak,
   characters,
   charactersError,
   apiUrl,
 }: Readonly<{
   profile: Profile | null;
   profileError: boolean;
+  streak: LearningStreak | null;
   characters: readonly CharacterOption[];
   charactersError: boolean;
   apiUrl: string;
@@ -94,6 +97,8 @@ export function ProfileView({
   return (
     <div className="space-y-8">
       <CharacterSummary profile={profile} />
+
+      <LearningStreakGraph streak={streak} />
 
       <section aria-labelledby="competency-heading" className="space-y-3">
         <h2 id="competency-heading" className="text-lg font-semibold">Initial competency baseline</h2>

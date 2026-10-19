@@ -11,6 +11,7 @@ import type {
   CtfChallengeSummary,
   Language,
   LeaderboardResponse,
+  LearningStreakResponse,
   LessonResponse,
   ProfileResponse,
   Quest,
@@ -48,6 +49,7 @@ import {
 
 export type CharacterOption = Character;
 export type Profile = ProfileResponse;
+export type LearningStreak = LearningStreakResponse;
 export type DailyEvent = DailyEventResponse;
 export type Leaderboard = LeaderboardResponse;
 export type Lesson = LessonResponse;
@@ -205,6 +207,15 @@ export async function getProfile(
 ): Promise<Profile> {
   const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/users/profile`;
   return fetchAuthedJson<Profile>(endpoint, token, fetchFn);
+}
+
+export async function getLearningStreak(
+  apiBaseUrl: string,
+  token: string,
+  fetchFn: typeof fetch = fetch,
+): Promise<LearningStreak> {
+  const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/users/learning-streak`;
+  return fetchAuthedJson<LearningStreak>(endpoint, token, fetchFn);
 }
 
 export async function getTodayEvent(

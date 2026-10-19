@@ -7,6 +7,7 @@ describe("GetLeaderboardUseCase", () => {
   it("ranks entries by the repository's XP order and offsets rank by page", async () => {
     const profiles: ProfileRepository = {
       findProfileByUserId: vi.fn(),
+      findDailyLearningActivity: vi.fn(),
       findLeaderboardPage: vi.fn().mockResolvedValue({
         rows: [
           { userId: "user_1", name: "Top Learner", totalXp: 900 },
