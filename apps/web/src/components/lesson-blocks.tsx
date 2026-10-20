@@ -1,13 +1,14 @@
 import { codeToHtml } from "shiki";
 import Link from "next/link";
 import type { RenderableBlock } from "@/lib/lesson-blocks";
+import { Window, Y2kButton } from "@/components/y2k";
+import { Y2kAlert } from "@/components/y2k-dialog";
 
 async function highlight(code: string, language: string): Promise<string> {
   try {
     return await codeToHtml(code, {
       lang: language,
-      themes: { light: "github-light", dark: "github-dark" },
-      defaultColor: false,
+      theme: "css-variables",
     });
   } catch {
     // Unknown language to the highlighter — fall back to a plain block
@@ -22,17 +23,38 @@ async function CodeBlockView({
 }: Readonly<{ language: string; content: string }>) {
   const html = await highlight(content, language);
   return (
-    <figure className="[&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:border [&_pre]:border-border/60 [&_pre]:p-4 [&_pre]:text-sm">
-      <figcaption className="sr-only">Code block, {language}</figcaption>
-      {/* Shiki's own output is the highlighted markup; there is no learner
-        input in this path — content comes from the admin-authored Lesson. */}
-      <div dangerouslySetInnerHTML={{ __html: html }} />
-    </figure>
+    <Window title={language || "code"} actions={null} controls={false}>
+      <div className="flex flex-col gap-2">
+        <button
+          type="button"
+          className="self-start border-2 border-border bg-title-bar px-2 py-1 font-pixel text-[8px] leading-relaxed shadow-[2px_2px_0_var(--border)]"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(content);
+            } catch {
+              // ignore
+            }
+          }}
+        >
+          COPY
+        </button>
+        <figure className="overflow-x-auto border-2 border-border bg-white [&_pre]:m-0 [&_pre]:overflow-x-auto [&_pre]:p-3 [&_pre]:text-sm">
+          <figcaption className="sr-only">Code block, {language}</figcaption>
+          {/* Shiki's own output is the highlighted markup; there is no learner
+            input in this path — content comes from the admin-authored Lesson. */}
+          <div dangerouslySetInnerHTML={{ __html: html }} />
+        </figure>
+      </div>
+    </Window>
   );
 }
 
 function TextBlockView({ content }: Readonly<{ content: string }>) {
-  return <p className="whitespace-pre-wrap leading-relaxed">{content}</p>;
+  return (
+    <Window title="TEXT">
+      <p className="whitespace-pre-wrap font-body text-sm font-bold leading-relaxed text-foreground">{content}</p>
+    </Window>
+  );
 }
 
 function ExerciseBlockView({
@@ -52,20 +74,19 @@ function ExerciseBlockView({
       : `/codelab?activity=${activityId}`;
 
   return (
-    <div className="rounded-md border border-border/60 p-4">
-      <p className="font-medium">{prompt}</p>
-      <div className="mt-3">
-        <CodeBlockView language={language} content={starterCode} />
+    <Window title="EXERCISE">
+      <div className="flex flex-col gap-3">
+        <p className="font-body text-sm font-bold text-foreground">{prompt}</p>
+        <div>
+          <CodeBlockView language={language} content={starterCode} />
+        </div>
+        <div>
+          <Link href={codelabHref}>
+            <Y2kButton>OPEN IN CODELAB</Y2kButton>
+          </Link>
+        </div>
       </div>
-      <p className="mt-3">
-        <Link
-          href={codelabHref}
-          className="text-sm font-medium text-primary underline-offset-4 hover:underline"
-        >
-          {activityId === undefined ? "Open in Codelab" : "Solve and submit for grading"}
-        </Link>
-      </p>
-    </div>
+    </Window>
   );
 }
 
@@ -75,23 +96,30 @@ function ImageBlockView({
   caption,
 }: Readonly<{ url: string; alt: string; caption?: string }>) {
   return (
-    <figure className="space-y-2">
-      <img src={url} alt={alt} className="h-auto max-w-full rounded-md" />
-      {caption ? (
-        <figcaption className="text-sm text-muted-foreground">
-          {caption}
-        </figcaption>
-      ) : null}
-    </figure>
+    <Window title="IMAGE">
+      <figure className="space-y-2">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={url} alt={alt} className="h-auto max-w-full border-2 border-border" />
+        {caption ? (
+          <figcaption className="font-body text-sm font-bold text-muted-foreground">
+            {caption}
+          </figcaption>
+        ) : null}
+      </figure>
+    </Window>
   );
 }
 
-function UnsupportedBlockView({ type }: Readonly<{ type: string }>) {
+function UnsupportedBlockView() {
   return (
-    <p className="rounded-md border border-dashed border-border/60 p-4 text-sm text-muted-foreground">
-      This Lesson includes a &ldquo;{type}&rdquo; block this version of the app
-      can&rsquo;t display yet.
-    </p>
+    <Y2kAlert
+      open={true}
+      onOpenChange={() => {}}
+      title="UNSUPPORTED"
+      icon="info"
+    >
+      This content type isn&apos;t supported yet.
+    </Y2kAlert>
   );
 }
 
@@ -128,6 +156,6 @@ export function LessonBlockView({
         />
       );
     default:
-      return <UnsupportedBlockView type={block.type} />;
+      return <UnsupportedBlockView />;
   }
 }

@@ -17,10 +17,10 @@ const profile = {
 describe("SharedProfileView", () => {
   it("shows the approved summary with Badge multiplicity", () => {
     const html = renderToStaticMarkup(<SharedProfileView profile={profile} error={false} />);
-    expect(html).toContain("Adventurer Rank");
-    expect(html).toContain("1 Novel");
-    expect(html).toContain("2 Side Quests");
-    expect(html).toContain("Pull Shark ×3");
+    expect(html).toContain("Rank");
+    expect(html).toContain("Stages completed");
+    expect(html).toContain("Quests passed");
+    expect(html).toContain("Earned ×3");
   });
 
   it("explains a revoked/unknown link and announces a load failure", () => {
@@ -32,6 +32,6 @@ describe("SharedProfileView", () => {
 describe("AccomplishmentSummary", () => {
   it("renders an accessible empty state", () => {
     const html = renderToStaticMarkup(<AccomplishmentSummary summary={{ ...profile, accomplishments: { novelsCompleted: 0, sideQuestsCompleted: 0, ctfsSolved: 0 } }} />);
-    expect(html).toContain("No completed Novels");
+    expect(html).toContain("No completed Novels, Side Quests or CTF challenges yet");
   });
 });

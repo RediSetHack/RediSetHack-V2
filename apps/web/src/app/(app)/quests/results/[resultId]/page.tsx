@@ -1,7 +1,11 @@
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Check, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { ApiError, getQuestResult } from "@/lib/api-client";
+import { StatusChip, Window, buttonClasses, EmptyState } from "@/components/y2k";
+import { ErrorAlert } from "@/components/y2k-dialog";
 
 // The parent (app)/layout.tsx already redirects unauthenticated learners to
 // /sign-in before this page renders, so no auth guard is needed here.
@@ -29,66 +33,89 @@ export default async function QuestResultPage({
       notFound();
     }
     return (
-      <div className="flex-1 mx-auto w-full max-w-2xl p-6 sm:p-10">
-        <p role="alert" className="text-sm text-destructive">
-          This Result could not be loaded. Please try again later.
-        </p>
+      <div className="mx-auto w-full max-w-2xl flex-1 p-6 sm:p-10">
+        <ErrorAlert
+          message="This Result could not be loaded. Please try again later."
+          onRetry={() => window.location.reload()}
+        />
       </div>
     );
   }
 
+  const submittedAt = new Date(review.submittedAt).toLocaleString("en-US");
+
   return (
-    <div className="flex-1 mx-auto w-full max-w-2xl space-y-6 p-6 sm:p-10">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Quest Review</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {review.passed ? "Passed" : "Not passed"} • Score: {review.score}%
-        </p>
-      </div>
-
-      <ol className="space-y-4">
-        {review.breakdown.map((item, questionIndex) => (
-          <li key={item.questionId} className="rounded-xl border border-border bg-card p-4">
-            <p className="font-medium text-foreground">
-              {questionIndex + 1}. {item.prompt}
+    <div className="mx-auto w-full max-w-2xl flex-1 space-y-4 p-6 sm:p-10">
+      <Window title={`RESULT ${review.resultId}`}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="font-pixel text-lg leading-relaxed text-foreground">Quest Review</h1>
+            <p className="mt-2 font-pixel-lg text-xl text-foreground">Score: {review.score}%</p>
+            <p className="mt-2 font-body text-sm font-bold text-muted-foreground">
+              Submitted {submittedAt}
             </p>
-            <ul className="mt-2 space-y-1">
-              {item.options.map((option) => {
-                const wasChosen = option.id === item.chosenOptionId;
-                return (
-                  <li
-                    key={option.id}
-                    className={`rounded-lg px-2 py-1 text-sm ${
-                      option.isCorrect
-                        ? "bg-green-500/10 text-green-700 dark:text-green-400"
-                        : wasChosen
-                          ? "bg-destructive/10 text-destructive"
-                          : "text-muted-foreground"
-                    }`}
-                  >
-                    {option.text}
-                    {option.isCorrect && " — Correct answer"}
-                    {wasChosen && !option.isCorrect && " — Your answer"}
-                    {wasChosen && option.isCorrect && " — Your answer"}
-                  </li>
-                );
-              })}
-            </ul>
-          </li>
-        ))}
-      </ol>
+          </div>
+          <StatusChip
+            status={review.passed ? "passed" : "not-passed"}
+            label={review.passed ? "Passed" : "Not passed"}
+          />
+        </div>
+      </Window>
 
-      <div className="flex flex-wrap gap-3">
-        <Link
-          href={`/quests/${review.questId}/session`}
-          className="rounded-lg border border-input bg-background px-2.5 py-1.5 text-sm font-medium hover:bg-muted"
-        >
+      {review.breakdown.length === 0 ? (
+        <Window title="NO QUESTIONS">
+          <EmptyState title="No questions to review." />
+        </Window>
+      ) : (
+        <ol className="space-y-4">
+          {review.breakdown.map((item, questionIndex) => (
+            <li key={item.questionId}>
+              <Window title={`QUESTION ${questionIndex + 1}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <p className="font-body text-base font-bold text-foreground">{item.prompt}</p>
+                  <StatusChip
+                    status={item.isCorrect ? "passed" : "not-passed"}
+                    label={item.isCorrect ? "Correct" : "Incorrect"}
+                  />
+                </div>
+                <ul className="mt-3 space-y-2">
+                  {item.options.map((option) => {
+                    const wasChosen = option.id === item.chosenOptionId;
+                    let optionIcon;
+                    if (option.isCorrect) optionIcon = <Check aria-hidden="true" className="size-4 shrink-0" />;
+                    else if (wasChosen) optionIcon = <X aria-hidden="true" className="size-4 shrink-0" />;
+                    else optionIcon = <span className="size-4 shrink-0" aria-hidden="true" />;
+                    return (
+                      <li
+                        key={option.id}
+                        className={cn(
+                          "flex items-center gap-2 border-2 border-border px-3 py-2 font-body text-sm font-bold shadow-[2px_2px_0_var(--border)]",
+                          option.isCorrect && "bg-[#59D98F] text-foreground",
+                          wasChosen && !option.isCorrect && "bg-btn-danger text-white",
+                          !option.isCorrect && !wasChosen && "bg-white text-muted-foreground",
+                        )}
+                      >
+                        {optionIcon}
+                        <span>{option.text}</span>
+                        <span className="ml-auto flex flex-wrap gap-1 font-pixel text-[8px] leading-relaxed uppercase">
+                          {option.isCorrect && <span>Correct answer</span>}
+                          {wasChosen && <span>Your answer</span>}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </Window>
+            </li>
+          ))}
+        </ol>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        <Link href={`/quests/${review.questId}/session`} className={buttonClasses("primary")}>
           Retake Quest
         </Link>
-        <Link
-          href="/quests"
-          className="rounded-lg px-2.5 py-1.5 text-sm font-medium hover:bg-muted"
-        >
+        <Link href="/quests" className={buttonClasses("secondary")}>
           Back to Quests
         </Link>
       </div>

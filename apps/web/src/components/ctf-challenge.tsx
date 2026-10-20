@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "@clerk/nextjs";
-import { Button } from "@/components/ui/button";
+import { Flag } from "lucide-react";
 import {
   ApiError,
   getCtfArtifact,
@@ -12,6 +12,7 @@ import {
   type CtfAttempt,
   type CtfChallenge,
 } from "@/lib/api-client";
+import { StatusChip, Window, XPChip, Y2kButton, Y2kInput } from "@/components/y2k";
 
 function verdict(result: CtfAttempt): string {
   if (!result.correct) return "Not the flag. Check the artifact and try again.";
@@ -51,32 +52,41 @@ export function CtfChallengeView({ apiUrl, challengeId }: Readonly<{ apiUrl: str
     }
   }
 
-  if (error) return <p role="alert" className="text-sm text-destructive">{error}</p>;
-  if (!challenge || !artifact) return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (error) return <p role="alert" className="font-body text-sm font-bold text-btn-danger">{error}</p>;
+  if (!challenge || !artifact) return <p className="font-body text-sm font-bold text-muted-foreground">Loading…</p>;
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold tracking-tight">{challenge.title}</h1>
-      <p className="text-sm text-muted-foreground">
-        {challenge.category} · {challenge.difficulty} · {challenge.xpReward} XP{challenge.solved ? " · Solved" : ""}
-      </p>
-      <p>{challenge.brief}</p>
-      <div className="rounded-md border border-border bg-card font-mono text-sm">
-        <div className="border-b border-border/60 px-4 py-2 text-xs font-medium text-muted-foreground">{artifact.name}</div>
-        <pre className="overflow-x-auto whitespace-pre-wrap p-4">{artifact.content}</pre>
-      </div>
-      <form onSubmit={onSubmit} className="flex gap-2">
-        <input
-          aria-label="Flag"
-          value={flag}
-          onChange={(e) => setFlag(e.target.value)}
-          maxLength={200}
-          placeholder="RSH{...}"
-          className="flex-1 rounded-md border border-border bg-background px-3 py-2 font-mono text-sm"
-        />
-        <Button type="submit" disabled={flag.trim() === ""}>Submit flag</Button>
-      </form>
-      {message && <p role="status" className="text-sm font-medium">{message}</p>}
+      <Window title={challenge.title}>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-body text-sm font-bold">{challenge.category} · {challenge.difficulty}</span>
+          <XPChip xp={challenge.xpReward} />
+          {challenge.solved && <StatusChip status="solved" />}
+        </div>
+        <p className="mt-2 font-body text-sm font-bold">{challenge.brief}</p>
+      </Window>
+
+      <Window title={artifact.name}>
+        <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-sm">{artifact.content}</pre>
+      </Window>
+
+      <Window title="Flag Submission">
+        <form onSubmit={onSubmit} className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-1 items-center gap-2">
+            <Flag aria-hidden="true" className="size-4" />
+            <Y2kInput
+              aria-label="Flag"
+              value={flag}
+              onChange={(e) => setFlag(e.target.value)}
+              maxLength={200}
+              placeholder="RSH{...}"
+              className="flex-1"
+            />
+          </div>
+          <Y2kButton type="submit" disabled={flag.trim() === ""}>SUBMIT</Y2kButton>
+        </form>
+        {message && <output className="mt-2 block font-body text-sm font-bold">{message}</output>}
+      </Window>
     </div>
   );
 }

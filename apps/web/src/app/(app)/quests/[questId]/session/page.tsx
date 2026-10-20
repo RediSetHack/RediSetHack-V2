@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { notFound } from "next/navigation";
 import { QuestSessionRunner } from "@/components/quest-session-runner";
+import { ErrorAlert } from "@/components/y2k-dialog";
 import { ApiError, startQuestSession } from "@/lib/api-client";
 
 // The parent (app)/layout.tsx already redirects unauthenticated learners to
@@ -32,18 +33,20 @@ export default async function QuestSessionPage({
       notFound();
     }
     return (
-      <div className="flex-1 mx-auto w-full max-w-2xl p-6 sm:p-10">
-        <p role="alert" className="text-sm text-destructive">
-          {error instanceof ApiError && error.status === 403
-            ? error.message
-            : "This Quest could not be started. Please try again later."}
-        </p>
+      <div className="mx-auto w-full max-w-2xl flex-1 p-6 sm:p-10">
+        <ErrorAlert
+          message={
+            error instanceof ApiError && error.status === 403
+              ? error.message
+              : "This Quest could not be started. Please try again later."
+          }
+        />
       </div>
     );
   }
 
   return (
-    <div className="flex-1 mx-auto w-full max-w-2xl p-6 sm:p-10">
+    <div className="mx-auto w-full max-w-2xl flex-1 p-6 sm:p-10">
       <QuestSessionRunner questId={questIdNumber} session={session} apiUrl={apiUrl} />
     </div>
   );

@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useAuth, useClerk } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { AlertTriangle } from "lucide-react";
 import { syncUser } from "@/lib/api-client";
+import { Y2kButton, buttonClasses } from "@/components/y2k";
 
 interface UnregisteredUserCardProps {
   readonly email: string;
@@ -42,51 +43,39 @@ export function UnregisteredUserCard({
   };
 
   return (
-    <div className="w-full max-w-lg mx-auto p-6 sm:p-8 rounded-2xl border border-border bg-card shadow-md space-y-6 text-center">
-      <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-amber-100 text-amber-900 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300 dark:border-amber-700 text-2xl mx-auto">
-        ⚠️
-      </div>
-
-      <div className="space-y-2">
-        <h2 className="text-xl font-bold tracking-tight text-foreground">
-          No Account Found
-        </h2>
-        <p className="text-sm text-destructive font-medium">
-          No account associated with this email, please sign up.
-        </p>
-        <p className="text-xs text-muted-foreground break-all">
-          Signed in as: <span className="font-semibold text-foreground">{email}</span>
-        </p>
-      </div>
-
-      {error && (
-        <div
-          role="alert"
-          className="p-3 rounded-lg text-xs bg-destructive/10 text-destructive border border-destructive/20"
-        >
-          {error}
+    <section className="w-full max-w-md border-2 border-border bg-window-body shadow-[6px_6px_0_var(--border)]">
+      <header className="y2k-scanline flex min-h-8 items-center border-b-2 border-border bg-title-bar px-2 py-1">
+        <span className="relative z-10 font-pixel text-[9px] leading-relaxed">
+          SETUP.EXE
+        </span>
+      </header>
+      <div className="flex flex-col items-center gap-4 p-4 text-center">
+        <AlertTriangle aria-hidden="true" className="size-6 text-btn-danger" />
+        <div className="flex flex-col gap-2">
+          <p className="font-pixel-lg text-lg leading-snug">
+            We&apos;re still setting up your account
+          </p>
+          <p className="font-body text-sm font-bold text-muted-foreground break-all">
+            Signed in as: {email}
+          </p>
         </div>
-      )}
-
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-        <Button
-          type="button"
-          onClick={handleCompleteSignUp}
-          disabled={isLoading}
-          className="w-full sm:w-auto px-6 font-semibold"
-        >
-          {isLoading ? "Creating Account..." : "Complete Sign Up"}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleSignOut}
-          disabled={isLoading}
-          className="w-full sm:w-auto"
-        >
-          Sign Out
-        </Button>
+        {error && (
+          <div
+            role="alert"
+            className="w-full border-2 border-border bg-btn-danger p-2 text-left text-white shadow-[2px_2px_0_var(--border)]"
+          >
+            <p className="font-body text-sm font-bold">{error}</p>
+          </div>
+        )}
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <Y2kButton variant="primary" onClick={handleCompleteSignUp} disabled={isLoading}>
+            {isLoading ? "SAVING…" : "RETRY SYNC"}
+          </Y2kButton>
+          <button type="button" onClick={handleSignOut} className={buttonClasses("ghost")} disabled={isLoading}>
+            SIGN OUT
+          </button>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }

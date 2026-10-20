@@ -1,71 +1,92 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertDialog } from "@base-ui/react/alert-dialog";
-import { Button } from "@/components/ui/button";
+import { Clock } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { formatMmSs } from "@/lib/format";
 import type { Quest } from "@/lib/api-client";
+import {
+  buttonClasses,
+  EmptyState,
+  StatusChip,
+  Window,
+  XPChip,
+  Y2kButton,
+  Y2kInput,
+} from "@/components/y2k";
+import { ConfirmDialog, ErrorAlert } from "@/components/y2k-dialog";
 
-function formatTimeLimit(seconds: number): string {
-  const minutes = Math.round(seconds / 60);
-  return minutes === 1 ? "1 minute" : `${minutes} minutes`;
-}
+type Filter = "all" | "not-taken" | "passed";
+
+const FILTERS: ReadonlyArray<{ id: Filter; label: string }> = [
+  { id: "all", label: "All" },
+  { id: "not-taken", label: "Not taken" },
+  { id: "passed", label: "Passed" },
+];
 
 function StartQuestDialog({ quest }: Readonly<{ quest: Quest }>) {
   const router = useRouter();
+  const [open, setOpen] = useState(false);
 
   return (
-    <AlertDialog.Root>
-      <AlertDialog.Trigger render={<Button size="sm" />}>
-        {quest.completed ? "Retake Quest" : "Start Quest"}
-      </AlertDialog.Trigger>
-      <AlertDialog.Portal>
-        <AlertDialog.Backdrop className="fixed inset-0 bg-black/50 dark:bg-black/70" />
-        <AlertDialog.Popup className="fixed top-1/2 left-1/2 w-[90vw] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-card p-6 text-card-foreground shadow-lg">
-          <AlertDialog.Title className="text-lg font-semibold">
-            Start &ldquo;{quest.title}&rdquo;?
-          </AlertDialog.Title>
-          <AlertDialog.Description className="mt-2 text-sm text-muted-foreground">
-            You&apos;ll have {formatTimeLimit(quest.timeLimitSeconds)} to finish once you
-            start — the timer can&apos;t be paused.
-          </AlertDialog.Description>
-          <div className="mt-6 flex justify-end gap-2">
-            <AlertDialog.Close render={<Button variant="outline" />}>Cancel</AlertDialog.Close>
-            <Button onClick={() => router.push(`/quests/${quest.id}/session`)}>
-              Start
-            </Button>
-          </div>
-        </AlertDialog.Popup>
-      </AlertDialog.Portal>
-    </AlertDialog.Root>
+    <>
+      <Y2kButton variant="primary" onClick={() => setOpen(true)}>
+        {quest.completed ? "Retake Quest" : "Start"}
+      </Y2kButton>
+      <ConfirmDialog
+        open={open}
+        onOpenChange={setOpen}
+        title={`Start ${quest.title}?`}
+        message={`You have ${formatMmSs(quest.timeLimitSeconds)}. The timer starts immediately and submits automatically at zero.`}
+        confirmLabel="Start Quest"
+        cancelLabel="Cancel"
+        onConfirm={() => router.push(`/quests/${quest.id}/session`)}
+      />
+    </>
   );
 }
 
 function QuestCard({ quest }: Readonly<{ quest: Quest }>) {
+  const bestStatus = quest.completed ? "passed" : "not-taken";
+  const bestLabel = quest.completed ? "Passed" : "Not taken";
+
   return (
-    <li className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-4">
-      <div>
-        <p className="font-semibold text-foreground">
-          {quest.title}
-          {quest.initialAssessment && <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">Initial assessment</span>}
-          {quest.completed && (
-            <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-              Completed
+    <li>
+      <Window
+        title={quest.title}
+        actions={
+          quest.initialAssessment ? (
+            <span className="border-2 border-border bg-accent px-2 py-0.5 font-body text-[11px] font-semibold tracking-wide uppercase">
+              Initial assessment
             </span>
-          )}
-        </p>
+          ) : undefined
+        }
+      >
         {quest.description && (
-          <p className="mt-1 text-sm text-muted-foreground">{quest.description}</p>
+          <p className="font-body text-sm font-bold text-muted-foreground">{quest.description}</p>
         )}
-        <p className="mt-2 text-xs text-muted-foreground">
-          {formatTimeLimit(quest.timeLimitSeconds)} • Pass at {quest.passingScore}% •{" "}
-          {quest.xpReward} XP
-        </p>
-      </div>
-      {quest.lockReason ? (
-        <p role="status" className="text-sm text-muted-foreground">{quest.lockReason}</p>
-      ) : (
-        <StartQuestDialog quest={quest} />
-      )}
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1 font-body text-[13px] font-bold text-foreground">
+            <Clock aria-hidden="true" className="size-4" />
+            {formatMmSs(quest.timeLimitSeconds)}
+          </span>
+          <span className="border-2 border-border bg-window-body px-2 py-0.5 font-body text-[11px] font-semibold tracking-wide text-foreground uppercase">
+            Pass {quest.passingScore}%
+          </span>
+          <XPChip xp={quest.xpReward} />
+          <StatusChip status={bestStatus} label={bestLabel} />
+        </div>
+        <div className="mt-4 flex items-center justify-end">
+          {quest.lockReason ? (
+            <output className="block font-body text-sm font-bold text-muted-foreground">
+              {quest.lockReason}
+            </output>
+          ) : (
+            <StartQuestDialog quest={quest} />
+          )}
+        </div>
+      </Window>
     </li>
   );
 }
@@ -77,27 +98,77 @@ export function QuestList({
   quests: Quest[] | null;
   error: boolean;
 }>) {
+  const [filter, setFilter] = useState<Filter>("all");
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(() => {
+    const list = quests ?? [];
+    const query = search.trim().toLowerCase();
+    return list.filter((quest) => {
+      if (filter === "not-taken" && quest.completed) return false;
+      if (filter === "passed" && !quest.completed) return false;
+      if (query && !quest.title.toLowerCase().includes(query)) return false;
+      return true;
+    });
+  }, [quests, filter, search]);
+
   if (error || !quests) {
     return (
-      <p role="alert" className="text-sm text-destructive">
-        Quests could not be loaded. Please try again later.
-      </p>
+      <ErrorAlert
+        message="Quests could not be loaded. Please try again later."
+        onRetry={() => window.location.reload()}
+      />
     );
   }
 
   if (quests.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
-        No Quests are available yet — check back once new ones are added.
-      </p>
+      <Window title="NO QUESTS">
+        <EmptyState title="No Quests available." />
+      </Window>
     );
   }
 
   return (
-    <ul className="space-y-3">
-      {quests.map((quest) => (
-        <QuestCard key={quest.id} quest={quest} />
-      ))}
-    </ul>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <fieldset className="flex flex-wrap gap-1 border-0 p-0">
+          <legend className="sr-only">Filter quests</legend>
+          {FILTERS.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              aria-pressed={filter === option.id}
+              onClick={() => setFilter(option.id)}
+              className={cn(
+                buttonClasses("secondary"),
+                "px-3 py-1.5",
+                filter === option.id && "bg-primary",
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
+        </fieldset>
+        <Y2kInput
+          type="search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search quests…"
+          aria-label="Search quests"
+          className="max-w-xs"
+        />
+      </div>
+
+      {filtered.length === 0 ? (
+        <EmptyState title="No Quests match your filter." />
+      ) : (
+        <ul className="space-y-4">
+          {filtered.map((quest) => (
+            <QuestCard key={quest.id} quest={quest} />
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }

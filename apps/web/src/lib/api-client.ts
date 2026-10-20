@@ -1,6 +1,8 @@
 import type {
   BadgeAward,
+  BadgeDefinition,
   Character,
+  ContributorReview,
   DailyEventResponse,
   ExecuteCodeResponse,
   CodingActivityResponse,
@@ -18,6 +20,7 @@ import type {
   LessonResponse,
   ProfileResponse,
   Quest,
+  QuestQuestionAuthoring,
   QuestResponse,
   QuestResultReviewResponse,
   QuestSessionResponse,
@@ -74,7 +77,7 @@ export type CtfChallenge = CtfChallengeResponse;
 export type CtfSummary = CtfChallengeSummary;
 export type CtfArtifact = CtfArtifactResponse;
 export type CtfAttempt = CtfAttemptResponse;
-export type { Region, Stage, Zone, Quest };
+export type { Region, Stage, Zone, Quest, Character, BadgeDefinition };
 
 export interface UpdatedUserResponse {
   id: string;
@@ -584,4 +587,121 @@ export async function updateContributorDraft(apiBaseUrl: string, token: string, 
 /** Submits one revision for review, `POST /v1/api/contributor/drafts/:id/submit`. */
 export async function submitContributorDraft(apiBaseUrl: string, token: string, id: number, revision: number, fetchFn: typeof fetch = fetch): Promise<ContributorDraftItem> {
   return ContributorDraftSchema.parse(await contributorRequest("POST", contributorEndpoint(apiBaseUrl, `/${id}/submit`), token, { revision }, fetchFn));
+}
+
+/* ── Admin content CRUD ─────────────────────────────────────────── */
+
+/** `GET /v1/api/admin/stages/:id` has no server-computed learner status. */
+export type AdminStageRecord = Omit<Stage, "status" | "lockReason">;
+/** `GET /v1/api/admin/quests/:id` answers the learner-completion fields with the authoring payload. */
+export type AdminQuestRecord = Omit<Quest, "completed" | "lockReason"> & {
+  questions: QuestQuestionAuthoring[];
+};
+export type AdminInput = Record<string, unknown>;
+
+/** Every admin content mutation/read: Bearer token required, 400 bodies with per-field `issues` or a `message` array collapse into one `ApiError`; 204 responses resolve to `undefined`. */
+async function adminRequest(method: string, endpoint: string, token: string, body?: unknown, fetchFn: typeof fetch = fetch): Promise<unknown> {
+  if (!token) {
+    throw new ApiError(401, "Authentication token is required");
+  }
+
+  const response = await fetchFn(endpoint, {
+    method,
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+
+  if (response.status === 204) return undefined;
+  if (response.ok) return response.json();
+
+  const error = await response.json().catch(() => ({}));
+  const issues: { path: string; message: string }[] = Array.isArray(error?.issues) ? error.issues : [];
+  if (issues.length > 0) {
+    throw new ApiError(response.status, issues.map((i) => (i.path ? `${i.path}: ${i.message}` : i.message)).join("; "));
+  }
+  if (Array.isArray(error?.message)) {
+    throw new ApiError(response.status, (error.message as unknown[]).map(String).join("; "));
+  }
+  throw new ApiError(response.status, typeof error?.message === "string" ? error.message : `Request failed with status ${response.status}`);
+}
+
+/** The four admin verbs shared by every content resource, `POST`/`GET`/`PATCH`/`DELETE /v1/api/admin/{resource}[/:id]`. */
+function adminCrud<T>(resource: "regions" | "zones" | "stages" | "quests" | "badges" | "characters") {
+  const endpoint = (apiBaseUrl: string, id?: number | string) => {
+    const suffix = id === undefined ? "" : "/" + id;
+    return `${apiBaseUrl.replace(/\/$/, "")}/v1/api/admin/${resource}${suffix}`;
+  };
+  return {
+    create: (apiBaseUrl: string, token: string, input: AdminInput, fetchFn: typeof fetch = fetch): Promise<T> =>
+      adminRequest("POST", endpoint(apiBaseUrl), token, input, fetchFn) as Promise<T>,
+    get: (apiBaseUrl: string, token: string, id: number | string, fetchFn: typeof fetch = fetch): Promise<T> =>
+      adminRequest("GET", endpoint(apiBaseUrl, id), token, undefined, fetchFn) as Promise<T>,
+    update: (apiBaseUrl: string, token: string, id: number | string, input: AdminInput, fetchFn: typeof fetch = fetch): Promise<T> =>
+      adminRequest("PATCH", endpoint(apiBaseUrl, id), token, input, fetchFn) as Promise<T>,
+    remove: (apiBaseUrl: string, token: string, id: number | string, fetchFn: typeof fetch = fetch): Promise<void> =>
+      adminRequest("DELETE", endpoint(apiBaseUrl, id), token, undefined, fetchFn) as Promise<void>,
+  };
+}
+
+const regionsAdmin = adminCrud<Region>("regions");
+export const { create: createAdminRegion, get: getAdminRegion, update: updateAdminRegion, remove: deleteAdminRegion } = regionsAdmin;
+
+const zonesAdmin = adminCrud<Zone>("zones");
+export const { create: createAdminZone, get: getAdminZone, update: updateAdminZone, remove: deleteAdminZone } = zonesAdmin;
+
+const stagesAdmin = adminCrud<AdminStageRecord>("stages");
+export const { create: createAdminStage, get: getAdminStage, update: updateAdminStage, remove: deleteAdminStage } = stagesAdmin;
+
+const questsAdmin = adminCrud<AdminQuestRecord>("quests");
+export const { create: createAdminQuest, get: getAdminQuest, update: updateAdminQuest, remove: deleteAdminQuest } = questsAdmin;
+
+const badgesAdmin = adminCrud<BadgeDefinition>("badges");
+export const { create: createAdminBadge, get: getAdminBadge, update: updateAdminBadge, remove: deleteAdminBadge } = badgesAdmin;
+
+const charactersAdmin = adminCrud<Character>("characters");
+export const { create: createAdminCharacter, get: getAdminCharacter, update: updateAdminCharacter, remove: deleteAdminCharacter } = charactersAdmin;
+
+/** Public Badge definition catalog, `GET /v1/api/badges` — the only listing endpoint for badge definitions. */
+export async function getBadgeDefinitions(apiBaseUrl: string, fetchFn: typeof fetch = fetch): Promise<BadgeDefinition[]> {
+  const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/v1/api/badges`;
+  return fetchPublicJson<BadgeDefinition[]>(endpoint, "Badge catalog", fetchFn);
+}
+
+/* ── Admin contributor review ───────────────────────────────────── */
+
+const reviewEndpoint = (apiBaseUrl: string, path = "") => `${apiBaseUrl.replace(/\/$/, "")}/v1/api/admin/contributor-drafts${path}`;
+
+export type ReviewQueueItem = ContributorReview;
+export type ReviewDecisionInput = { decision: "approved" | "rejected" | "revision-needed"; reason: string };
+export type ReviewDecisionRecord = {
+  id: number;
+  draftId: number;
+  revision: number;
+  title: string;
+  decision: "approved" | "rejected" | "revision-needed" | "unpublished";
+  reviewerId: string;
+  reason: string;
+  reviewedAt: string;
+  publishedStageId: number | null;
+};
+
+/** Submitted revisions awaiting moderation, `GET /v1/api/admin/contributor-drafts/queue`. */
+export async function getReviewQueue(apiBaseUrl: string, token: string, fetchFn: typeof fetch = fetch): Promise<ReviewQueueItem[]> {
+  return adminRequest("GET", reviewEndpoint(apiBaseUrl, "/queue"), token, undefined, fetchFn) as Promise<ReviewQueueItem[]>;
+}
+
+/** One submitted revision's detail: the queue carries every submitted draft's Lesson, so this is a queue lookup by id (no admin single-draft route exists). */
+export async function getReviewRevision(apiBaseUrl: string, token: string, id: number, fetchFn: typeof fetch = fetch): Promise<ReviewQueueItem | null> {
+  const queue = await getReviewQueue(apiBaseUrl, token, fetchFn);
+  return queue.find((item) => item.id === id) ?? null;
+}
+
+/** Approve / reject / request revision with a note, `POST /v1/api/admin/contributor-drafts/:draftId/review`. */
+export async function reviewRevision(apiBaseUrl: string, token: string, id: number, input: ReviewDecisionInput, fetchFn: typeof fetch = fetch): Promise<ReviewDecisionRecord> {
+  return adminRequest("POST", reviewEndpoint(apiBaseUrl, `/${id}/review`), token, input, fetchFn) as Promise<ReviewDecisionRecord>;
+}
+
+/** Unpublish a published Lesson (reason required), `POST /v1/api/admin/contributor-drafts/:draftId/unpublish`. */
+export async function unpublishRevision(apiBaseUrl: string, token: string, id: number, reason: string, fetchFn: typeof fetch = fetch): Promise<ReviewDecisionRecord> {
+  return adminRequest("POST", reviewEndpoint(apiBaseUrl, `/${id}/unpublish`), token, { reason }, fetchFn) as Promise<ReviewDecisionRecord>;
 }

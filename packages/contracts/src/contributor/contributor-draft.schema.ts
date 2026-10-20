@@ -67,7 +67,7 @@ export const ContributorDraftReviewSchema = z.object({
   title: z.string(),
   lessonContent: z.array(AuthoredLessonBlockSchema),
   decision: z.enum(["approved", "rejected", "revision-needed", "unpublished"]),
-  reviewerId: z.string(),
+  reviewerId: z.string().nullable(),
   reason: z.string(),
   reviewedAt: z.string(),
   publishedStageId: z.number().int().positive().nullable(),

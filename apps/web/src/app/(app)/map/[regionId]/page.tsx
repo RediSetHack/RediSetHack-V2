@@ -1,9 +1,10 @@
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CatalogList } from "@/components/catalog-list";
 import { findNovelResume } from "@/lib/novel-resume";
 import { getRegions, getStages, getZones, type Stage } from "@/lib/api-client";
+import { Breadcrumb, EmptyState, Progress, StatusChip, Window, Y2kButton } from "@/components/y2k";
+import { ErrorAlert } from "@/components/y2k-dialog";
 
 async function loadChapterStages(
   zones: Awaited<ReturnType<typeof getZones>>,
@@ -46,92 +47,161 @@ export default async function RegionZonesPage({
   }
   if (loadError)
     return (
-      <p role="alert" className="p-6 text-destructive">
-        Catalog could not be loaded. Please try again.
-      </p>
+      <div className="mx-auto w-full max-w-4xl p-6">
+        <Window title={<Breadcrumb items={[{ label: "MAP", href: "/map" }, { label: "Region" }]} />}>
+          <ErrorAlert message="Catalog could not be loaded. Please try again." />
+        </Window>
+      </div>
     );
   if (!region) notFound();
+
   if (!region.storyIntro) {
     if (zones.length === 0)
       return (
-        <p className="p-6 text-muted-foreground">
-          This Region has no Zones yet — check back soon.
-        </p>
+        <div className="mx-auto w-full max-w-4xl p-6">
+          <Window title={<Breadcrumb items={[{ label: "MAP", href: "/map" }, { label: region.name }]} />}>
+            <EmptyState title="No Zones in this Region." />
+          </Window>
+        </div>
       );
     return (
-      <div className="mx-auto w-full max-w-3xl p-6">
-        <h1 className="text-2xl font-bold tracking-tight">Zones</h1>
-        <CatalogList items={zones} hrefFor={(zone) => `/map/${regionIdNumber}/${zone.id}`} />
+      <div className="mx-auto w-full max-w-4xl p-6">
+        <Window title={<Breadcrumb items={[{ label: "MAP", href: "/map" }, { label: region.name }]} />}>
+          <header className="mb-4">
+            <h1 className="font-pixel text-[18px] leading-relaxed text-foreground">
+              {region.name}
+            </h1>
+            {region.description && (
+              <p className="mt-2 font-body text-sm font-bold text-muted-foreground">
+                {region.description}
+              </p>
+            )}
+          </header>
+          <ul className="flex flex-col gap-3">
+            {zones.map((zone) => {
+              // We don't have per-zone completion counts here from this page's data in current shape;
+              // keep structure but show progress placeholder if not available
+              return (
+                <li key={zone.id}>
+                  <article className="border-2 border-border bg-window-body shadow-[4px_4px_0_var(--border)]">
+                    <header className="flex items-center justify-between gap-2 border-b-2 border-border bg-title-bar px-3 py-1">
+                      <span className="font-pixel text-[9px] leading-relaxed text-foreground">
+                        {zone.name}
+                      </span>
+                    </header>
+                    <div className="flex flex-col gap-3 p-3">
+                      {zone.description && (
+                        <p className="font-body text-sm font-bold text-foreground">
+                          {zone.description}
+                        </p>
+                      )}
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex-1">
+                          <Progress value={0} max={100} label="Zone progress" />
+                        </div>
+                        <Link href={`/map/${regionIdNumber}/${zone.id}`}>
+                          <Y2kButton>ENTER</Y2kButton>
+                        </Link>
+                      </div>
+                    </div>
+                  </article>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="mt-4">
+            <Link href="/map">
+              <Y2kButton variant="ghost">BACK TO MAP</Y2kButton>
+            </Link>
+          </div>
+        </Window>
       </div>
     );
   }
+
   const resume = findNovelResume(chapterStages);
 
   return (
-    <div className="mx-auto w-full max-w-3xl p-6">
-      <h1 className="text-2xl font-bold tracking-tight">
-        {region.storyIntro ? `Novel: ${region.name}` : region.name}
-      </h1>
-      {region.storyIntro && (
-        <p className="mt-3 text-muted-foreground">{region.storyIntro}</p>
-      )}
-      {resume && (
-        <Link
-          className="mt-4 inline-block rounded-md bg-primary px-4 py-2 text-primary-foreground"
-          href={`/map/${regionIdNumber}/${resume.zone.id}/${resume.stage.id}`}
-        >
-          Resume: {resume.zone.name} — {resume.stage.title}
-        </Link>
-      )}
-      <h2 className="mt-8 text-lg font-semibold">
-        {region.storyIntro ? "Chapters" : "Zones"}
-      </h2>
-      {chapterStages.length === 0 ? (
-        <p className="mt-4 text-muted-foreground">
-          This Region has no Zones yet — check back soon.
-        </p>
-      ) : (
-        <ol className="mt-4 flex flex-col gap-3">
-          {chapterStages.map(({ zone, stages }) => {
-            const completed =
-              stages.length > 0 &&
-              stages.every(({ status }) => status === "completed");
-            const chapterResume: Stage | undefined = stages.find(
-              ({ status }) => status === "available",
-            );
-            return (
-              <li
-                className="rounded-md border border-border/60 p-4"
-                key={zone.id}
-              >
-                <h3 className="font-medium">
-                  {region.storyIntro
-                    ? `Chapter ${zone.sortOrder}: ${zone.name}`
-                    : zone.name}
-                </h3>
-                {zone.description && (
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {zone.description}
-                  </p>
-                )}
-                <p className="mt-2 text-sm" aria-live="polite">
-                  {completed
-                    ? "Completed"
-                    : chapterResume
-                      ? `Current encounter: ${chapterResume.title}`
-                      : "Not started"}
-                </p>
-                <Link
-                  className="mt-2 inline-block text-sm text-primary underline"
-                  href={`/map/${regionIdNumber}/${zone.id}`}
-                >
-                  Open {region.storyIntro ? "chapter" : "Zone"}
-                </Link>
-              </li>
-            );
-          })}
-        </ol>
-      )}
+    <div className="mx-auto w-full max-w-4xl p-6">
+      <Window title={<Breadcrumb items={[{ label: "MAP", href: "/map" }, { label: region.name }]} />}>
+        <header className="mb-4">
+          <h1 className="font-pixel text-[18px] leading-relaxed text-foreground">
+            {region.name}
+          </h1>
+          {region.storyIntro && (
+            <p className="mt-2 font-body text-sm font-bold text-foreground">
+              {region.storyIntro}
+            </p>
+          )}
+        </header>
+        {resume && (
+          <div className="mb-4">
+            <Link href={`/map/${regionIdNumber}/${resume.zone.id}/${resume.stage.id}`}>
+              <Y2kButton>RESUME: {resume.zone.name} — {resume.stage.title}</Y2kButton>
+            </Link>
+          </div>
+        )}
+        <section>
+          <h2 className="mb-3 font-pixel text-[12px] leading-relaxed text-foreground">
+            Chapters
+          </h2>
+          {chapterStages.length === 0 ? (
+            <EmptyState title="No Zones in this Region." />
+          ) : (
+            <ol className="flex flex-col gap-3">
+              {chapterStages.map(({ zone, stages }) => {
+                const completed =
+                  stages.length > 0 &&
+                  stages.every(({ status }) => status === "completed");
+                const chapterResume: Stage | undefined = stages.find(
+                  ({ status }) => status === "available",
+                );
+                const total = stages.length;
+                const done = stages.filter(({ status }) => status === "completed").length;
+                let chapterChip;
+                if (completed) chapterChip = <StatusChip status="completed" />;
+                else if (chapterResume) chapterChip = <StatusChip status="unlocked" label="Current" />;
+                else chapterChip = <StatusChip status="locked" label="Not started" />;
+                return (
+                  <li key={zone.id}>
+                    <article className="border-2 border-border bg-window-body shadow-[4px_4px_0_var(--border)]">
+                      <header className="flex items-center justify-between gap-2 border-b-2 border-border bg-title-bar px-3 py-1">
+                        <span className="font-pixel text-[9px] leading-relaxed text-foreground">
+                          Chapter {zone.sortOrder}: {zone.name}
+                        </span>
+                        {chapterChip}
+                      </header>
+                      <div className="flex flex-col gap-3 p-3">
+                        {zone.description && (
+                          <p className="font-body text-sm font-bold text-foreground">
+                            {zone.description}
+                          </p>
+                        )}
+                        {total > 0 && (
+                          <div className="flex items-center gap-2">
+                            <Progress value={done} max={total} label="Chapter progress" className="flex-1" />
+                            <span className="font-pixel text-[8px] leading-relaxed">
+                              {done} / {total}
+                            </span>
+                          </div>
+                        )}
+                        <Link href={`/map/${regionIdNumber}/${zone.id}`}>
+                          <Y2kButton>OPEN CHAPTER</Y2kButton>
+                        </Link>
+                      </div>
+                    </article>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+        </section>
+        <div className="mt-4">
+          <Link href="/map">
+            <Y2kButton variant="ghost">BACK TO MAP</Y2kButton>
+          </Link>
+        </div>
+      </Window>
     </div>
   );
 }

@@ -1,21 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import { X } from "lucide-react";
 import type { DailyEvent } from "@/lib/api-client";
+import { Sparkle, StatusChip, Window } from "@/components/y2k";
 
-function EventBadge({ event }: Readonly<{ event: DailyEvent }>) {
-  const isBonus = event.eventType === "bonus";
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
-        isBonus
-          ? "bg-amber-100 text-amber-900 dark:bg-amber-950/80 dark:text-amber-300"
-          : "bg-muted text-muted-foreground"
-      }`}
-    >
-      {isBonus ? `🔥 Bonus day ×${event.xpMultiplier} XP` : "Normal day"}
-    </span>
-  );
+function dismissalKey(): string {
+  return `rsh-event-dismissed-${new Date().toISOString().slice(0, 10)}`;
+}
+
+function isDismissedToday(): boolean {
+  try {
+    return window.localStorage.getItem(dismissalKey()) === "1";
+  } catch {
+    return false;
+  }
 }
 
 export function EventBanner({
@@ -25,44 +24,51 @@ export function EventBanner({
   event: DailyEvent | null;
   error: boolean;
 }>) {
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, setDismissed] = useState(isDismissedToday);
 
-  if (error) {
-    return (
-      <p role="alert" className="text-xs text-destructive">
-        Today&apos;s event could not be loaded.
-      </p>
-    );
-  }
-
-  if (!event) {
+  if (error || !event || dismissed) {
     return null;
   }
 
+  const isBonus = event.eventType === "bonus";
+
   return (
-    <div className="flex items-center gap-2">
-      <EventBadge event={event} />
-      {!dismissed && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 text-xs"
+    <Window
+      title="TODAY'S EVENT"
+      bodyClassName="px-3 py-2"
+      actions={
+        <button
+          type="button"
+          aria-label="Dismiss today's event announcement"
+          onClick={() => {
+            setDismissed(true);
+            try {
+              window.localStorage.setItem(dismissalKey(), "1");
+            } catch {
+              /* storage unavailable — dismissal stays in-memory */
+            }
+          }}
+          className="relative z-10"
         >
-          <span>
-            {event.eventType === "bonus"
-              ? `Today's Event: ×${event.xpMultiplier} XP — make it count!`
-              : "Today's Event: a Normal day, no XP bonus."}
+          <X aria-hidden="true" className="size-4" />
+        </button>
+      }
+    >
+      <div role="status" aria-live="polite" className="flex flex-wrap items-center gap-2">
+        {isBonus ? (
+          <span className="inline-flex items-center gap-1 border-2 border-border bg-sparkle px-2 py-0.5 font-pixel text-[8px] leading-relaxed text-white">
+            <Sparkle size={12} />
+            BONUS DAY ×{event.xpMultiplier} XP
           </span>
-          <button
-            type="button"
-            onClick={() => setDismissed(true)}
-            aria-label="Dismiss today's event announcement"
-            className="text-muted-foreground hover:text-foreground"
-          >
-            ✕
-          </button>
-        </div>
-      )}
-    </div>
+        ) : (
+          <StatusChip status="normal" label="NORMAL DAY" />
+        )}
+        <p className="font-body text-sm font-bold text-foreground">
+          {isBonus
+            ? `Today's Event: ×${event.xpMultiplier} XP — make it count!`
+            : "Today's Event: a Normal day, no XP bonus."}
+        </p>
+      </div>
+    </Window>
   );
 }

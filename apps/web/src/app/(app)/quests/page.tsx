@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { QuestList } from "@/components/quest-list";
+import { Sparkle, Window } from "@/components/y2k";
 import { getQuests, type Quest } from "@/lib/api-client";
 
 // The parent (app)/layout.tsx already redirects unauthenticated learners to
@@ -18,8 +19,18 @@ export default async function QuestsPage() {
   }
 
   return (
-    <div className="flex-1 mx-auto w-full max-w-4xl p-6 sm:p-10 space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight">Quests</h1>
+    <div className="mx-auto w-full max-w-4xl flex-1 space-y-6 p-6 sm:p-10">
+      <Window title="QUESTS.EXE">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <h1 className="font-pixel text-xl leading-relaxed text-foreground">Quests</h1>
+            <p className="mt-2 font-body text-sm font-bold text-muted-foreground">
+              Timed quizzes. Pass to earn XP — first pass only.
+            </p>
+          </div>
+          <Sparkle size={20} />
+        </div>
+      </Window>
       <QuestList quests={quests} error={error} />
     </div>
   );

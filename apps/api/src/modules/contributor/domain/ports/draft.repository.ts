@@ -3,7 +3,7 @@ import type { ReviewDecisionInput } from "@repo/contracts";
 
 export type DraftReviewRecord = {
   id: number; draftId: number; revision: number; title: string; lessonContent: AuthoredLessonBlock[];
-  decision: ReviewDecisionInput["decision"] | "unpublished"; reviewerId: string; reason: string; reviewedAt: Date; publishedStageId: number | null;
+  decision: ReviewDecisionInput["decision"] | "unpublished"; reviewerId: string | null; reason: string; reviewedAt: Date; publishedStageId: number | null;
 };
 
 export type DraftRecord = {
