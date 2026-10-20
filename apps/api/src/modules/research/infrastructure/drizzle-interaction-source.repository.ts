@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { asc, count, eq, inArray, notInArray, sql } from "drizzle-orm";
+import { asc, count, eq, inArray, notInArray } from "drizzle-orm";
 import { type Database, deletedUsers, learningInteractions, users } from "@repo/db";
 
 import { DB } from "../../../database/database.module.js";

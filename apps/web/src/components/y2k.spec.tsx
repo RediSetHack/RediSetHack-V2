@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import { Window, StatusChip, XPChip, SegmentedTracker, Progress, EmptyState, BadgeTile } from "@/components/y2k";
+import { Y2kButton, Window, StatusChip, XPChip, SegmentedTracker, Progress, EmptyState, BadgeTile } from "@/components/y2k";
 
 describe("Window", () => {
   it("renders the title and three control squares", () => {
@@ -65,5 +65,13 @@ describe("BadgeTile", () => {
     const markup = renderToStaticMarkup(<BadgeTile name="Quest Master" earnedCount={3} />);
     expect(markup).toContain("Quest Master");
     expect(markup).toContain("Earned ×3");
+  });
+});
+
+
+describe("Y2kButton", () => {
+  it("keeps builder actions from submitting surrounding forms", () => {
+    expect(renderToStaticMarkup(<Y2kButton>PREVIEW</Y2kButton>)).toContain('type="button"');
+    expect(renderToStaticMarkup(<Y2kButton type="submit">SAVE</Y2kButton>)).toContain('type="submit"');
   });
 });

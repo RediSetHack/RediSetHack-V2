@@ -320,7 +320,7 @@ export const contributorDraftReviews = pgTable(
     title: text("title").notNull(),
     lessonContent: jsonb("lesson_content").notNull(),
     decision: text("decision").notNull(),
-    reviewerId: text("reviewer_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+    reviewerId: text("reviewer_id").references(() => users.id, { onDelete: "set null" }),
     reason: text("reason").notNull(),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }).notNull().defaultNow(),
     publishedStageId: integer("published_stage_id").references(() => stages.id, { onDelete: "set null" }),

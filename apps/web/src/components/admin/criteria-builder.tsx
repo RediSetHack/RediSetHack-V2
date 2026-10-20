@@ -1,5 +1,6 @@
 "use client";
 
+import type { BadgeCriteria } from "@repo/contracts";
 import { useState } from "react";
 import { ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -136,4 +137,12 @@ export function CriteriaBuilder({
       </div>
     </div>
   );
+}
+
+/** Preserve saved criteria when opening the edit form. */
+export function toCriteriaValue(criteria?: BadgeCriteria): CriteriaValue {
+  if (!criteria) return { trigger: "cumulative", target: "stage_completions", threshold: 5, zoneId: 0 };
+  return criteria.trigger === "category"
+    ? { ...criteria, threshold: 1 }
+    : { ...criteria, zoneId: 0 };
 }

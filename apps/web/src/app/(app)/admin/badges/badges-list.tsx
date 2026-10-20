@@ -71,7 +71,6 @@ export function BadgesList() {
       error={error}
       deleteItem={deleteAdminBadge}
       deleteName={(row) => row.name}
-      cascadeWarning="Badges already earned by learners are removed."
       onDeleted={() => setVersion((value) => value + 1)}
     />
   );

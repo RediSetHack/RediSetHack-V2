@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LessonBlockView } from "@/components/lesson-blocks";
 import { StageCompletion } from "@/components/stage-completion";
-import { ApiError, getLesson, getRegions, getZones, type Lesson } from "@/lib/api-client";
+import { ApiError, getLesson, getRegions, getZones, getStages, type Lesson } from "@/lib/api-client";
 import { normalizeLessonBlocks } from "@/lib/lesson-blocks";
 import { Breadcrumb, StatusChip, Window, XPChip, Y2kButton } from "@/components/y2k";
 import { Y2kAlert } from "@/components/y2k-dialog";
@@ -78,6 +78,9 @@ export default async function StagePage({
   }
 
   const blocks = normalizeLessonBlocks(lesson.blocks);
+  const stages = await getStages(apiUrl, token ?? "", zoneIdNumber).catch(() => []);
+  const stageIndex = stages.findIndex((stage) => stage.id === stageIdNumber);
+  const nextStage = stageIndex < 0 ? undefined : stages[stageIndex + 1];
 
   return (
     <div className="mx-auto w-full max-w-4xl p-6">
@@ -109,6 +112,7 @@ export default async function StagePage({
         </div>
         <StageCompletion
           stageId={stageIdNumber}
+          nextStagePath={nextStage ? `/map/${regionIdNumber}/${zoneIdNumber}/${nextStage.id}` : undefined}
           apiUrl={apiUrl}
           completed={lesson.status === "completed"}
           zonePath={`/map/${regionIdNumber}/${zoneIdNumber}`}

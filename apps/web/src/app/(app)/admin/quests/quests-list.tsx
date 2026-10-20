@@ -98,7 +98,6 @@ export function QuestsList() {
       error={error}
       deleteItem={deleteAdminQuest}
       deleteName={(row) => row.title}
-      cascadeWarning="Existing learner Results for this Quest are deleted too."
       onDeleted={() => setVersion((value) => value + 1)}
     />
   );

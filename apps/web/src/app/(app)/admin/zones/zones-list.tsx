@@ -48,7 +48,6 @@ export function ZonesList() {
       error={catalog.error}
       deleteItem={deleteAdminZone}
       deleteName={(row) => row.name}
-      cascadeWarning="Deleting a Zone cascades to its Stages and Quests."
       onDeleted={catalog.reload}
     />
   );

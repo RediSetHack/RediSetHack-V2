@@ -46,7 +46,6 @@ export function RegionForm({ mode, id }: Readonly<{ mode: "create" | "edit"; id?
         hub="/admin/regions"
         deleteItem={deleteAdminRegion}
         itemName={initial.name || "this Region"}
-        cascadeWarning="Deleting a Region also deletes its Zones, Stages and Quests."
         renderFields={regionFields}
       />
     </FormShell>

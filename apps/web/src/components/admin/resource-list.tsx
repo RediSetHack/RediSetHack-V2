@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { useToast, ConfirmDialog } from "@/components/y2k-dialog";
 import { EmptyState, Table, Td, Th, Window, buttonClasses } from "@/components/y2k";
 import { API_URL, useToken } from "@/components/admin/use-catalog";
-import { ApiError, type AdminInput } from "@/lib/api-client";
+import { ApiError } from "@/lib/api-client";
 
 /** One column: `sortValue`/`render` receive the row; `value` also feeds search and sort. */
 export type ListColumn<T> = Readonly<{
@@ -330,4 +330,4 @@ export function ResourceList<T extends { id: number }>({
   );
 }
 
-export type { AdminInput };
+export type { AdminInput } from "@/lib/api-client";

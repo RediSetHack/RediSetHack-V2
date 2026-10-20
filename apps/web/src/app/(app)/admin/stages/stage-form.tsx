@@ -57,7 +57,6 @@ export function StageForm({ mode, id }: Readonly<{ mode: "create" | "edit"; id?:
         hub="/admin/stages"
         deleteItem={deleteAdminStage}
         itemName={initial.title || "this Stage"}
-        cascadeWarning="Deleting a Stage cascades to its Quests; learner progress rows are removed."
         renderFields={makeStageFields(zoneOptions, (blocks, onChange) => <LessonBuilder blocks={blocks} onChange={onChange} />)}
       />
     </FormShell>

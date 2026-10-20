@@ -12,7 +12,7 @@ export const QUESTION_MIN_OPTIONS = 2;
 export const QUESTION_MAX_OPTIONS = 6;
 
 export function optionLetter(index: number): string {
-  return String.fromCharCode(65 + index);
+  return String.fromCodePoint(65 + index);
 }
 
 function QuestionCard({

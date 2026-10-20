@@ -5,13 +5,14 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
 import { ApiError, markStageComplete, type StageCompletion } from "@/lib/api-client";
-import { Y2kButton } from "@/components/y2k";
+import { Y2kButton, buttonClasses } from "@/components/y2k";
 import { Y2kDialog } from "@/components/y2k-dialog";
 
 interface StageCompletionProps {
   readonly stageId: number;
   readonly apiUrl: string;
   readonly completed: boolean;
+  readonly nextStagePath?: string;
   /** Route to the Zone's Stage list, where the successor's newly-unlocked status is visible. */
   readonly zonePath: string;
 }
@@ -20,6 +21,7 @@ export function StageCompletion({
   stageId,
   apiUrl,
   completed,
+  nextStagePath,
   zonePath,
 }: StageCompletionProps) {
   const { getToken } = useAuth();
@@ -87,10 +89,10 @@ export function StageCompletion({
         title="STAGE COMPLETE!"
         actions={
           <>
-            <Link href={zonePath}>
-              <Y2kButton variant="secondary">BACK TO ZONE</Y2kButton>
-            </Link>
-            <Y2kButton variant="primary">NEXT STAGE</Y2kButton>
+            <Link href={zonePath} className={buttonClasses("secondary")}>BACK TO ZONE</Link>
+            {nextStagePath && (
+              <Link href={nextStagePath} className={buttonClasses("primary")}>NEXT STAGE</Link>
+            )}
           </>
         }
       >
@@ -114,7 +116,7 @@ export function StageCompletion({
                 </span>
               )}
               <span className="font-body text-sm text-muted-foreground">
-                The next Stage in this Zone is now available.
+                {nextStagePath ? "The next Stage in this Zone is now available." : "Zone cleared — all Stages completed!"}
               </span>
             </>
           )}

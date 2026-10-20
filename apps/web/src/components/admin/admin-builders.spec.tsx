@@ -1,5 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { toCriteria, toCriteriaValue } from "./criteria-builder";
+import type { BadgeCriteria } from "@repo/contracts";
 import { QuestionBuilder } from "./question-builder";
 import { toDraftBlocks, toLessonPayload, LessonBuilder } from "./lesson-builder";
 import { newQuestion, type AdminQuestion } from "@/lib/admin-helpers";
@@ -55,5 +57,16 @@ describe("LessonBuilder", () => {
       { type: "text", content: "hi" },
       { type: "image", url: "u", alt: "a" },
     ]);
+  });
+});
+
+
+describe("Badge criteria editing", () => {
+  it.each<BadgeCriteria>([
+    { trigger: "cumulative", target: "stage_completions", threshold: 20 },
+    { trigger: "activity", target: "quest_passes", threshold: 7 },
+    { trigger: "category", target: "zone_completion", zoneId: 42 },
+  ])("preserves saved $trigger criteria", (criteria) => {
+    expect(toCriteria(toCriteriaValue(criteria))).toEqual(criteria);
   });
 });

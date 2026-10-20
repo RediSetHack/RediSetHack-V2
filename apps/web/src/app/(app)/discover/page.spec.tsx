@@ -45,10 +45,17 @@ describe("discover page", () => {
       },
     ]);
 
-    const markup = renderToStaticMarkup(await DiscoverPage({ searchParams: {} }));
+    const markup = renderToStaticMarkup(await DiscoverPage({ searchParams: Promise.resolve({}) }));
     for (const competency of COMPETENCIES) {
       expect(markup).toContain(`value="${competency.id}"`);
     }
+  });
+
+  it("forwards filters from asynchronous Next search parameters", async () => {
+    await DiscoverPage({ searchParams: Promise.resolve({ q: "python", competency: "programming.control-flow", difficulty: "beginner" }) });
+    expect(mockGetDiscover).toHaveBeenCalledWith(expect.any(String), "token", expect.objectContaining({
+      q: "python", competency: "programming.control-flow", difficulty: "beginner",
+    }));
   });
 
   it("designates a Region as a Novel only when storyIntro is non-null", async () => {
@@ -73,7 +80,7 @@ describe("discover page", () => {
       },
     ]);
 
-    const markup = renderToStaticMarkup(await DiscoverPage({ searchParams: {} }));
+    const markup = renderToStaticMarkup(await DiscoverPage({ searchParams: Promise.resolve({}) }));
     // Novel section contains the story-intro region.
     expect(markup).toContain("Novel");
     // Plain region (null storyIntro) is listed under Regions, not Novels.

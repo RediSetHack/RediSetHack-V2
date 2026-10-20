@@ -51,7 +51,7 @@ export function slugError(value: string): string | null {
 
 /* ── Question set validation ───────────────────────────────────── */
 
-const optionLetter = (index: number) => String.fromCharCode(65 + index);
+const optionLetter = (index: number) => String.fromCodePoint(65 + index);
 
 /**
  * Blocks a Quest save until every rule the API enforces holds:
@@ -133,12 +133,12 @@ export function parseFieldIssues(message: string): FieldIssues {
   const leftovers: string[] = [];
 
   for (const segment of message.split(";").map((part) => part.trim()).filter(Boolean)) {
-    const pathMatch = segment.match(/^([\w.[\]]+):\s*(.+)$/);
+    const pathMatch = /^([\w.[\]]+):\s*(\S.*)$/.exec(segment);
     if (pathMatch) {
       fields[pathMatch[1]!] = pathMatch[2]!;
       continue;
     }
-    const propertyMatch = segment.match(/^(\w+)\s+(?:must|should|cannot|has|is|does)\b/);
+    const propertyMatch = /^(\w+)\s+(?:must|should|cannot|has|is|does)\b/.exec(segment);
     if (propertyMatch) {
       fields[propertyMatch[1]!] = segment;
       continue;
@@ -175,4 +175,9 @@ export function buildLessonPayload(blocks: readonly LessonBlock[]): LessonBlock[
         return block;
     }
   });
+}
+
+/** Text controls accept scalar values, never an object’s default stringification. */
+export function fieldText(value: unknown, fallback = ""): string {
+  return typeof value === "string" || typeof value === "number" ? String(value) : fallback;
 }

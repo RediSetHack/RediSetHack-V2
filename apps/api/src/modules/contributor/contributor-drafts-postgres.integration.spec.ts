@@ -4,17 +4,19 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { contributorDrafts, contributorDraftReviews, createDb, readingSessions, regions, stages, users, zones, type Database } from '@repo/db';
+import { contributorDrafts, contributorDraftReviews, createDb, deletedUsers, readingSessions, regions, stages, users, zones, type Database } from '@repo/db';
 import { ContributorDraftListResponseSchema, ContributorDraftReviewListSchema, ContributorDraftSchema, ContributorReviewQueueSchema, DiscoveryResponseSchema } from '@repo/contracts';
 import { AppModule } from '../../app.module.js';
 import { ClerkAuthPort } from '../auth/domain/ports/clerk-auth.port.js';
+import { DrizzleUserRepository } from '../auth/infrastructure/drizzle-user.repository.js';
 
 const databaseUrl = process.env.DATABASE_URL;
 
 describe.skipIf(!databaseUrl)('Contributor drafts through HTTP with PostgreSQL', () => {
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const [owner, other, learner, reviewer] = ['o', 'p', 'l', 'r'].map((n) => `cd-${n}-${suffix}`) as [string, string, string, string];
-  const roles: Record<string, 'contributor' | 'user' | 'admin'> = { [owner]: 'contributor', [other]: 'contributor', [learner]: 'user', [reviewer]: 'admin' };
+  const deletedReviewer = `cd-deleted-reviewer-${suffix}`;
+  const roles: Record<string, 'contributor' | 'user' | 'admin'> = { [owner]: 'contributor', [other]: 'contributor', [learner]: 'user', [reviewer]: 'admin', [deletedReviewer]: 'admin' };
   let app: INestApplication;
   let database: Database;
   let regionId: number;
@@ -50,7 +52,10 @@ describe.skipIf(!databaseUrl)('Contributor drafts through HTTP with PostgreSQL',
     await app?.close();
     if (database) {
       await database.delete(regions).where(eq(regions.id, regionId)); // cascades zones and drafts
-      for (const id of Object.keys(roles)) await database.delete(users).where(eq(users.id, id));
+      for (const id of Object.keys(roles)) {
+        await database.delete(users).where(eq(users.id, id));
+        await database.delete(deletedUsers).where(eq(deletedUsers.id, id));
+      }
       await (database as unknown as { $client: { end(): Promise<void> } }).$client.end();
     }
   });
@@ -159,6 +164,24 @@ describe.skipIf(!databaseUrl)('Contributor drafts through HTTP with PostgreSQL',
     await http().post(`/v1/api/admin/contributor-drafts/${draft.id}/review`).set(as(reviewer)).send({ decision: 'approved', reason: '' }).expect(400);
     expect(await database.select().from(contributorDraftReviews).where(eq(contributorDraftReviews.draftId, draft.id))).toHaveLength(3);
     expect(await database.select().from(stages).where(eq(stages.id, approved.body.publishedStageId))).toHaveLength(1);
+  });
+
+  it("deletes a reviewer while preserving the other contributor's moderation history", async () => {
+    const draft = await create({ title: 'Retained moderation snapshot' });
+    await http().post(api(`/${draft.id}/submit`)).set(as(owner)).send({ revision: 1 }).expect(201);
+    const reviewed = await http().post(`/v1/api/admin/contributor-drafts/${draft.id}/review`)
+      .set(as(deletedReviewer)).send({ decision: 'rejected', reason: 'Outside the curriculum.' }).expect(201);
+
+    const accounts = new DrizzleUserRepository(database);
+    await accounts.deleteUser(deletedReviewer);
+    await accounts.deleteUser(deletedReviewer);
+
+    expect(await database.select().from(users).where(eq(users.id, deletedReviewer))).toEqual([]);
+    expect(await database.select().from(deletedUsers).where(eq(deletedUsers.id, deletedReviewer))).toEqual([{ id: deletedReviewer }]);
+    expect(await database.select().from(contributorDrafts).where(eq(contributorDrafts.id, draft.id))).toHaveLength(1);
+    const history = await http().get(api(`/${draft.id}/reviews`)).set(as(owner)).expect(200);
+    expect(ContributorDraftReviewListSchema.parse(history.body)).toEqual([{ ...reviewed.body, reviewerId: null }]);
+    await http().get('/v1/api/admin/contributor-drafts/queue').set(as(deletedReviewer)).expect(401);
   });
 
   it('allows moderators to reject submissions without publishing them', async () => {

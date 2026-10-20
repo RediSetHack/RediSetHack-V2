@@ -9,7 +9,7 @@ import { ConfirmDialog, SaveButton, useToast } from "@/components/y2k-dialog";
 import { FormActions, FormErrorAlert } from "@/components/admin/form-controls";
 import { API_URL, useToken } from "@/components/admin/use-catalog";
 import { ApiError, type AdminInput } from "@/lib/api-client";
-import { parseFieldIssues } from "@/lib/admin-helpers";
+import { fieldText, parseFieldIssues } from "@/lib/admin-helpers";
 import { useState } from "react";
 
 const DELETE_COPY =
@@ -70,7 +70,7 @@ export function ResourceForm({
     for (const key of requiredKeys) {
       const value = values[key];
       // `0` is never a valid id, so a required select left on its placeholder fails.
-      if (value === 0 || String(value ?? "").trim().length === 0) localErrors[key] = "This field is required.";
+      if (value === 0 || fieldText(value).trim().length === 0) localErrors[key] = "This field is required.";
     }
     if (Object.keys(localErrors).length > 0) {
       setFieldErrors(localErrors);
@@ -128,7 +128,7 @@ export function ResourceForm({
         <Link href={hub} className={buttonClasses("secondary")}>
           CANCEL
         </Link>
-        <SaveButton busy={busy}>{mode === "create" ? `CREATE ${resource.toUpperCase()}` : "SAVE"}</SaveButton>
+        <SaveButton type="submit" busy={busy}>{mode === "create" ? `CREATE ${resource.toUpperCase()}` : "SAVE"}</SaveButton>
       </FormActions>
 
       {mode === "edit" && deleteItem && (

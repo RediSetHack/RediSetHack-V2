@@ -3,6 +3,7 @@ import type { BadgeCriteria } from "@repo/contracts";
 
 import {
   buildLessonPayload,
+  fieldText,
   criteriaSummary,
   criteriaToSentence,
   defaultSlug,
@@ -142,6 +143,12 @@ describe("parseFieldIssues", () => {
     expect(alert).toBeNull();
   });
 
+  it("handles long whitespace after a colon without backtracking", () => {
+    const whitespace = " ".repeat(20000);
+    expect(parseFieldIssues(`name:${whitespace}required`)).toEqual({ fields: { name: "required" }, alert: null });
+    expect(parseFieldIssues(`name:${whitespace}`)).toEqual({ fields: {}, alert: "name:" });
+  });
+
   it("keys class-validator style `field must …` segments", () => {
     const { fields } = parseFieldIssues("slug must match /^[a-z0-9-]+$/; sortOrder must be an integer number");
     expect(fields.slug).toMatch(/must match/);
@@ -175,5 +182,17 @@ describe("buildLessonPayload", () => {
     expect(buildLessonPayload([{ type: "image", url: "u", alt: "a", caption: "Fig 1" }])).toEqual([
       { type: "image", url: "u", alt: "a", caption: "Fig 1" },
     ]);
+  });
+});
+
+
+describe("fieldText", () => {
+  it("keeps strings and numeric select values without stringifying objects", () => {
+    expect(fieldText("hello")).toBe("hello");
+    expect(fieldText(12)).toBe("12");
+    for (const value of [undefined, null, {}, [], true]) {
+      expect(fieldText(value)).toBe("");
+      expect(fieldText(value, "python")).toBe("python");
+    }
   });
 });

@@ -121,7 +121,7 @@ export function Y2kButton({
   }
 >) {
   return (
-    <button className={cn(buttonClasses(variant), className)} {...props}>
+    <button type="button" className={cn(buttonClasses(variant), className)} {...props}>
       {children}
     </button>
   );
@@ -472,7 +472,7 @@ export function EmptyState({
 
 function MonitorIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="size-8" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="size-8" fill="none" stroke="currentColor" strokeWidth="2">
       <rect x="2" y="3" width="20" height="14" />
       <path d="M8 21h8M12 17v4" />
     </svg>

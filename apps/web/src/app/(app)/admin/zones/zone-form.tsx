@@ -51,7 +51,6 @@ export function ZoneForm({ mode, id }: Readonly<{ mode: "create" | "edit"; id?: 
         hub="/admin/zones"
         deleteItem={deleteAdminZone}
         itemName={initial.name || "this Zone"}
-        cascadeWarning="Deleting a Zone cascades to its Stages and Quests."
         renderFields={makeZoneFields(regionOptions)}
       />
     </FormShell>

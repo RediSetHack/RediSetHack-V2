@@ -2,7 +2,7 @@
 
 import { Y2kInput, Y2kSelect } from "@/components/y2k";
 import { FormField } from "@/components/admin/form-controls";
-import { defaultSlug } from "@/lib/admin-helpers";
+import { fieldText, defaultSlug } from "@/lib/admin-helpers";
 import type { LessonDraftBlock } from "@/components/admin/lesson-builder";
 
 export type StageValues = {
@@ -44,7 +44,7 @@ export function makeStageFields(
     return (
       <div className="flex flex-col gap-4">
         <FormField id="stage-zone" label="Zone" required error={errors.zoneId}>
-          <Y2kSelect id="stage-zone" value={String(values.zoneId ?? 0)} onChange={(event) => set("zoneId", Number(event.target.value))}>
+          <Y2kSelect id="stage-zone" value={fieldText(values.zoneId, "0")} onChange={(event) => set("zoneId", Number(event.target.value))}>
             <option value="0">Select a Zone…</option>
             {zoneOptions.map((zone) => (
               <option key={zone.value} value={zone.value}>
@@ -56,7 +56,7 @@ export function makeStageFields(
         <FormField id="stage-title" label="Title" required error={errors.title}>
           <Y2kInput
             id="stage-title"
-            value={String(values.title ?? "")}
+            value={fieldText(values.title, "")}
             onChange={(event) => {
               set("title", event.target.value);
               set("slug", defaultSlug(event.target.value));
@@ -64,7 +64,7 @@ export function makeStageFields(
           />
         </FormField>
         <FormField id="stage-slug" label="Slug" required error={errors.slug} hint={<span className="font-body text-xs text-muted-foreground">Unique within the Zone.</span>}>
-          <Y2kInput id="stage-slug" value={String(values.slug ?? "")} onChange={(event) => set("slug", event.target.value)} />
+          <Y2kInput id="stage-slug" value={fieldText(values.slug, "")} onChange={(event) => set("slug", event.target.value)} />
         </FormField>
         <div className="grid gap-4 sm:grid-cols-2">
           <FormField id="stage-xp" label="XP reward" required error={errors.xpReward}>
@@ -85,8 +85,8 @@ export function makeStageFields(
 export function stageInput(values: Record<string, unknown>, toPayload: (blocks: readonly LessonDraftBlock[]) => unknown) {
   return {
     zoneId: Number(values.zoneId),
-    title: String(values.title ?? "").trim(),
-    slug: String(values.slug ?? "").trim(),
+    title: fieldText(values.title, "").trim(),
+    slug: fieldText(values.slug, "").trim(),
     xpReward: Number(values.xpReward ?? 0),
     sortOrder: Number(values.sortOrder ?? 0),
     lessonContent: toPayload((values.lessonContent as LessonDraftBlock[]) ?? []),

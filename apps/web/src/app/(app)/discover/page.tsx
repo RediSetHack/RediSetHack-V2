@@ -150,8 +150,8 @@ function StageCard({ item }: Readonly<{ item: DiscoveryItem }>) {
 
 export default async function DiscoverPage({
   searchParams,
-}: Readonly<{ searchParams: SearchParams }>) {
-  const filters = parseFilters(searchParams);
+}: Readonly<{ searchParams: Promise<SearchParams> }>) {
+  const filters = parseFilters(await searchParams);
 
   const { getToken } = await auth();
   const token = await getToken();

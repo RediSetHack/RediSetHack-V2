@@ -57,7 +57,6 @@ export function StagesList() {
       error={catalog.error}
       deleteItem={deleteAdminStage}
       deleteName={(row) => row.title}
-      cascadeWarning="Deleting a Stage cascades to its Quests."
       onDeleted={catalog.reload}
     />
   );

@@ -7,7 +7,7 @@ import { QuestionBuilder } from "@/components/admin/question-builder";
 import { API_URL, useCatalog, useToken } from "@/components/admin/use-catalog";
 import { ApiError, deleteAdminQuest, getAdminQuest } from "@/lib/api-client";
 import { Y2kInput, Y2kTextarea, Y2kSelect } from "@/components/y2k";
-import { newQuestion, validateQuestionSet, type AdminQuestion } from "@/lib/admin-helpers";
+import { fieldText, newQuestion, validateQuestionSet, type AdminQuestion } from "@/lib/admin-helpers";
 import { formatMmSs } from "@/lib/format";
 
 type QuestValues = {
@@ -83,7 +83,7 @@ export function QuestForm({ mode, id }: Readonly<{ mode: "create" | "edit"; id?:
   }: Readonly<{ values: Record<string, unknown>; set: (key: string, value: unknown) => void; errors: Record<string, string> }>) => (
     <div className="flex flex-col gap-4">
       <FormField id="quest-stage" label="Stage" required error={errors.stageId}>
-        <Y2kSelect id="quest-stage" value={String(values.stageId ?? 0)} onChange={(event) => set("stageId", Number(event.target.value))}>
+        <Y2kSelect id="quest-stage" value={fieldText(values.stageId, "0")} onChange={(event) => set("stageId", Number(event.target.value))}>
           <option value="0">Select a Stage…</option>
           {stageOptions.map((stage) => (
             <option key={stage.value} value={stage.value}>
@@ -93,10 +93,10 @@ export function QuestForm({ mode, id }: Readonly<{ mode: "create" | "edit"; id?:
         </Y2kSelect>
       </FormField>
       <FormField id="quest-title" label="Title" required error={errors.title}>
-        <Y2kInput id="quest-title" value={String(values.title ?? "")} onChange={(event) => set("title", event.target.value)} />
+        <Y2kInput id="quest-title" value={fieldText(values.title, "")} onChange={(event) => set("title", event.target.value)} />
       </FormField>
       <FormField id="quest-description" label="Description" error={errors.description}>
-        <Y2kTextarea id="quest-description" value={String(values.description ?? "")} onChange={(event) => set("description", event.target.value)} />
+        <Y2kTextarea id="quest-description" value={fieldText(values.description, "")} onChange={(event) => set("description", event.target.value)} />
       </FormField>
       <div className="grid gap-4 sm:grid-cols-3">
         <FormField id="quest-time" label="Time limit (seconds)" required error={errors.timeLimitSeconds} hint={<span className="font-body text-xs text-muted-foreground">{formatMmSs(Number(values.timeLimitSeconds ?? 0))}</span>}>
@@ -125,15 +125,14 @@ export function QuestForm({ mode, id }: Readonly<{ mode: "create" | "edit"; id?:
         hub="/admin/quests"
         deleteItem={deleteAdminQuest}
         itemName={initial.title || "this Quest"}
-        cascadeWarning="Existing learner Results for this Quest are deleted too."
         toInput={(values) => {
           const questions = (values.questions as AdminQuestion[]) ?? [];
           const errors = validateQuestionSet(questions);
           if (errors.length > 0) throw new ApiError(400, errors.join("; "));
           return {
             stageId: Number(values.stageId),
-            title: String(values.title ?? "").trim(),
-            description: String(values.description ?? "").trim() || undefined,
+            title: fieldText(values.title, "").trim(),
+            description: fieldText(values.description, "").trim() || undefined,
             timeLimitSeconds: Number(values.timeLimitSeconds ?? 60),
             passingScore: Number(values.passingScore ?? 70),
             xpReward: Number(values.xpReward ?? 0),

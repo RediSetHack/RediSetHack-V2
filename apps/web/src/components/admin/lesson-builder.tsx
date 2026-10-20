@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { Window, Y2kButton, Y2kInput, Y2kSelect, Y2kTextarea, buttonClasses } from "@/components/y2k";
 import { Y2kDialog } from "@/components/y2k-dialog";
 import { FormField } from "@/components/admin/form-controls";
-import { buildLessonPayload, newId } from "@/lib/admin-helpers";
+import { fieldText, buildLessonPayload, newId } from "@/lib/admin-helpers";
 
 const LANGUAGES = ["python", "javascript", "cpp", "c", "java"] as const;
 
@@ -71,7 +71,7 @@ export function LessonBuilder({
         <ol className="flex flex-col gap-3">
           {blocks.map((entry, index) => {
             const block = entry.block;
-            const type = String(block.type);
+            const type = fieldText(block.type, "unknown");
             const known = (KNOWN_TYPES as readonly string[]).includes(type);
             return (
               <li key={entry.key} className="border-2 border-border bg-window-body p-3 shadow-[2px_2px_0_var(--border)]">
@@ -94,7 +94,7 @@ export function LessonBuilder({
                   <FormField id={`block-${entry.key}-content`} label="Content" required>
                     <Y2kTextarea
                       id={`block-${entry.key}-content`}
-                      value={String(block.content ?? "")}
+                      value={fieldText(block.content, "")}
                       onChange={(event) => patch(entry.key, { ...block, content: event.target.value })}
                     />
                   </FormField>
@@ -105,7 +105,7 @@ export function LessonBuilder({
                     <FormField id={`block-${entry.key}-language`} label="Language" required>
                       <Y2kSelect
                         id={`block-${entry.key}-language`}
-                        value={String(block.language ?? "python")}
+                        value={fieldText(block.language, "python")}
                         onChange={(event) => patch(entry.key, { ...block, language: event.target.value })}
                       >
                         {LANGUAGES.map((language) => (
@@ -118,7 +118,7 @@ export function LessonBuilder({
                     <FormField id={`block-${entry.key}-code`} label="Code" required>
                       <Y2kTextarea
                         id={`block-${entry.key}-code`}
-                        value={String(block.content ?? "")}
+                        value={fieldText(block.content, "")}
                         onChange={(event) => patch(entry.key, { ...block, content: event.target.value })}
                         className="font-mono"
                       />
@@ -131,14 +131,14 @@ export function LessonBuilder({
                     <FormField id={`block-${entry.key}-prompt`} label="Prompt" required>
                       <Y2kTextarea
                         id={`block-${entry.key}-prompt`}
-                        value={String(block.prompt ?? "")}
+                        value={fieldText(block.prompt, "")}
                         onChange={(event) => patch(entry.key, { ...block, prompt: event.target.value })}
                       />
                     </FormField>
                     <FormField id={`block-${entry.key}-language`} label="Language" required>
                       <Y2kSelect
                         id={`block-${entry.key}-language`}
-                        value={String(block.language ?? "python")}
+                        value={fieldText(block.language, "python")}
                         onChange={(event) => patch(entry.key, { ...block, language: event.target.value })}
                       >
                         {LANGUAGES.map((language) => (
@@ -151,7 +151,7 @@ export function LessonBuilder({
                     <FormField id={`block-${entry.key}-starter`} label="Starter code">
                       <Y2kTextarea
                         id={`block-${entry.key}-starter`}
-                        value={String(block.starterCode ?? "")}
+                        value={fieldText(block.starterCode, "")}
                         onChange={(event) => patch(entry.key, { ...block, starterCode: event.target.value })}
                         className="font-mono"
                       />
@@ -164,21 +164,21 @@ export function LessonBuilder({
                     <FormField id={`block-${entry.key}-url`} label="Image URL" required>
                       <Y2kInput
                         id={`block-${entry.key}-url`}
-                        value={String(block.url ?? "")}
+                        value={fieldText(block.url, "")}
                         onChange={(event) => patch(entry.key, { ...block, url: event.target.value })}
                       />
                     </FormField>
                     <FormField id={`block-${entry.key}-alt`} label="Alt text" required>
                       <Y2kInput
                         id={`block-${entry.key}-alt`}
-                        value={String(block.alt ?? "")}
+                        value={fieldText(block.alt, "")}
                         onChange={(event) => patch(entry.key, { ...block, alt: event.target.value })}
                       />
                     </FormField>
                     <FormField id={`block-${entry.key}-caption`} label="Caption">
                       <Y2kInput
                         id={`block-${entry.key}-caption`}
-                        value={String(block.caption ?? "")}
+                        value={fieldText(block.caption, "")}
                         onChange={(event) => patch(entry.key, { ...block, caption: event.target.value })}
                       />
                     </FormField>

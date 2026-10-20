@@ -6,7 +6,7 @@ import { EditLoadState, FormField, FormShell } from "@/components/admin/form-con
 import { AvatarOrInitial, Y2kInput, Y2kTextarea } from "@/components/y2k";
 import { API_URL, useToken } from "@/components/admin/use-catalog";
 import { ApiError, deleteAdminCharacter, getAdminCharacter } from "@/lib/api-client";
-import { defaultSlug } from "@/lib/admin-helpers";
+import { fieldText, defaultSlug } from "@/lib/admin-helpers";
 
 type CharacterValues = { id: number; name: string; slug: string; description: string; imageUrl: string };
 
@@ -56,7 +56,7 @@ export function CharacterForm({ mode, id }: Readonly<{ mode: "create" | "edit"; 
       <FormField id="character-name" label="Name" required error={errors.name}>
         <Y2kInput
           id="character-name"
-          value={String(values.name ?? "")}
+          value={fieldText(values.name, "")}
           onChange={(event) => {
             set("name", event.target.value);
             set("slug", defaultSlug(event.target.value));
@@ -64,18 +64,18 @@ export function CharacterForm({ mode, id }: Readonly<{ mode: "create" | "edit"; 
         />
       </FormField>
       <FormField id="character-slug" label="Slug" required error={errors.slug}>
-        <Y2kInput id="character-slug" value={String(values.slug ?? "")} onChange={(event) => set("slug", event.target.value)} />
+        <Y2kInput id="character-slug" value={fieldText(values.slug, "")} onChange={(event) => set("slug", event.target.value)} />
       </FormField>
       <FormField id="character-description" label="Description" error={errors.description}>
-        <Y2kTextarea id="character-description" value={String(values.description ?? "")} onChange={(event) => set("description", event.target.value)} />
+        <Y2kTextarea id="character-description" value={fieldText(values.description, "")} onChange={(event) => set("description", event.target.value)} />
       </FormField>
       <div className="flex items-end gap-3">
         <div className="flex-1">
           <FormField id="character-image" label="Image URL" error={errors.imageUrl}>
-            <Y2kInput id="character-image" value={String(values.imageUrl ?? "")} onChange={(event) => set("imageUrl", event.target.value)} />
+            <Y2kInput id="character-image" value={fieldText(values.imageUrl, "")} onChange={(event) => set("imageUrl", event.target.value)} />
           </FormField>
         </div>
-        <AvatarOrInitial src={String(values.imageUrl ?? "") || null} name={String(values.name ?? "?")} className="size-16" />
+        <AvatarOrInitial src={fieldText(values.imageUrl, "") || null} name={fieldText(values.name, "?")} className="size-16" />
       </div>
     </div>
   );
@@ -92,10 +92,10 @@ export function CharacterForm({ mode, id }: Readonly<{ mode: "create" | "edit"; 
         itemName={initial.name || "this Character"}
         cascadeWarning="Characters assigned to learners are archived rather than deleted."
         toInput={(values) => ({
-          name: String(values.name ?? "").trim(),
-          slug: String(values.slug ?? "").trim(),
-          description: String(values.description ?? "").trim() || undefined,
-          imageUrl: String(values.imageUrl ?? "").trim() || undefined,
+          name: fieldText(values.name, "").trim(),
+          slug: fieldText(values.slug, "").trim(),
+          description: fieldText(values.description, "").trim() || undefined,
+          imageUrl: fieldText(values.imageUrl, "").trim() || undefined,
         })}
         renderFields={renderFields}
       />

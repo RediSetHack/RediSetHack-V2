@@ -292,6 +292,7 @@ export function CodelabEditor({
       <Window title="Code" bodyClassName="space-y-2">
         <Y2kTextarea
           id="code-input"
+          aria-label="Code"
           value={code}
           onChange={(event) => setCode(event.target.value)}
           spellCheck={false}
@@ -302,6 +303,7 @@ export function CodelabEditor({
       <Window title="Standard input (optional — for programs that read input)" bodyClassName="space-y-2">
         <Y2kTextarea
           id="stdin-input"
+          aria-label="Standard input"
           value={stdin}
           onChange={(event) => setStdin(event.target.value)}
           spellCheck={false}

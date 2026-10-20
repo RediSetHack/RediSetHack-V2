@@ -35,7 +35,6 @@ export function RegionsList() {
       error={catalog.error}
       deleteItem={deleteAdminRegion}
       deleteName={(row) => row.name}
-      cascadeWarning="Deleting a Region also deletes its Zones, Stages and Quests."
       onDeleted={catalog.reload}
     />
   );

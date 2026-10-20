@@ -5,7 +5,7 @@ import { Dialog } from "@base-ui/react/dialog";
 import { AlertTriangle, Check, Info, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { buttonClasses, SkeletonWindow, Window, Y2kButton, type Y2kButtonVariant } from "@/components/y2k";
+import { SkeletonWindow, Window, Y2kButton, type Y2kButtonVariant } from "@/components/y2k";
 
 /* ── Dialog / Alert ─────────────────────────────────────────── */
 
@@ -303,4 +303,4 @@ export function SaveButton({
   );
 }
 
-export { buttonClasses };
+export { buttonClasses } from "@/components/y2k";

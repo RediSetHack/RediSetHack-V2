@@ -2,7 +2,7 @@
 
 import { Y2kInput, Y2kTextarea } from "@/components/y2k";
 import { FormField } from "@/components/admin/form-controls";
-import { defaultSlug } from "@/lib/admin-helpers";
+import { fieldText, defaultSlug } from "@/lib/admin-helpers";
 
 export type RegionValues = {
   id: number;
@@ -32,7 +32,7 @@ export function regionFields({
       <FormField id="region-name" label="Name" required error={errors.name}>
         <Y2kInput
           id="region-name"
-          value={String(values.name ?? "")}
+          value={fieldText(values.name, "")}
           onChange={(event) => {
             set("name", event.target.value);
             set("slug", defaultSlug(event.target.value));
@@ -40,10 +40,10 @@ export function regionFields({
         />
       </FormField>
       <FormField id="region-slug" label="Slug" required error={errors.slug} hint={<span className="font-body text-xs text-muted-foreground">Auto-filled from the name; lowercase-kebab, unique.</span>}>
-        <Y2kInput id="region-slug" value={String(values.slug ?? "")} onChange={(event) => set("slug", event.target.value)} />
+        <Y2kInput id="region-slug" value={fieldText(values.slug, "")} onChange={(event) => set("slug", event.target.value)} />
       </FormField>
       <FormField id="region-description" label="Description" error={errors.description}>
-        <Y2kTextarea id="region-description" value={String(values.description ?? "")} onChange={(event) => set("description", event.target.value)} />
+        <Y2kTextarea id="region-description" value={fieldText(values.description, "")} onChange={(event) => set("description", event.target.value)} />
       </FormField>
       <FormField id="region-sort" label="Sort order" error={errors.sortOrder}>
         <Y2kInput id="region-sort" type="number" value={Number(values.sortOrder ?? 0)} onChange={(event) => set("sortOrder", Number(event.target.value))} />
@@ -54,9 +54,9 @@ export function regionFields({
 
 export function regionInput(values: Record<string, unknown>) {
   return {
-    name: String(values.name ?? "").trim(),
-    slug: String(values.slug ?? "").trim(),
-    description: String(values.description ?? "").trim() || undefined,
+    name: fieldText(values.name, "").trim(),
+    slug: fieldText(values.slug, "").trim(),
+    description: fieldText(values.description, "").trim() || undefined,
     sortOrder: Number(values.sortOrder ?? 0),
   };
 }
