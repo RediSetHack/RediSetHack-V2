@@ -74,9 +74,7 @@ export default async function Home() {
         getTodayEvent(apiUrl),
       ]);
       dbUser = me.status === "fulfilled" ? me.value : null;
-      if (!dbUser) {
-        isNewUserWithoutAccount = true;
-      }
+      isNewUserWithoutAccount = !dbUser;
       profile = p.status === "fulfilled" ? p.value : null;
       event = ev.status === "fulfilled" ? ev.value : null;
     } catch (error) {
