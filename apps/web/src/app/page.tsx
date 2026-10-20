@@ -1,9 +1,28 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
+import { Map, ScrollText, Code2, Award, Star } from "lucide-react";
 import { CharacterSelector } from "@/components/character-selector";
 import { UnregisteredUserCard } from "@/components/unregistered-user-card";
-import { Button } from "@/components/ui/button";
-import { getCharacters, getCurrentUser, type CharacterOption } from "@/lib/api-client";
+import {
+  AvatarOrInitial,
+  Breadcrumb,
+  Decorations,
+  DesktopIcon,
+  EmptyState,
+  Window,
+  XPChip,
+  buttonClasses,
+} from "@/components/y2k";
+import { getCharacters, getCurrentUser, getLeaderboard, getProfile, getTodayEvent, getQuests, getRegions, getStages, getZones, type CharacterOption, type Leaderboard, type Profile } from "@/lib/api-client";
+import { findNovelResume } from "@/lib/novel-resume";
+
+const LANGUAGES = [
+  { label: "Python", icon: <Code2 className="size-4" /> },
+  { label: "JavaScript", icon: <Code2 className="size-4" /> },
+  { label: "C++", icon: <Code2 className="size-4" /> },
+  { label: "C", icon: <Code2 className="size-4" /> },
+  { label: "Java", icon: <Code2 className="size-4" /> },
+];
 
 export default async function Home() {
   const { userId, getToken } = await auth();
@@ -16,81 +35,123 @@ export default async function Home() {
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
   let characters: CharacterOption[] = [];
-  let charactersError = false;
   try {
     characters = await getCharacters(apiUrl);
   } catch (error) {
     console.error("Failed to load character catalog:", error);
-    charactersError = true;
   }
 
   if (!userId) {
+    let leaderboard: Leaderboard | null = null;
+    try {
+      const token = await getToken().catch(() => null);
+      if (token) {
+        leaderboard = await getLeaderboard(apiUrl, token, 1, 3);
+      }
+    } catch (error) {
+      console.error("Failed to load leaderboard teaser:", error);
+    }
+
     return (
-      <div className="flex-1 flex flex-col items-center justify-start p-6 sm:p-10 max-w-6xl mx-auto w-full">
-        <section className="flex flex-col items-center text-center py-16 sm:py-24 max-w-3xl space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
-            <span>✨ RediSetHack V2</span>
-            <span>•</span>
-            <span>Gamified Developer Learning</span>
-          </div>
+      <div className="y2k-grid relative min-h-screen">
+        <Decorations />
+        <main className="relative z-10 mx-auto flex w-full max-w-[1200px] flex-col gap-6 px-4 py-8">
+          <header className="flex flex-col items-center gap-2 text-center">
+            <h1 className="font-pixel text-lg leading-relaxed sm:text-xl md:text-2xl">
+              REDISETHACK
+            </h1>
+          </header>
 
-          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-foreground leading-[1.15]">
-            Master Code. Complete Quests.{" "}
-            <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              Level Up.
-            </span>
-          </h1>
-
-          <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed">
-            Progress through curated Regions, Zones, and Stages. Solve code
-            challenges in our interactive Codelab, take timed Quests, and earn
-            multiplicative badges that stack with every achievement.
-          </p>
-
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
-            <Link href="/sign-up">
-              <Button size="lg" className="px-6 text-base font-semibold shadow-md">
-                Get Started Free
-              </Button>
-            </Link>
-            <Link href="/sign-in">
-              <Button size="lg" variant="outline" className="px-6 text-base">
-                Sign In with Google / GitHub
-              </Button>
-            </Link>
-          </div>
-
-          {/* Character preview */}
-          <div className="w-full pt-16 border-t border-border/60">
-            <h2 className="text-xl font-bold mb-2">Choose Your Avatar Identity</h2>
-            <p className="text-sm text-muted-foreground mb-8">
-              Pick your persona when you sign up to track your learning journey:
-            </p>
-            {charactersError ? (
-              <p role="alert" className="text-sm text-destructive">
-                The character catalog could not be loaded. Please try again later.
+          <Window title="WELCOME.EXE">
+            <div className="flex flex-col items-start gap-4">
+              <h2 className="font-pixel text-base leading-relaxed sm:text-lg">
+                Learn to code. Level up.
+              </h2>
+              <p className="max-w-2xl font-body text-sm font-bold text-muted-foreground">
+                Progress through curated Regions, Zones, and Stages. Solve code
+                challenges in the Codelab, take timed Quests, and earn XP and
+                Badges.
               </p>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                {characters.map((char) => (
-                  <div
-                    key={char.id}
-                    className="flex flex-col items-center p-4 rounded-xl border border-border bg-card/50 text-center"
-                  >
-                    <span
-                      className="flex items-center justify-center w-10 h-10 mb-2 rounded-full bg-muted text-lg font-semibold"
-                      role="img"
-                      aria-label={char.name}
-                    >
-                      {char.name.charAt(0)}
-                    </span>
-                    <span className="text-xs font-semibold">{char.name}</span>
-                  </div>
-                ))}
+              <div className="flex flex-wrap items-center gap-3">
+                <Link href="/sign-up" className={buttonClasses("primary")}>
+                  SIGN UP
+                </Link>
+                <Link href="/sign-in" className={buttonClasses("secondary")}>
+                  SIGN IN
+                </Link>
               </div>
-            )}
-          </div>
-        </section>
+            </div>
+          </Window>
+
+          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Window title="MAP.EXE" className="animate-[y2k-window_200ms_cubic-bezier(0.34,1.56,0.64,1)_both] [animation-delay:80ms]">
+              <div className="flex flex-col gap-2">
+                <Map aria-hidden="true" className="size-5" />
+                <p className="font-body text-sm font-bold">
+                  Progress through Regions and Zones
+                </p>
+              </div>
+            </Window>
+            <Window title="QUESTS.EXE" className="animate-[y2k-window_200ms_cubic-bezier(0.34,1.56,0.64,1)_both] [animation-delay:160ms]">
+              <div className="flex flex-col gap-2">
+                <ScrollText aria-hidden="true" className="size-5" />
+                <p className="font-body text-sm font-bold">
+                  Timed quizzes with XP rewards
+                </p>
+              </div>
+            </Window>
+            <Window title="CODELAB.EXE" className="animate-[y2k-window_200ms_cubic-bezier(0.34,1.56,0.64,1)_both] [animation-delay:240ms]">
+              <div className="flex flex-col gap-2">
+                <Code2 aria-hidden="true" className="size-5" />
+                <p className="font-body text-sm font-bold">
+                  Run code in five languages
+                </p>
+              </div>
+            </Window>
+            <Window title="BADGES.EXE" className="animate-[y2k-window_200ms_cubic-bezier(0.34,1.56,0.64,1)_both] [animation-delay:320ms]">
+              <div className="flex flex-col gap-2">
+                <Award aria-hidden="true" className="size-5" />
+                <p className="font-body text-sm font-bold">
+                  Collect Badges and earn XP
+                </p>
+              </div>
+            </Window>
+          </section>
+
+          <section className="flex flex-wrap items-center justify-center gap-6">
+            {LANGUAGES.map((lang) => (
+              <DesktopIcon key={lang.label} icon={lang.icon} label={lang.label} />
+            ))}
+          </section>
+
+          <Window title="TOP LEARNERS.EXE">
+            <div className="flex flex-col gap-2">
+              {leaderboard && leaderboard.entries.length > 0 ? (
+                <ol className="flex flex-col divide-y divide-border/40">
+                  {leaderboard.entries.map((entry) => (
+                    <li key={entry.userId} className="flex items-center gap-3 py-2">
+                      <span className="w-6 font-pixel text-[9px]">#{entry.rank}</span>
+                      <AvatarOrInitial name={entry.name ?? "L"} className="size-8" />
+                      <span className="flex-1 font-body text-sm font-bold">
+                        {entry.name ?? "Learner"}
+                      </span>
+                      <XPChip xp={entry.totalXp} />
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <EmptyState title="No rankings yet" message="Be the first to earn XP." />
+              )}
+            </div>
+          </Window>
+
+          <footer className="flex flex-col items-center gap-2 pb-4 text-center">
+            <div className="flex items-center gap-2 font-pixel text-[9px]">
+              <span>© RediSetHack</span>
+              <span aria-hidden="true">×××</span>
+            </div>
+          </footer>
+        </main>
       </div>
     );
   }
@@ -98,13 +159,22 @@ export default async function Home() {
   const token = await getToken();
   let dbUser = null;
   let isNewUserWithoutAccount = false;
+  let profile: Profile | null = null;
+  let event = null;
 
   if (token) {
     try {
-      dbUser = await getCurrentUser(apiUrl, token);
+      const [me, p, ev] = await Promise.allSettled([
+        getCurrentUser(apiUrl, token),
+        getProfile(apiUrl, token),
+        getTodayEvent(apiUrl),
+      ]);
+      dbUser = me.status === "fulfilled" ? me.value : null;
       if (!dbUser) {
         isNewUserWithoutAccount = true;
       }
+      profile = p.status === "fulfilled" ? p.value : null;
+      event = ev.status === "fulfilled" ? ev.value : null;
     } catch (error) {
       console.error("Failed to load user profile:", error);
     }
@@ -112,95 +182,141 @@ export default async function Home() {
 
   if (isNewUserWithoutAccount) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-10 max-w-6xl mx-auto w-full">
-        <UnregisteredUserCard email={userEmail} apiUrl={apiUrl} />
+      <div className="y2k-grid relative min-h-screen">
+        <Decorations />
+        <main className="relative z-10 mx-auto flex w-full max-w-[1200px] items-center justify-center px-4 py-8">
+          <UnregisteredUserCard email={userEmail} apiUrl={apiUrl} />
+        </main>
       </div>
     );
   }
 
-  return (
-    <div className="flex-1 flex flex-col items-center justify-start p-6 sm:p-10 max-w-6xl mx-auto w-full">
-      <div className="w-full space-y-8 py-6">
-        {/* User Welcome Banner */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl border border-border bg-card shadow-sm">
-          <div className="space-y-1">
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                Welcome back, {user?.firstName ?? user?.username ?? "Learner"}!
-              </h1>
-              {isAdmin ? (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-900 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
-                  🛡️ Admin
-                </span>
-              ) : (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                  ⭐ Learner
-                </span>
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {userEmail} • Identity synced with Clerk {dbUser ? `• ${dbUser.totalXp} XP` : ""}
-            </p>
-          </div>
+  let continueHref = "/map";
+  let continueLabel = "Map";
+  try {
+    if (token) {
+      const [regions, quests] = await Promise.all([
+        getRegions(apiUrl).catch(() => []),
+        getQuests(apiUrl, token).catch(() => []),
+      ]);
+      if (regions.length) {
+        const regionId = regions[0].id;
+        const zones = await getZones(apiUrl, regionId).catch(() => []);
+        if (zones.length) {
+          const zoneId = zones[0].id;
+          const stages = await getStages(apiUrl, token, zoneId).catch(() => []);
+          const resume = findNovelResume([{ zone: zones[0], stages }]);
+          if (resume) {
+            continueHref = `/map/${regionId}/${resume.zone.id}/${resume.stage.id}`;
+            continueLabel = resume.stage.title;
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Failed to resolve resume:", error);
+  }
 
-          {isAdmin && (
-            <div className="text-xs px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300">
-              <p className="font-semibold">Clerk publicMetadata.role === &quot;admin&quot;</p>
-              <p className="text-[11px] opacity-90">
-                Full access granted to NestJS admin-guarded endpoints
+  const rank = profile?.adventurerRank ?? profile?.level ?? 1;
+  const totalXp = profile?.totalXp ?? dbUser?.totalXp ?? 0;
+  const badgeCount = profile?.badges?.reduce((sum, b) => sum + b.count, 0) ?? 0;
+
+  return (
+    <div className="y2k-grid relative min-h-screen">
+      <Decorations />
+      <main className="relative z-10 mx-auto flex w-full max-w-[1200px] flex-col gap-6 px-4 py-8">
+        <header className="flex flex-col items-center gap-2 text-center">
+          <h1 className="font-pixel text-lg leading-relaxed sm:text-xl md:text-2xl">
+            REDISETHACK
+          </h1>
+        </header>
+
+        <Window title="DASHBOARD.EXE">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-1">
+              <p className="font-pixel text-[10px] leading-relaxed">
+                Welcome back, {user?.firstName ?? user?.username ?? "Learner"}
+              </p>
+              <p className="font-body text-sm font-bold text-muted-foreground">
+                {userEmail}
               </p>
             </div>
-          )}
-        </div>
+            {isAdmin && (
+              <div className="flex items-center gap-2">
+                <span className="font-pixel text-[9px]">ADMIN</span>
+                <Link href="/admin" className={buttonClasses("secondary")}>
+                  CONTROL PANEL
+                </Link>
+              </div>
+            )}
+          </div>
+        </Window>
 
-        {/* Character Selection Section */}
-        <section className="p-6 rounded-2xl border border-border bg-card shadow-sm">
-          {charactersError ? (
-            <p role="alert" className="text-sm text-destructive">
-              The character catalog could not be loaded. Please try again later.
-            </p>
-          ) : (
-            <CharacterSelector
-              characters={characters}
-              initialCharacterId={dbUser?.characterId}
-              apiUrl={apiUrl}
-            />
-          )}
+        <section className="grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]">
+          <Window title="CONTINUE.EXE">
+            <div className="flex flex-col gap-3">
+              <p className="font-body text-sm font-bold">Continue where you left off</p>
+              <div className="flex flex-col gap-2 border-2 border-border bg-white p-3 shadow-[2px_2px_0_var(--border)] sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-1">
+                  <p className="font-pixel text-[9px] leading-relaxed">{continueLabel}</p>
+                  <p className="font-body text-xs font-bold text-muted-foreground">Next unlocked Stage</p>
+                </div>
+                <Link href={continueHref} className={buttonClasses("primary")}>
+                  CONTINUE
+                </Link>
+              </div>
+            </div>
+          </Window>
+          <Window title="TODAY.EXE">
+            <div className="flex flex-col gap-2">
+              <p className="font-body text-sm font-bold">Today&apos;s Event</p>
+              <div className="flex items-center gap-2">
+                {event?.eventType === "bonus" ? (
+                  <>
+                    <Star aria-hidden="true" className="size-4 text-sparkle" />
+                    <span className="font-pixel text-[9px]">BONUS DAY ×{event.xpMultiplier} XP</span>
+                  </>
+                ) : (
+                  <>
+                    <Star aria-hidden="true" className="size-4" />
+                    <span className="font-pixel text-[9px]">NORMAL DAY</span>
+                  </>
+                )}
+              </div>
+            </div>
+          </Window>
         </section>
 
-        {/* Progression Overview */}
-        <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="p-5 rounded-xl border border-border bg-card/60">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-1">
-              Learning Structure
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <Window title="RANK.EXE">
+            <div className="flex items-center justify-between">
+              <p className="font-body text-sm font-bold">Adventurer Rank</p>
+              <span className="font-pixel-lg text-xl">LV {rank}</span>
             </div>
-            <div className="text-lg font-bold">Regions & Zones</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Structured curriculum from fundamental syntax to complex algorithms.
-            </p>
-          </div>
-
-          <div className="p-5 rounded-xl border border-border bg-card/60">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-1">
-              Progression Engine
+          </Window>
+          <Window title="XP.EXE">
+            <div className="flex items-center justify-between">
+              <p className="font-body text-sm font-bold">Total XP</p>
+              <XPChip xp={totalXp} />
             </div>
-            <div className="text-lg font-bold">XP & Stages</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Earn XP modifiers through daily events and quest completions.
-            </p>
-          </div>
-
-          <div className="p-5 rounded-xl border border-border bg-card/60">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold mb-1">
-              Achievements
+          </Window>
+          <Window title="BADGES.EXE">
+            <div className="flex items-center justify-between">
+              <p className="font-body text-sm font-bold">Badges count</p>
+              <span className="font-pixel-lg text-xl">{badgeCount}</span>
             </div>
-            <div className="text-lg font-bold">Multiplicative Badges</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Badges stack repeatedly (e.g. ×3) via data-driven achievement criteria.
-            </p>
-          </div>
+          </Window>
         </section>
-      </div>
+
+        <section className="flex flex-wrap items-center gap-3">
+          <Link href="/quests" className={buttonClasses("secondary")}>
+            QUESTS
+          </Link>
+          <Link href="/codelab" className={buttonClasses("secondary")}>
+            CODELAB
+          </Link>
+        </section>
+      </main>
     </div>
   );
 }

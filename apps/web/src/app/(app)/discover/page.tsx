@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { getDiscover } from "@/lib/api-client";
 import { COMPETENCIES, type DiscoveryItem } from "@repo/contracts";
+import { EmptyState, StatusChip, Window, XPChip, Y2kButton } from "@/components/y2k";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 const DEFAULT_LIMIT = 25;
@@ -36,29 +37,21 @@ function parseFilters(searchParams: SearchParams): FilterParams {
 function statusLabel(status: DiscoveryItem["status"]): string {
   return {
     locked: "Locked",
-    available: "Available",
+    available: "Unlocked",
     completed: "Completed",
-  }[status ?? "locked"];
-}
-
-function statusClasses(status: DiscoveryItem["status"]): string {
-  return {
-    locked: "bg-muted text-muted-foreground",
-    available: "bg-primary/10 text-primary",
-    completed: "bg-green-500/10 text-green-600 dark:text-green-400",
   }[status ?? "locked"];
 }
 
 function RegionCard({ item }: Readonly<{ item: DiscoveryItem }>) {
   return (
-    <li key={item.id} className="rounded-md border border-border/60 p-4">
+    <li key={item.id} className="border-2 border-border bg-window-body p-4 shadow-[3px_3px_0_var(--border)]">
       <Link href={`/map/${item.id}`} className="block">
-        <h2 className="font-medium">{item.title}</h2>
+        <p className="font-pixel text-[10px] leading-relaxed">{item.title}</p>
         {item.description && (
-          <p className="text-sm text-muted-foreground">{item.description}</p>
+          <p className="mt-1 font-body text-sm font-bold text-muted-foreground">{item.description}</p>
         )}
         {item.storyIntro && (
-          <p className="mt-2 text-sm">Novel · {item.storyIntro}</p>
+          <p className="mt-2 font-body text-sm font-bold">Novel · {item.storyIntro}</p>
         )}
       </Link>
     </li>
@@ -70,28 +63,25 @@ function ZoneCard({ item }: Readonly<{ item: DiscoveryItem }>) {
     item.regionId != null
       ? `/map/${item.regionId}/${item.id}`
       : undefined;
+  const content = (
+    <>
+      <p className="font-pixel text-[10px] leading-relaxed">{item.title}</p>
+      {item.description && (
+        <p className="mt-1 font-body text-sm font-bold text-muted-foreground">{item.description}</p>
+      )}
+      {item.regionName && (
+        <p className="mt-1 font-body text-xs font-bold text-muted-foreground">In {item.regionName}</p>
+      )}
+    </>
+  );
   return (
-    <li key={item.id} className="rounded-md border border-border/60 p-4">
+    <li key={item.id} className="border-2 border-border bg-window-body p-4 shadow-[3px_3px_0_var(--border)]">
       {href ? (
         <Link href={href} className="block">
-          <h2 className="font-medium">{item.title}</h2>
-          {item.description && (
-            <p className="text-sm text-muted-foreground">{item.description}</p>
-          )}
-          {item.regionName && (
-            <p className="mt-1 text-xs text-muted-foreground">In {item.regionName}</p>
-          )}
+          {content}
         </Link>
       ) : (
-        <>
-          <h2 className="font-medium">{item.title}</h2>
-          {item.description && (
-            <p className="text-sm text-muted-foreground">{item.description}</p>
-          )}
-          {item.regionName && (
-            <p className="mt-1 text-xs text-muted-foreground">In {item.regionName}</p>
-          )}
-        </>
+        content
       )}
     </li>
   );
@@ -107,30 +97,23 @@ function StageCard({ item }: Readonly<{ item: DiscoveryItem }>) {
 
   const body = (
     <>
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="font-medium">{item.title}</h2>
-        <span
-          className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusClasses(
-            item.status,
-          )}`}
-          aria-label={statusLabel(item.status)}
-        >
-          {statusLabel(item.status)}
-        </span>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="font-pixel text-[10px] leading-relaxed">{item.title}</p>
+        <StatusChip status={locked ? "locked" : item.status === "completed" ? "completed" : "unlocked"} label={statusLabel(item.status)} />
       </div>
-      <p className="text-sm text-muted-foreground">{item.xpReward ?? 0} XP</p>
-      {item.difficulty && (
-        <p className="mt-1 text-xs text-muted-foreground">
-          Difficulty: {item.difficulty}
-        </p>
-      )}
+      <div className="mt-2 flex items-center gap-2">
+        <XPChip xp={item.xpReward ?? 0} />
+        {item.difficulty && (
+          <span className="font-body text-xs font-bold text-muted-foreground">{item.difficulty}</span>
+        )}
+      </div>
       {competencies.length > 0 && (
-        <p className="mt-1 text-xs text-muted-foreground truncate" title={competencies.map((c) => c.title).join(", ")}>
+        <p className="mt-1 font-body text-xs font-bold text-muted-foreground truncate" title={competencies.map((c) => c.title).join(", ")}>
           {competencies.map((c) => c.title).join(", ")}
         </p>
       )}
       {locked && item.lockReason && (
-        <p className="mt-2 text-sm text-muted-foreground">{item.lockReason}</p>
+        <p className="mt-2 font-body text-sm font-bold text-muted-foreground">{item.lockReason}</p>
       )}
     </>
   );
@@ -139,7 +122,7 @@ function StageCard({ item }: Readonly<{ item: DiscoveryItem }>) {
     return (
       <li
         key={item.id}
-        className="rounded-md border border-border/60 p-4 opacity-60"
+        className="border-2 border-border bg-window-body p-4 opacity-70 shadow-[3px_3px_0_var(--border)]"
         aria-label={`${item.title}, locked, worth ${item.xpReward ?? 0} XP`}
       >
         {body}
@@ -148,7 +131,7 @@ function StageCard({ item }: Readonly<{ item: DiscoveryItem }>) {
   }
 
   return (
-    <li key={item.id} className="rounded-md border border-border/60 p-4">
+    <li key={item.id} className="border-2 border-border bg-window-body p-4 shadow-[3px_3px_0_var(--border)]">
       {href ? (
         <Link href={href} className="block" aria-label={`${item.title}, ${statusLabel(item.status)}, worth ${item.xpReward ?? 0} XP`}>
           {body}
@@ -184,46 +167,43 @@ export default async function DiscoverPage({
   const stages = items.filter((i) => i.kind === "stage");
   const regions = items.filter((i) => i.kind === "region");
   const zones = items.filter((i) => i.kind === "zone");
-  // Only Regions carrying a story introduction are Novels; never label other
-  // regions as Novel.
   const novels = regions.filter((item) => item.storyIntro !== null);
   const hasActiveFilters =
     filters.q !== "" || filters.competency !== "" || filters.difficulty !== "";
 
-  // Use the complete supported competency taxonomy so interest filters are not
-  // hidden by the capped discovery result set (page limit 25).
   const relevantCompetencies = COMPETENCIES;
 
   return (
     <div className="mx-auto w-full max-w-5xl p-6 sm:p-10 space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight">Discover</h1>
-      <p className="text-sm text-muted-foreground">
-        Browse approved learning content by interest and difficulty.
-      </p>
+      <Window title="DISCOVER.EXE">
+        <p className="font-body text-sm font-bold text-muted-foreground">
+          Browse approved learning content by interest and difficulty.
+        </p>
+      </Window>
 
-      <section aria-label="Filters" className="rounded-lg border border-border/60 bg-muted/50 p-4">
-        <form className="flex flex-col sm:flex-row sm:items-end gap-3">
+      <Window title="Filter">
+        <form className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <div className="flex-1">
-            <label htmlFor="discover-search" className="block text-xs font-medium text-muted-foreground mb-1">
+            <label htmlFor="discover-search" className="block font-body text-[11px] font-semibold tracking-wide text-muted-foreground uppercase mb-1">
               Search
             </label>
             <input
               id="discover-search"
               name="q"
               defaultValue={filters.q}
-              className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none"
+              className="w-full border-2 border-border bg-white px-2.5 py-1.5 font-body text-[13px] font-bold text-foreground shadow-[2px_2px_0_var(--border)] outline-none"
               placeholder="Search titles…"
             />
           </div>
           <div className="flex-1">
-            <label htmlFor="discover-competency" className="block text-xs font-medium text-muted-foreground mb-1">
+            <label htmlFor="discover-competency" className="block font-body text-[11px] font-semibold tracking-wide text-muted-foreground uppercase mb-1">
               Interest / competency
             </label>
             <select
               id="discover-competency"
               name="competency"
               defaultValue={filters.competency}
-              className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none"
+              className="w-full border-2 border-border bg-white px-2.5 py-1.5 font-body text-[13px] font-bold text-foreground shadow-[2px_2px_0_var(--border)] outline-none appearance-none"
             >
               <option value="">Any</option>
               {relevantCompetencies.map((competency) => (
@@ -234,14 +214,14 @@ export default async function DiscoverPage({
             </select>
           </div>
           <div className="flex-1">
-            <label htmlFor="discover-difficulty" className="block text-xs font-medium text-muted-foreground mb-1">
+            <label htmlFor="discover-difficulty" className="block font-body text-[11px] font-semibold tracking-wide text-muted-foreground uppercase mb-1">
               Difficulty
             </label>
             <select
               id="discover-difficulty"
               name="difficulty"
               defaultValue={filters.difficulty}
-              className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none"
+              className="w-full border-2 border-border bg-white px-2.5 py-1.5 font-body text-[13px] font-bold text-foreground shadow-[2px_2px_0_var(--border)] outline-none appearance-none"
             >
               <option value="">Any</option>
               <option value="beginner">Beginner</option>
@@ -250,87 +230,74 @@ export default async function DiscoverPage({
             </select>
           </div>
           <div className="flex items-end gap-2">
-            <button
-              type="submit"
-              className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90"
-            >
-              Apply
-            </button>
+            <Y2kButton type="submit">UPDATE</Y2kButton>
             {hasActiveFilters && (
-              <Link
-                href="?"
-                className="rounded-md border border-input bg-background px-4 py-2 text-sm text-muted-foreground hover:bg-muted"
-              >
-                Clear filters
+              <Link href="?" className="inline-flex items-center justify-center gap-2 border-2 border-border px-4 py-2 font-pixel text-[9px] leading-relaxed text-foreground shadow-[3px_3px_0_var(--border)] bg-window-body">
+                CLEAR
               </Link>
             )}
           </div>
         </form>
-      </section>
+      </Window>
 
       {error && (
-        <p role="alert" className="p-6 text-destructive">
-          The catalog could not be loaded. Please try again.
-        </p>
+        <Window title="Error">
+          <p role="alert" className="font-body text-sm font-bold text-btn-danger">
+            The catalog could not be loaded. Please try again.
+          </p>
+        </Window>
       )}
 
       {!error && items.length === 0 && (
-        <p className="p-6 text-muted-foreground">
-          {hasActiveFilters
-            ? "No content matches your current filters."
-            : "No approved content available yet — check back soon."}
-          {hasActiveFilters && (
-            <Link
-              href="?"
-              className="ml-2 text-xs underline text-primary hover:text-primary/90"
-            >
-              Clear filters
-            </Link>
-          )}
-        </p>
+        <Window title="Empty">
+          <p className="font-body text-sm font-bold text-muted-foreground">
+            {hasActiveFilters
+              ? "No content matches your current filters."
+              : "No approved content available yet — check back soon."}
+            {hasActiveFilters && (
+              <Link href="?" className="ml-2 underline">Clear filters</Link>
+            )}
+          </p>
+        </Window>
       )}
 
       {!error && items.length > 0 && (
         <>
           {novels.length > 0 && (
-            <section className="space-y-2">
-              <h2 className="text-lg font-semibold">Novels</h2>
-              <ul className="mt-4 flex flex-col gap-2">
+            <Window title="Novels">
+              <ul className="flex flex-col gap-2">
                 {novels.map((item) => (
                   <RegionCard key={item.id} item={item} />
                 ))}
               </ul>
-            </section>
+            </Window>
           )}
           {regions.length > novels.length && (
-            <section className="space-y-2">
-              <h2 className="text-lg font-semibold">Regions</h2>
-              <ul className="mt-4 flex flex-col gap-2">
+            <Window title="Regions">
+              <ul className="flex flex-col gap-2">
                 {regions.filter((item) => item.storyIntro === null).map((item) => (
                   <RegionCard key={item.id} item={item} />
                 ))}
               </ul>
-            </section>
+            </Window>
           )}
           {zones.length > 0 && (
-            <section className="space-y-2">
-              <h2 className="text-lg font-semibold">Chapters</h2>
-              <ul className="mt-4 flex flex-col gap-2">
+            <Window title="Chapters">
+              <ul className="flex flex-col gap-2">
                 {zones.map((item) => (
                   <ZoneCard key={item.id} item={item} />
                 ))}
               </ul>
-            </section>
+            </Window>
           )}
           {stages.length > 0 && (
-            <section className="space-y-2">
-              <h2 className="text-lg font-semibold">Activities</h2>
-              <ul className="mt-4 flex flex-col gap-2">
+            <Window title="Activities">
+              <ul className="flex flex-col gap-2">
                 {stages.map((item) => (
                   <StageCard key={item.id} item={item} />
                 ))}
               </ul>
-            </section>
+            </Window>
           )}
         </>
       )}

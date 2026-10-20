@@ -1,92 +1,57 @@
 import Link from "next/link";
 import type { Profile, DailyEvent } from "@/lib/api-client";
 import { EventBanner } from "@/components/event-banner";
-
-const NAV_LINKS = [
-  { href: "/map", label: "Map" },
-  { href: "/discover", label: "Discover" },
-  { href: "/quests", label: "Quests" },
-  { href: "/codelab", label: "Codelab" },
-  { href: "/ctf", label: "CTF" },
-  { href: "/side-quests", label: "Side Quests" },
-  { href: "/leaderboard", label: "Leaderboard" },
-  { href: "/profile", label: "Profile" },
-];
-
-function NavLinks({ className }: Readonly<{ className: string }>) {
-  return (
-    <nav aria-label="Main" className={className}>
-      {NAV_LINKS.map((link) => (
-        <Link
-          key={link.href}
-          href={link.href}
-          className="rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
-        >
-          {link.label}
-        </Link>
-      ))}
-    </nav>
-  );
-}
-
-function ProfileSummary({
-  profile,
-  error,
-}: Readonly<{
-  profile: Profile | null;
-  error: boolean;
-}>) {
-  if (error) {
-    return (
-      <p role="alert" className="text-xs text-destructive">
-        Your profile could not be loaded.
-      </p>
-    );
-  }
-
-  if (!profile) {
-    return null;
-  }
-
-  return (
-    <p className="text-xs text-muted-foreground">
-      {profile.character?.name ?? "No Character"} • Level {profile.level} •{" "}
-      {profile.totalXp} XP
-    </p>
-  );
-}
+import { PlayerChip } from "@/components/player-chip";
+import { Taskbar } from "@/components/taskbar";
+import { Decorations, Sparkle } from "@/components/y2k";
 
 export function AppShell({
   profile,
   profileError,
   event,
   eventError,
+  isAdmin,
+  isContributor,
   children,
 }: Readonly<{
   profile: Profile | null;
   profileError: boolean;
   event: DailyEvent | null;
   eventError: boolean;
+  isAdmin: boolean;
+  isContributor: boolean;
   children: React.ReactNode;
 }>) {
   return (
-    <div className="flex-1 flex flex-col">
-      <div className="border-b border-border/60 bg-background">
-        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-3 sm:px-6">
-          <div className="flex items-center justify-between gap-4">
-            <NavLinks className="hidden sm:flex sm:items-center sm:gap-1" />
-            <details className="sm:hidden">
-              <summary className="cursor-pointer list-none rounded-md px-3 py-2 text-sm font-medium hover:bg-muted">
-                Menu
-              </summary>
-              <NavLinks className="flex flex-col gap-1 pt-1" />
-            </details>
-            <ProfileSummary profile={profile} error={profileError} />
-          </div>
-          <EventBanner event={event} error={eventError} />
+    <div className="y2k-grid flex min-h-screen flex-col pb-12">
+      <Decorations />
+      <header className="relative z-10 border-b-2 border-border bg-window-body">
+        <div className="mx-auto flex w-full max-w-[1200px] flex-wrap items-center justify-between gap-3 px-4 py-2">
+          <Link href="/" className="flex items-center gap-2">
+            <Sparkle size={16} />
+            <span className="font-pixel text-[12px] leading-relaxed text-foreground">
+              REDISETHACK
+            </span>
+          </Link>
+          {profileError ? (
+            <p role="alert" className="font-body text-xs font-bold text-btn-danger">
+              Your profile could not be loaded.
+            </p>
+          ) : (
+            <PlayerChip profile={profile} isAdmin={isAdmin} />
+          )}
         </div>
+      </header>
+
+      <div className="relative z-10 mx-auto w-full max-w-[1200px] px-4 pt-4">
+        <EventBanner event={event} error={eventError} />
       </div>
-      <div className="flex-1 flex flex-col">{children}</div>
+
+      <main className="relative z-10 mx-auto w-full max-w-[1200px] flex-1 px-4 py-4">
+        {children}
+      </main>
+
+      <Taskbar isAdmin={isAdmin} isContributor={isContributor} />
     </div>
   );
 }

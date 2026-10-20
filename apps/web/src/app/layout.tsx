@@ -1,17 +1,24 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
-import { Geist, Geist_Mono } from "next/font/google";
-import Link from "next/link";
+import { Nunito, Press_Start_2P, VT323 } from "next/font/google";
 import "./globals.css";
-import { AuthHeaderControls } from "@/components/auth-header-controls";
+import { ToastProvider } from "@/components/y2k-dialog";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const pressStart = Press_Start_2P({
+  weight: "400",
+  variable: "--font-pixel",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const vt323 = VT323({
+  weight: "400",
+  variable: "--font-pixel-lg",
+  subsets: ["latin"],
+});
+
+const nunito = Nunito({
+  weight: ["400", "600", "700", "800"],
+  variable: "--font-body",
   subsets: ["latin"],
 });
 
@@ -30,31 +37,107 @@ const authLocalization = {
   },
 };
 
+const clerkAppearance = {
+  variables: {
+    colorPrimary: "#FFD84D",
+    colorText: "#1A0A2E",
+    colorTextSecondary: "#6B4C6B",
+    colorBackground: "#FFF5DC",
+    colorInputBackground: "#FFFFFF",
+    colorInputText: "#1A0A2E",
+    borderRadius: "0px",
+  },
+  elements: {
+    card: {
+      backgroundColor: "#FFF5DC",
+      border: "2px solid #1A0A2E",
+      boxShadow: "6px 6px 0 #1A0A2E",
+      borderRadius: "0px",
+    },
+    headerTitle: {
+      fontFamily: "var(--font-pixel)",
+      fontSize: "12px",
+      lineHeight: 1.8,
+      color: "#1A0A2E",
+    },
+    headerSubtitle: {
+      fontFamily: "var(--font-body)",
+      fontWeight: 700,
+      color: "#6B4C6B",
+    },
+    socialButtonsBlockButton: {
+      fontFamily: "var(--font-body)",
+      fontWeight: 800,
+      textTransform: "uppercase",
+      fontSize: "12px",
+      border: "2px solid #1A0A2E",
+      boxShadow: "3px 3px 0 #1A0A2E",
+      borderRadius: "0px",
+      color: "#1A0A2E",
+    },
+    formButtonPrimary: {
+      fontFamily: "var(--font-pixel)",
+      fontSize: "10px",
+      textTransform: "uppercase",
+      border: "2px solid #1A0A2E",
+      boxShadow: "3px 3px 0 #1A0A2E",
+      borderRadius: "0px",
+      backgroundColor: "#FFD84D",
+      color: "#1A0A2E",
+      "&:hover": { filter: "brightness(1.08)" },
+      "&:active": { transform: "translate(3px, 3px)", boxShadow: "none" },
+    },
+    formFieldInput: {
+      fontFamily: "var(--font-body)",
+      fontWeight: 700,
+      border: "2px solid #1A0A2E",
+      boxShadow: "2px 2px 0 #1A0A2E",
+      borderRadius: "0px",
+      backgroundColor: "#FFFFFF",
+    },
+    formFieldLabel: {
+      fontFamily: "var(--font-body)",
+      fontWeight: 600,
+      textTransform: "uppercase",
+      fontSize: "11px",
+      color: "#6B4C6B",
+    },
+    footerActionLink: {
+      fontFamily: "var(--font-body)",
+      fontWeight: 700,
+      color: "#1A0A2E",
+    },
+    identityPreviewEditButton: {
+      fontFamily: "var(--font-body)",
+      fontWeight: 700,
+      borderRadius: "0px",
+    },
+    otpInput: {
+      fontFamily: "var(--font-pixel-lg)",
+      fontSize: "24px",
+      border: "2px solid #1A0A2E",
+      boxShadow: "2px 2px 0 #1A0A2E",
+      borderRadius: "0px",
+      backgroundColor: "#FFFFFF",
+    },
+  },
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider localization={authLocalization}>
+    <ClerkProvider localization={authLocalization} appearance={clerkAppearance}>
       <html
         lang="en"
-        className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+        className={`${pressStart.variable} ${vt323.variable} ${nunito.variable} h-full antialiased`}
       >
-        <body className="min-h-full flex flex-col bg-background text-foreground">
-          <header className="sticky top-0 z-40 border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
-              <Link
-                href="/"
-                className="flex items-center gap-2 font-bold text-lg tracking-tight"
-              >
-                <span className="text-primary text-xl">⚡</span>
-                <span>RediSetHack</span>
-              </Link>
-              <AuthHeaderControls />
-            </div>
-          </header>
-          <main className="flex-1 flex flex-col">{children}</main>
+        <body className="min-h-full flex flex-col font-body">
+          <ToastProvider>
+            <main className="flex-1 flex flex-col">{children}</main>
+          </ToastProvider>
         </body>
       </html>
     </ClerkProvider>

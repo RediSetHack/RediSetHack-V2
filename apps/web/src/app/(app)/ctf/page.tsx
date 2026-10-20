@@ -2,8 +2,8 @@ import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { CtfChallengeView } from "@/components/ctf-challenge";
 import { getCtfChallenges, type CtfSummary } from "@/lib/api-client";
+import { EmptyState, StatusChip, Window, XPChip } from "@/components/y2k";
 
-// The parent (app)/layout.tsx already redirects unauthenticated learners to /sign-in.
 export default async function CtfPage({
   searchParams,
 }: Readonly<{ searchParams: Promise<{ challenge?: string }> }>) {
@@ -13,7 +13,7 @@ export default async function CtfPage({
   if (id) {
     return (
       <div className="flex-1 mx-auto w-full max-w-4xl p-6 sm:p-10 space-y-6">
-        <Link href="/ctf" className="text-sm text-muted-foreground underline">All challenges</Link>
+        <Link href="/ctf" className="font-body text-sm font-bold underline">All challenges</Link>
         <CtfChallengeView apiUrl={apiUrl} challengeId={id} />
       </div>
     );
@@ -28,24 +28,27 @@ export default async function CtfPage({
   }
 
   return (
-    <div className="flex-1 mx-auto w-full max-w-4xl p-6 sm:p-10 space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight">Capture the Flag</h1>
-      {challenges === null ? (
-        <p role="alert" className="text-sm text-destructive">Could not load challenges.</p>
-      ) : challenges.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No challenges available yet. Finish more stages to unlock them.</p>
-      ) : (
-        <ul className="space-y-2">
-          {challenges.map((c) => (
-            <li key={c.id} className="rounded-lg border border-border bg-card p-3 text-sm">
-              <Link href={`/ctf?challenge=${c.id}`} className="font-medium underline">{c.title}</Link>
-              <p className="text-muted-foreground">
-                {c.category} · {c.difficulty} · {c.xpReward} XP{c.solved ? " · Solved" : ""}
-              </p>
-            </li>
-          ))}
-        </ul>
-      )}
+    <div className="flex-1 mx-auto w-full max-w-5xl p-6 sm:p-10 space-y-6">
+      <Window title="CTF.EXE">
+        {challenges === null ? (
+          <p role="alert" className="font-body text-sm font-bold text-btn-danger">Could not load challenges.</p>
+        ) : challenges.length === 0 ? (
+          <EmptyState title="No challenges available yet. Finish more stages to unlock them." />
+        ) : (
+          <ul className="space-y-2">
+            {challenges.map((c) => (
+              <li key={c.id} className="border-2 border-border bg-window-body p-3 shadow-[3px_3px_0_var(--border)]">
+                <Link href={`/ctf?challenge=${c.id}`} className="font-pixel text-[9px] leading-relaxed underline">{c.title}</Link>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <span className="font-body text-xs font-bold">{c.category} · {c.difficulty}</span>
+                  <XPChip xp={c.xpReward} />
+                  {c.solved && <StatusChip status="solved" />}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Window>
     </div>
   );
 }

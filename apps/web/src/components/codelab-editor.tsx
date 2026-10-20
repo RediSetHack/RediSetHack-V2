@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import type { Language } from "@repo/contracts";
-import { Button } from "@/components/ui/button";
 import {
   executeCode,
   getCodingActivity,
@@ -12,6 +11,18 @@ import {
   type CodingActivity,
   type CodingAttempt,
 } from "@/lib/api-client";
+import {
+  ConfirmDialog,
+  Y2kAlert,
+} from "@/components/y2k-dialog";
+import {
+  FieldLabel,
+  Progress,
+  Window,
+  Y2kButton,
+  Y2kSelect,
+  Y2kTextarea,
+} from "@/components/y2k";
 
 const LANGUAGES: readonly { readonly id: Language; readonly label: string }[] =
   [
@@ -46,35 +57,29 @@ function OutputPanel({
   const failed = result.failureType !== "none";
 
   return (
-    <div className="rounded-md border border-border bg-card font-mono text-sm">
-      <div className="border-b border-border/60 px-4 py-2 text-xs font-medium text-muted-foreground">
-        {failed
-          ? `${result.failureType === "compile" ? "Compilation failed" : "Program failed"} (exit code ${result.exitCode})`
-          : `Executed in ${result.executionTimeMs}ms`}
-        <span className="ml-3 font-normal">
-          Request: {result.requestDurationMs}ms · Total: {learnerElapsedTimeMs}
-          ms
-        </span>
+    <Window
+      title={
+        failed
+          ? `Program exited with code ${result.exitCode}`
+          : `Ran in ${result.executionTimeMs}ms`
+      }
+      bodyClassName="space-y-2 font-mono text-sm"
+    >
+      <div className="text-xs text-muted-foreground">
+        Request: {result.requestDurationMs}ms · Total: {learnerElapsedTimeMs}ms
       </div>
       {!hasOutput && (
-        <p className="px-4 py-3 text-muted-foreground">
-          Program produced no output.
-        </p>
+        <p className="text-muted-foreground">Program produced no output.</p>
       )}
       {result.stdout.length > 0 && (
-        <pre className="overflow-x-auto whitespace-pre-wrap p-4">
-          {result.stdout}
-        </pre>
+        <pre className="overflow-x-auto whitespace-pre-wrap">{result.stdout}</pre>
       )}
       {result.stderr.length > 0 && (
-        <pre
-          role="alert"
-          className="overflow-x-auto whitespace-pre-wrap p-4 text-destructive"
-        >
+        <pre role="alert" className="overflow-x-auto whitespace-pre-wrap text-btn-danger">
           {result.stderr}
         </pre>
       )}
-    </div>
+    </Window>
   );
 }
 
@@ -96,19 +101,19 @@ const CATEGORY_MESSAGE: Record<CodingAttempt["errorCategory"], string> = {
 
 function AttemptPanel({ attempt }: Readonly<{ attempt: CodingAttempt }>) {
   return (
-    <div className="space-y-2 rounded-md border border-border bg-card p-4 text-sm">
-      <p role="status" className="font-medium">
+    <Window title="Graded Result" bodyClassName="space-y-2 text-sm">
+      <p role="status" className="font-body font-bold">
         {attempt.passed ? "Passed" : "Not yet"} — {attempt.checksPassed}/
         {attempt.checksTotal} checks ({attempt.score}%).{" "}
         {CATEGORY_MESSAGE[attempt.errorCategory]}
       </p>
       {attempt.xpAwarded > 0 && (
-        <p className="text-primary">+{attempt.xpAwarded} XP earned</p>
+        <p className="font-body font-bold text-foreground">+{attempt.xpAwarded} XP earned</p>
       )}
       <ul className="font-mono">
         {attempt.visibleResults.map((r) => (
           <li key={r.input}>
-            {r.passed ? "✓" : "✗"} input {JSON.stringify(r.input)}: expected{" "}
+            {r.passed ? "OK" : "FAIL"} input {JSON.stringify(r.input)}: expected{" "}
             {JSON.stringify(r.expected)}, got {JSON.stringify(r.actual.trim())}
           </li>
         ))}
@@ -116,7 +121,7 @@ function AttemptPanel({ attempt }: Readonly<{ attempt: CodingAttempt }>) {
       <p className="text-xs text-muted-foreground">
         Hidden checks are not shown. Sandbox time: {attempt.elapsedMs}ms.
       </p>
-    </div>
+    </Window>
   );
 }
 
@@ -225,34 +230,41 @@ export function CodelabEditor({
     }
   }
 
+  const [resetOpen, setResetOpen] = useState(false);
+
+  const starterForLang = STARTER_EXAMPLES[language];
+
+  function handleReset() {
+    setCode(starterForLang);
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold tracking-tight">Codelab</h1>
-        <label className="flex items-center gap-2 text-sm">
-          <span className="text-muted-foreground">Language</span>
-          <select
+      <Window title="CODELAB.EXE">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <FieldLabel htmlFor="language-select">Language</FieldLabel>
+          <Y2kSelect
+            id="language-select"
             value={language}
             onChange={(event) =>
               handleLanguageChange(event.target.value as Language)
             }
-            className="rounded-lg border border-input bg-background px-2.5 py-1.5 text-sm font-medium"
           >
             {LANGUAGES.map((languageOption) => (
               <option key={languageOption.id} value={languageOption.id}>
                 {languageOption.label}
               </option>
             ))}
-          </select>
-        </label>
-      </div>
+          </Y2kSelect>
+        </div>
+      </Window>
 
       {activity && (
-        <section className="space-y-2 rounded-md border border-border/60 p-4">
-          <h2 className="font-semibold">{activity.title}</h2>
-          <p>{activity.prompt}</p>
+        <Window title="Side Quest" bodyClassName="space-y-2">
+          <h2 className="font-pixel text-[11px] leading-relaxed">{activity.title}</h2>
+          <p className="font-body text-sm font-bold">{activity.prompt}</p>
           {[...activity.objectives.programming, ...activity.objectives.security].length > 0 && (
-            <ul className="list-disc pl-5 text-sm">
+            <ul className="list-disc pl-5 font-body text-sm font-bold">
               {activity.objectives.programming.map((o) => (
                 <li key={o}>Programming: {o}</li>
               ))}
@@ -274,56 +286,63 @@ export function CodelabEditor({
               </li>
             ))}
           </ul>
-        </section>
+        </Window>
       )}
 
-      <div>
-        <label htmlFor="code-input" className="mb-1 block text-sm font-medium">
-          Code
-        </label>
-        <textarea
+      <Window title="Code" bodyClassName="space-y-2">
+        <Y2kTextarea
           id="code-input"
           value={code}
           onChange={(event) => setCode(event.target.value)}
           spellCheck={false}
-          className="min-h-64 w-full rounded-lg border border-input bg-background p-3 font-mono text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="min-h-64 font-mono text-sm"
         />
-      </div>
+      </Window>
 
-      <div>
-        <label htmlFor="stdin-input" className="mb-1 block text-sm font-medium">
-          Standard input
-          <span className="ml-1 text-xs text-muted-foreground">
-            (optional — for programs that read input)
-          </span>
-        </label>
-        <textarea
+      <Window title="Standard input (optional — for programs that read input)" bodyClassName="space-y-2">
+        <Y2kTextarea
           id="stdin-input"
           value={stdin}
           onChange={(event) => setStdin(event.target.value)}
           spellCheck={false}
-          className="min-h-16 w-full rounded-lg border border-input bg-background p-3 font-mono text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="min-h-16 font-mono text-sm"
         />
-      </div>
+      </Window>
 
-      <div className="flex items-center gap-3">
-        <Button onClick={handleRun} disabled={isRunning}>
-          {isRunning ? "Running…" : "Run"}
-        </Button>
+      <div className="flex flex-wrap items-center gap-3">
+        <Y2kButton onClick={handleRun} disabled={isRunning}>
+          {isRunning ? "RUNNING…" : "RUN"}
+        </Y2kButton>
         {activityId !== undefined && (
-          <Button onClick={handleSubmit} disabled={isRunning || !activity}>
+          <Y2kButton onClick={handleSubmit} disabled={isRunning || !activity}>
             Submit for grading
-          </Button>
+          </Y2kButton>
         )}
+        <Y2kButton variant="secondary" onClick={() => setResetOpen(true)}>
+          RESET
+        </Y2kButton>
         <span aria-live="polite" className="sr-only">
           {isRunning ? "Running your code" : ""}
         </span>
-        {runError && (
-          <p role="alert" className="text-sm text-destructive">
-            {runError}
-          </p>
-        )}
       </div>
+
+      {isRunning && <Progress value={60} label="Running" />}
+
+      {runError && (
+        <Y2kAlert
+          open
+          onOpenChange={() => setRunError(null)}
+          title="Error"
+          icon="alert"
+          actions={
+            <Y2kButton variant="primary" onClick={() => setRunError(null)}>
+              OK
+            </Y2kButton>
+          }
+        >
+          {runError}
+        </Y2kAlert>
+      )}
 
       {attempt && <AttemptPanel attempt={attempt} />}
 
@@ -335,6 +354,16 @@ export function CodelabEditor({
           />
         </div>
       )}
+
+      <ConfirmDialog
+        open={resetOpen}
+        onOpenChange={setResetOpen}
+        title="Reset"
+        message="Restore starter code?"
+        confirmLabel="Reset"
+        cancelLabel="Cancel"
+        onConfirm={handleReset}
+      />
     </div>
   );
 }

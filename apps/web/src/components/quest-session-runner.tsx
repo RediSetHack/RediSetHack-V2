@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { formatXp } from "@/lib/format";
 import { submitQuest, type QuestSession, type QuestSubmitResult } from "@/lib/api-client";
 import {
   accumulateAnswer,
@@ -15,6 +16,16 @@ import {
   toSubmission,
   type AnswerMap,
 } from "@/lib/quest-session";
+import {
+  SegmentedTracker,
+  Window,
+  XPChip,
+  Y2kButton,
+  buttonClasses,
+} from "@/components/y2k";
+import { ConfirmDialog, ErrorAlert, Y2kAlert } from "@/components/y2k-dialog";
+
+const OPTION_LABELS = ["A", "B", "C", "D", "E", "F"];
 
 function CountdownAnnouncement({ seconds }: Readonly<{ seconds: number | null }>) {
   // Visually hidden and updated only at coarse checkpoints (see the tick
@@ -30,60 +41,70 @@ function CountdownAnnouncement({ seconds }: Readonly<{ seconds: number | null }>
 function SubmissionResult({
   result,
   questId,
-}: Readonly<{ result: QuestSubmitResult; questId: number }>) {
+  title,
+}: Readonly<{ result: QuestSubmitResult; questId: number; title: string }>) {
   return (
-    <div className="space-y-6" aria-live="polite">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">
+    <div className="space-y-4" aria-live="polite">
+      <Window title={`${title} — RESULT`}>
+        <h1 className="font-pixel text-lg leading-relaxed text-foreground">
           {result.outcome === "expired"
-            ? "Time expired"
+            ? "TIME EXPIRED"
             : result.passed
-              ? "Quest passed!"
-              : "Quest not passed"}
+              ? "QUEST PASSED!"
+              : "QUEST NOT PASSED"}
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-3 font-pixel-lg text-xl text-foreground">
           {result.outcome === "expired"
             ? "The deadline passed before your answers were submitted, so no credit was given."
             : `Score: ${result.score}%`}
         </p>
-      </div>
+      </Window>
 
-      <div className="rounded-xl border border-border bg-card p-4">
-        <p className="font-medium text-foreground">
-          {result.xpAwarded > 0
-            ? `+${result.xpAwarded} XP awarded`
-            : "No XP awarded"}
+      <Window title="XP">
+        <div className="flex flex-wrap items-center gap-3">
+          {result.xpAwarded > 0 ? (
+            <>
+              <XPChip xp={result.xpAwarded} />
+              <span className="font-pixel-lg text-xl text-foreground">
+                +{formatXp(result.xpAwarded)} awarded
+              </span>
+            </>
+          ) : (
+            <span className="font-pixel-lg text-xl text-foreground">No XP awarded</span>
+          )}
+        </div>
+        <p className="mt-2 font-body text-xs font-bold text-muted-foreground">
+          XP is only awarded the first time you pass a Quest — retaking a Quest you&apos;ve already
+          passed is free to do, but won&apos;t earn XP again.
         </p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          XP is only awarded the first time you pass a Quest — retaking a Quest
-          you&apos;ve already passed is free to do, but won&apos;t earn XP again.
-        </p>
-      </div>
+      </Window>
 
       {result.badgesEarned.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p className="font-medium text-foreground">Badges earned</p>
-          <ul className="mt-2 space-y-1">
+        <Window title="BADGES EARNED">
+          <ul className="space-y-2">
             {result.badgesEarned.map((badge) => (
-              <li key={badge.id} className="text-sm text-muted-foreground">
+              <li
+                key={badge.id}
+                className="flex items-center gap-2 border-2 border-border bg-window-body px-2 py-1 font-body text-sm font-bold text-foreground shadow-[2px_2px_0_var(--border)]"
+              >
                 {badge.name}
                 {badge.awardCount > 1 ? ` ×${badge.awardCount}` : ""}
               </li>
             ))}
           </ul>
-        </div>
+        </Window>
       )}
 
-      <div className="flex flex-wrap gap-3">
-        <Button render={<Link href={`/quests/results/${result.resultId}`} />}>
+      <div className="flex flex-wrap gap-2">
+        <Link href={`/quests/results/${result.resultId}`} className={buttonClasses("primary")}>
           Review your answers
-        </Button>
-        <Button variant="outline" render={<Link href={`/quests/${questId}/session`} />}>
+        </Link>
+        <Link href={`/quests/${questId}/session`} className={buttonClasses("secondary")}>
           Retake Quest
-        </Button>
-        <Button variant="ghost" render={<Link href="/quests" />}>
+        </Link>
+        <Link href="/quests" className={buttonClasses("ghost")}>
           Back to Quests
-        </Button>
+        </Link>
       </div>
     </div>
   );
@@ -108,6 +129,8 @@ export function QuestSessionRunner({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [result, setResult] = useState<QuestSubmitResult | null>(null);
+  const [confirmSubmitOpen, setConfirmSubmitOpen] = useState(false);
+  const [timesUpOpen, setTimesUpOpen] = useState(false);
 
   // A ref, not state, so the interval's auto-submit always sees the latest
   // answers without needing to be torn down and rebuilt on every keystroke.
@@ -150,7 +173,7 @@ export function QuestSessionRunner({
       setSubmitError(
         err instanceof Error
           ? err.message
-          : "Failed to submit your Quest. Your answers are still here — try again.",
+          : "Failed to submit. Your answers are still here — try again.",
       );
     } finally {
       setIsSubmitting(false);
@@ -168,6 +191,7 @@ export function QuestSessionRunner({
       }
       if (isExpired(session.expiresAt, Date.now(), skewMs) && !autoSubmitTriggeredRef.current) {
         autoSubmitTriggeredRef.current = true;
+        setTimesUpOpen(true);
         void doSubmit();
       }
     };
@@ -177,93 +201,150 @@ export function QuestSessionRunner({
     return () => clearInterval(id);
   }, [session.expiresAt, skewMs, doSubmit, result]);
 
+  const answeredSet = useMemo(() => {
+    const set = new Set<number>();
+    session.questions.forEach((q, i) => {
+      if (answers[q.id] !== undefined) set.add(i);
+    });
+    return set;
+  }, [answers, session.questions]);
+
   if (result) {
-    return <SubmissionResult result={result} questId={questId} />;
+    return <SubmissionResult result={result} questId={questId} title={session.title} />;
   }
 
   const question = session.questions[index];
   const total = session.questions.length;
   const answeredCount = Object.keys(answers).length;
+  const unansweredCount = total - answeredCount;
+  const danger = remaining <= 10;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <CountdownAnnouncement seconds={announcedSeconds} />
 
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight">{session.title}</h1>
-          <p className="text-sm text-muted-foreground">
+      <Window title={session.title}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="font-body text-sm font-bold text-foreground">
             Question {index + 1} of {total} • {answeredCount} answered
           </p>
+          <p
+            className={cn(
+              "inline-flex items-center gap-2 border-2 border-border px-2 py-1 font-pixel text-[9px] leading-relaxed tabular-nums",
+              danger ? "bg-btn-danger text-white y2k-danger-pulse" : "bg-window-body text-foreground",
+            )}
+          >
+            Time remaining: {formatCountdown(remaining)}
+          </p>
         </div>
-        <p
-          className={`text-sm font-semibold tabular-nums ${
-            remaining <= 10 ? "text-destructive" : "text-foreground"
-          }`}
-        >
-          Time remaining: {formatCountdown(remaining)}
-        </p>
-      </div>
+        <div className="mt-3">
+          <SegmentedTracker
+            total={total}
+            current={index}
+            answered={answeredSet}
+            onSelect={(i) => setIndex(i)}
+          />
+        </div>
+      </Window>
 
       {question && (
-        <fieldset className="rounded-xl border border-border bg-card p-4">
-          <legend className="px-1 font-medium text-foreground">{question.prompt}</legend>
-          {(Boolean(question.difficulty) || (question.competencies?.length ?? 0) > 0) && (
-            <div className="mb-3 text-sm text-muted-foreground">
-              {question.difficulty && <p>Difficulty: {question.difficulty}</p>}
-              {question.competencies?.map((competency) => <p key={competency.id}>{competency.objective}</p>)}
+        <Window title={`QUESTION ${index + 1}`}>
+          <fieldset>
+            <legend className="font-body text-base font-bold text-foreground">
+              {question.prompt}
+            </legend>
+            {(Boolean(question.difficulty) || (question.competencies?.length ?? 0) > 0) && (
+              <div className="mt-2 font-body text-xs font-bold text-muted-foreground">
+                {question.difficulty && <p>Difficulty: {question.difficulty}</p>}
+                {question.competencies?.map((competency) => (
+                  <p key={competency.id}>{competency.objective}</p>
+                ))}
+              </div>
+            )}
+            <div className="mt-4 space-y-2">
+              {question.options.map((option, optionIndex) => {
+                const selected = answers[question.id] === option.id;
+                return (
+                  <label
+                    key={option.id}
+                    className={cn(
+                      "flex cursor-pointer items-center gap-3 border-2 border-border bg-white p-3 transition-[filter] duration-[80ms] hover:brightness-[1.03]",
+                      selected
+                        ? "border-accent shadow-[3px_3px_0_var(--accent)]"
+                        : "shadow-[3px_3px_0_var(--border)]",
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name={`question-${question.id}`}
+                      value={option.id}
+                      checked={selected}
+                      onChange={() =>
+                        setAnswers((prev) => accumulateAnswer(prev, question.id, option.id))
+                      }
+                      className="sr-only"
+                    />
+                    <span className="flex size-6 shrink-0 items-center justify-center border-2 border-border bg-title-bar font-pixel text-[9px]">
+                      {OPTION_LABELS[optionIndex] ?? optionIndex + 1}
+                    </span>
+                    <span className="font-body text-sm font-bold text-foreground">
+                      {option.text}
+                    </span>
+                  </label>
+                );
+              })}
             </div>
-          )}
-          <div className="mt-3 space-y-2">
-            {question.options.map((option) => (
-              <label
-                key={option.id}
-                className="flex cursor-pointer items-center gap-2 rounded-lg border border-transparent p-2 hover:bg-muted has-[:checked]:border-primary has-[:checked]:bg-primary/5"
-              >
-                <input
-                  type="radio"
-                  name={`question-${question.id}`}
-                  value={option.id}
-                  checked={answers[question.id] === option.id}
-                  onChange={() =>
-                    setAnswers((prev) => accumulateAnswer(prev, question.id, option.id))
-                  }
-                  className="size-4"
-                />
-                <span className="text-sm text-foreground">{option.text}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
+          </fieldset>
+        </Window>
       )}
 
       {submitError && (
-        <p role="alert" className="text-sm text-destructive">
-          {submitError}
-        </p>
+        <ErrorAlert message="Failed to submit. Your answers are still here — try again." onRetry={doSubmit} />
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-2">
-          <Button
-            variant="outline"
+          <Y2kButton
+            variant="secondary"
             onClick={() => setIndex((i) => Math.max(0, i - 1))}
             disabled={index === 0}
           >
             Previous
-          </Button>
-          <Button
-            variant="outline"
+          </Y2kButton>
+          <Y2kButton
+            variant="secondary"
             onClick={() => setIndex((i) => Math.min(total - 1, i + 1))}
             disabled={index === total - 1}
           >
             Next
-          </Button>
+          </Y2kButton>
         </div>
-        <Button onClick={doSubmit} disabled={isSubmitting}>
+        <Y2kButton
+          onClick={() => (unansweredCount > 0 ? setConfirmSubmitOpen(true) : void doSubmit())}
+          disabled={isSubmitting}
+        >
           {isSubmitting ? "Submitting…" : "Submit Quest"}
-        </Button>
+        </Y2kButton>
       </div>
+
+      <ConfirmDialog
+        open={confirmSubmitOpen}
+        onOpenChange={setConfirmSubmitOpen}
+        title="Submit Quest?"
+        message={`You have ${unansweredCount} unanswered. Submit anyway?`}
+        confirmLabel="Submit"
+        cancelLabel="Cancel"
+        onConfirm={() => void doSubmit()}
+      />
+
+      <Y2kAlert
+        open={timesUpOpen}
+        onOpenChange={setTimesUpOpen}
+        title="TIME'S UP"
+        icon="alert"
+      >
+        TIME&apos;S UP — submitting your answers…
+      </Y2kAlert>
     </div>
   );
 }

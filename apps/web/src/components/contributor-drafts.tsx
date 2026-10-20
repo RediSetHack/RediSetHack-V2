@@ -9,10 +9,10 @@ import {
   updateContributorDraft,
   type ContributorDraftItem,
 } from "@/lib/api-client";
+import { FieldLabel, StatusChip, Window, Y2kButton, Y2kInput, Y2kTextarea } from "@/components/y2k";
 
 const BLANK = JSON.stringify([{ type: "text", content: "" }], null, 2);
 
-/** Lists the caller's drafts and edits one: title, a Zone (new drafts), and Lesson blocks as JSON. */
 export function ContributorDrafts({ apiUrl, initial }: Readonly<{ apiUrl: string; initial: ContributorDraftItem[] }>) {
   const { getToken } = useAuth();
   const [drafts, setDrafts] = useState(initial);
@@ -67,44 +67,53 @@ export function ContributorDrafts({ apiUrl, initial }: Readonly<{ apiUrl: string
 
   return (
     <div className="grid gap-6 sm:grid-cols-[16rem_1fr]">
-      <section aria-label="Your drafts" className="space-y-2">
-        <button type="button" onClick={() => open(null)} className="text-sm font-medium underline">New draft</button>
-        {drafts.length === 0 && <p className="text-sm text-muted-foreground">No drafts yet.</p>}
-        <ul className="space-y-2">
-          {drafts.map((d) => (
-            <li key={d.id} className="rounded-lg border border-border bg-card p-3 text-sm">
-              <button type="button" onClick={() => open(d)} className="font-medium underline">{d.title}</button>
-              <p className="text-muted-foreground">Revision {d.revision} · {d.status}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
-      <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); void save(); }}>
-        <h2 className="text-lg font-semibold">{selected ? `Edit draft #${selected.id}` : "New draft"}</h2>
-        {locked && <p className="text-sm text-muted-foreground">This revision was submitted for review and can no longer be changed.</p>}
-        {selected?.status === "revision-needed" && <p className="text-sm text-muted-foreground">A reviewer requested changes. Save an updated revision and submit it for review again.</p>}
-        <label className="block text-sm">Title
-          <input value={title} onChange={(e) => setTitle(e.target.value)} disabled={locked} className="mt-1 w-full rounded border border-border bg-background p-2" />
-        </label>
-        {!selected && (
-          <label className="block text-sm">Zone (chapter) id
-            <input value={zoneId} onChange={(e) => setZoneId(e.target.value)} inputMode="numeric" className="mt-1 w-full rounded border border-border bg-background p-2" />
-          </label>
-        )}
-        <label className="block text-sm">Lesson blocks (JSON)
-          <textarea value={blocks} onChange={(e) => setBlocks(e.target.value)} disabled={locked} rows={12} className="mt-1 w-full rounded border border-border bg-background p-2 font-mono text-xs" />
-        </label>
-        {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-        {notice && <p role="status" className="text-sm">{notice}</p>}
-        <div className="flex gap-3">
-          <button type="submit" disabled={locked} className="rounded border border-border px-3 py-1 text-sm font-medium">Save</button>
-          {selected && (
-            <button type="button" disabled={locked} onClick={() => void submit()} className="rounded border border-border px-3 py-1 text-sm font-medium">
-              Submit revision {selected.revision}
-            </button>
-          )}
+      <Window title="Drafts">
+        <div className="space-y-2">
+          <Y2kButton variant="secondary" onClick={() => open(null)}>NEW DRAFT</Y2kButton>
+          {drafts.length === 0 && <p className="font-body text-sm font-bold text-muted-foreground">No drafts yet.</p>}
+          <ul className="space-y-2">
+            {drafts.map((d) => (
+              <li key={d.id} className="border-2 border-border bg-window-body p-2 shadow-[2px_2px_0_var(--border)]">
+                <button type="button" onClick={() => open(d)} className="font-pixel text-[9px] leading-relaxed underline">{d.title}</button>
+                <div className="mt-1 flex items-center gap-2">
+                  <span className="font-body text-xs font-bold">Rev {d.revision}</span>
+                  <StatusChip status={d.status === "approved" ? "completed" : d.status === "submitted" ? "unlocked" : d.status === "revision-needed" ? "not-passed" : "locked"} label={d.status} />
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
-      </form>
+      </Window>
+      <Window title={selected ? `Edit draft #${selected.id}` : "New draft"}>
+        <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); void save(); }}>
+          {locked && <p className="font-body text-sm font-bold text-muted-foreground">This revision was submitted for review and can no longer be changed.</p>}
+          {selected?.status === "revision-needed" && <p className="font-body text-sm font-bold text-muted-foreground">A reviewer requested changes. Save an updated revision and submit it for review again.</p>}
+          <div>
+            <FieldLabel htmlFor="draft-title">Title</FieldLabel>
+            <Y2kInput id="draft-title" value={title} onChange={(e) => setTitle(e.target.value)} disabled={locked} />
+          </div>
+          {!selected && (
+            <div>
+              <FieldLabel htmlFor="draft-zone">Zone (chapter) id</FieldLabel>
+              <Y2kInput id="draft-zone" value={zoneId} onChange={(e) => setZoneId(e.target.value)} inputMode="numeric" />
+            </div>
+          )}
+          <div>
+            <FieldLabel htmlFor="draft-blocks">Lesson blocks (JSON)</FieldLabel>
+            <Y2kTextarea id="draft-blocks" value={blocks} onChange={(e) => setBlocks(e.target.value)} disabled={locked} rows={12} className="font-mono text-xs" />
+          </div>
+          {error && <p role="alert" className="font-body text-sm font-bold text-btn-danger">{error}</p>}
+          {notice && <p role="status" className="font-body text-sm font-bold">{notice}</p>}
+          <div className="flex flex-wrap gap-2">
+            <Y2kButton type="submit" disabled={locked}>SAVE</Y2kButton>
+            {selected && (
+              <Y2kButton type="button" variant="secondary" disabled={locked} onClick={() => void submit()}>
+                SUBMIT REV {selected.revision}
+              </Y2kButton>
+            )}
+          </div>
+        </form>
+      </Window>
     </div>
   );
 }

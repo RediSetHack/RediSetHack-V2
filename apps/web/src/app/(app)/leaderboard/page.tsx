@@ -22,9 +22,6 @@ export default async function LeaderboardPage({
   try {
     if (token) {
       leaderboard = await getLeaderboard(apiUrl, token, requestedPage, PAGE_SIZE);
-      // A page requested past the end (e.g. a stale bookmark, or the
-      // leaderboard shrinking) clamps back onto the last real page instead
-      // of rendering a page's worth of nothing as "no one has XP yet".
       const { page: clampedPage } = getPageInfo(requestedPage, PAGE_SIZE, leaderboard.total);
       if (clampedPage !== requestedPage) {
         leaderboard = await getLeaderboard(apiUrl, token, clampedPage, PAGE_SIZE);
@@ -36,5 +33,13 @@ export default async function LeaderboardPage({
     error = true;
   }
 
-  return <LeaderboardView leaderboard={leaderboard} error={error} currentUserId={userId} />;
+  return (
+    <div className="flex-1 mx-auto w-full max-w-5xl p-6 sm:p-10">
+      <LeaderboardView
+        leaderboard={leaderboard}
+        error={error}
+        currentUserId={userId}
+      />
+    </div>
+  );
 }
