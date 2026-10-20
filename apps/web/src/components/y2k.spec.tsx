@@ -31,11 +31,12 @@ describe("XPChip", () => {
 });
 
 describe("Progress", () => {
-  it("exposes aria-valuenow and clamps", () => {
+  it("renders a native progress element with value and max", () => {
     const markup = renderToStaticMarkup(<Progress value={150} max={100} label="Zone progress" />);
-    expect(markup).toContain('aria-valuenow="150"');
-    expect(markup).toContain('aria-valuemax="100"');
-    expect(markup).toContain('width:100%');
+    expect(markup).toContain("<progress");
+    expect(markup).toContain('value="150"');
+    expect(markup).toContain('max="100"');
+    expect(markup).toContain('aria-label="Zone progress"');
   });
 });
 

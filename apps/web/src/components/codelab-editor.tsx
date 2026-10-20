@@ -102,11 +102,11 @@ const CATEGORY_MESSAGE: Record<CodingAttempt["errorCategory"], string> = {
 function AttemptPanel({ attempt }: Readonly<{ attempt: CodingAttempt }>) {
   return (
     <Window title="Graded Result" bodyClassName="space-y-2 text-sm">
-      <p role="status" className="font-body font-bold">
+      <output className="block font-body font-bold">
         {attempt.passed ? "Passed" : "Not yet"} — {attempt.checksPassed}/
         {attempt.checksTotal} checks ({attempt.score}%).{" "}
         {CATEGORY_MESSAGE[attempt.errorCategory]}
-      </p>
+      </output>
       {attempt.xpAwarded > 0 && (
         <p className="font-body font-bold text-foreground">+{attempt.xpAwarded} XP earned</p>
       )}

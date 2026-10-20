@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { getDiscover } from "@/lib/api-client";
 import { COMPETENCIES, type DiscoveryItem } from "@repo/contracts";
-import { EmptyState, StatusChip, Window, XPChip, Y2kButton } from "@/components/y2k";
+import { StatusChip, Window, XPChip, Y2kButton } from "@/components/y2k";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 const DEFAULT_LIMIT = 25;
@@ -90,6 +90,7 @@ function ZoneCard({ item }: Readonly<{ item: DiscoveryItem }>) {
 function StageCard({ item }: Readonly<{ item: DiscoveryItem }>) {
   const competencies = item.competencies ?? [];
   const locked = item.status === "locked";
+  const chipStatus = locked ? "locked" : item.status === "completed" ? "completed" : "unlocked";
   const href =
     !locked && item.regionId != null && item.zoneId != null
       ? `/map/${item.regionId}/${item.zoneId}/${item.id}`
@@ -99,7 +100,7 @@ function StageCard({ item }: Readonly<{ item: DiscoveryItem }>) {
     <>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="font-pixel text-[10px] leading-relaxed">{item.title}</p>
-        <StatusChip status={locked ? "locked" : item.status === "completed" ? "completed" : "unlocked"} label={statusLabel(item.status)} />
+        <StatusChip status={chipStatus} label={statusLabel(item.status)} />
       </div>
       <div className="mt-2 flex items-center gap-2">
         <XPChip xp={item.xpReward ?? 0} />

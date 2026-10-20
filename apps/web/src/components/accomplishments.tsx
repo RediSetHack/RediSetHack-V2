@@ -1,8 +1,6 @@
 import type { SharedProfile } from "@/lib/api-client";
 import { formatXp } from "@/lib/format";
 
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
-
 /** Rank, XP and evidence counts shared by the self profile and the public summary. */
 export function AccomplishmentSummary({ summary }: Readonly<{ summary: Pick<SharedProfile, "adventurerRank" | "totalXp" | "accomplishments"> }>) {
   const { novelsCompleted, sideQuestsCompleted, ctfsSolved } = summary.accomplishments;

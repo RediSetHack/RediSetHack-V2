@@ -20,7 +20,7 @@ export function StagesList() {
       key: "zone",
       header: "Zone (Region › Zone)",
       sortValue: (row) => `${regionName.get(regionByZone.get(row.zoneId) ?? -1) ?? ""} ${zoneName.get(row.zoneId) ?? ""}`,
-      render: (row) => `${regionName.get(regionByZone.get(row.zoneId) ?? -1) ?? "?"} › ${zoneName.get(row.zoneId) ?? `#${row.zoneId}`}`,
+      render: (row) => `${regionName.get(regionByZone.get(row.zoneId) ?? -1) ?? "?"} › ${zoneName.get(row.zoneId) ?? "#" + row.zoneId}`,
     },
     { key: "xp", header: "XP reward", sortValue: (row) => row.xpReward, render: (row) => formatXp(row.xpReward) },
     { key: "sortOrder", header: "Sort order", sortValue: (row) => row.sortOrder, render: (row) => row.sortOrder },

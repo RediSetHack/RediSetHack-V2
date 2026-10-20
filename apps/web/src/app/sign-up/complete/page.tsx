@@ -3,9 +3,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AlertTriangle } from "lucide-react";
 import { CharacterPicker } from "@/components/character-selector";
-import { UnregisteredUserCard } from "@/components/unregistered-user-card";
 import { Decorations, Progress, Window, buttonClasses } from "@/components/y2k";
-import { getCurrentUser, getCharacters, getProfile, syncUser } from "@/lib/api-client";
+import { getCharacters, getProfile, syncUser } from "@/lib/api-client";
 
 export default async function SignUpCompletePage() {
   const { userId, getToken } = await auth();

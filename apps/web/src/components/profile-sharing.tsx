@@ -6,6 +6,11 @@ import { setProfileSharing } from "@/lib/api-client";
 import { Y2kButton } from "@/components/y2k";
 import { useToast } from "@/components/y2k-dialog";
 
+const buttonLabel = (busy: boolean, shareId: string | null) => {
+  if (busy) return "SAVING…";
+  return shareId ? "REVOKE" : "SHARE";
+};
+
 export function ProfileSharing({
   initialShareId,
   apiUrl,
@@ -44,11 +49,11 @@ export function ProfileSharing({
         </p>
       )}
       <Y2kButton type="button" onClick={toggle} disabled={busy} aria-busy={busy}>
-        {busy ? "SAVING…" : shareId ? "REVOKE" : "SHARE"}
+        {buttonLabel(busy, shareId)}
       </Y2kButton>
-      <p role="status" className="font-body text-sm font-bold text-muted-foreground">
+      <output className="block font-body text-sm font-bold text-muted-foreground">
         {shareId ? "Your profile is shared." : "Your profile is private."}
-      </p>
+      </output>
       {error && <p role="alert" className="font-body text-sm font-bold text-btn-danger">Sharing could not be updated. Please try again.</p>}
     </section>
   );

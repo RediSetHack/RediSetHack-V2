@@ -85,7 +85,7 @@ export function CtfChallengeView({ apiUrl, challengeId }: Readonly<{ apiUrl: str
           </div>
           <Y2kButton type="submit" disabled={flag.trim() === ""}>SUBMIT</Y2kButton>
         </form>
-        {message && <p role="status" className="mt-2 font-body text-sm font-bold">{message}</p>}
+        {message && <output className="mt-2 block font-body text-sm font-bold">{message}</output>}
       </Window>
     </div>
   );

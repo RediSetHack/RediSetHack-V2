@@ -49,7 +49,8 @@ export function QuestsList() {
     const zoneId = stageInfo.zoneByStage.get(stageId);
     const zone = zoneId === undefined ? undefined : catalog.zones.find((candidate) => candidate.id === zoneId);
     const region = zone === undefined ? undefined : catalog.regions.find((candidate) => candidate.id === zone.regionId);
-    return `${region?.name ?? "?"} › ${zone?.name ?? "?"} › ${stage?.title ?? `#${stageId}`}`;
+    const stageName = stage?.title ?? "#" + stageId;
+    return `${region?.name ?? "?"} › ${zone?.name ?? "?"} › ${stageName}`;
   };
 
   const columns: readonly ListColumn<Quest>[] = [

@@ -14,7 +14,7 @@ export function SharedProfileView({ profile, error }: Readonly<{ profile: Shared
   if (!profile) {
     return (
       <Window title="Not shared">
-        <p role="status" className="font-body text-sm font-bold text-muted-foreground">This profile is not shared or the link has been revoked.</p>
+        <output className="block font-body text-sm font-bold text-muted-foreground">This profile is not shared or the link has been revoked.</output>
       </Window>
     );
   }

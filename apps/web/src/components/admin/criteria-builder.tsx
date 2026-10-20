@@ -114,9 +114,9 @@ export function CriteriaBuilder({
         )}
       </div>
 
-      <p role="status" className="border-2 border-dashed border-border px-3 py-2 font-pixel-lg text-lg leading-snug text-foreground">
+      <output className="block border-2 border-dashed border-border px-3 py-2 font-pixel-lg text-lg leading-snug text-foreground">
         {exhaustive}
-      </p>
+      </output>
 
       <div>
         <button

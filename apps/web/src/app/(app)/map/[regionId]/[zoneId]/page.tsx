@@ -80,7 +80,6 @@ export default async function ZoneStagesPage({
             const num = idx + 1;
             const isLocked = stage.status === "locked";
             const isCompleted = stage.status === "completed";
-            const isUnlocked = stage.status === "available";
             if (isLocked) {
               return (
                 <li key={stage.id}>

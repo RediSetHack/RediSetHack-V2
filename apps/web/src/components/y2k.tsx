@@ -217,30 +217,16 @@ export function Progress({
 }>) {
   const pct = max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 0;
   return (
-    <div
-      role="progressbar"
-      aria-valuenow={value}
-      aria-valuemin={0}
-      aria-valuemax={max}
+    <progress
+      value={value}
+      max={max}
       aria-label={label}
       className={cn(
-        "h-[18px] border-2 border-border bg-white shadow-[2px_2px_0_var(--border)]",
+        "y2k-progress h-[18px] w-full border-2 border-border bg-white shadow-[2px_2px_0_var(--border)]",
+        march && pct < 100 && "y2k-march",
         className,
       )}
-    >
-      <div
-        className={cn(
-          "h-full bg-primary",
-          march && pct < 100 && "y2k-march",
-        )}
-        style={{
-          width: `${pct}%`,
-          backgroundImage:
-            "repeating-linear-gradient(45deg, var(--primary) 0px, var(--primary) 8px, var(--border) 8px, var(--border) 10px)",
-          backgroundSize: pct < 100 ? "14px 14px" : undefined,
-        }}
-      />
-    </div>
+    />
   );
 }
 

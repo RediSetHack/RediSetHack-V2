@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Plus, Search, Trash2, Pencil, ChevronUp, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -108,7 +108,7 @@ export function ResourceList<T extends { id: number }>({
       next = next.filter((row) => filter.match(row, value));
     }
     return compareRows(next, columns, sort);
-  }, [rows, query, filters, filterValues, columns, sort]);
+  }, [rows, query, haystack, filters, filterValues, columns, sort]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -136,6 +136,98 @@ export function ResourceList<T extends { id: number }>({
       setPending(null);
     }
   };
+
+  const sortIcon = (column: ListColumn<T>) => {
+    if (sort?.key !== column.key) return null;
+    return sort.direction === "asc" ? (
+      <ChevronUp aria-hidden="true" className="size-3" />
+    ) : (
+      <ChevronDown aria-hidden="true" className="size-3" />
+    );
+  };
+
+  let body: ReactNode;
+  if (loading) {
+    body = (
+      <output className="block py-8 text-center font-pixel-lg text-xl text-muted-foreground">
+        Loading…
+      </output>
+    );
+  } else if (error) {
+    body = (
+      <p role="alert" className="py-8 text-center font-body text-sm font-bold text-btn-danger">
+        Could not load {title.toLowerCase()}. Try again.
+      </p>
+    );
+  } else if (pageRows.length === 0) {
+    body = (
+      <EmptyState
+        title={rows.length === 0 ? emptyMessage : "No matches"}
+        action={
+          rows.length === 0 ? (
+            <Link href={newHref} className={buttonClasses("primary")}>
+              <Plus aria-hidden="true" className="size-3" />
+              {newLabel}
+            </Link>
+          ) : undefined
+        }
+      />
+    );
+  } else {
+    body = (
+      <Table>
+        <thead>
+          <tr>
+            {columns.map((column) => (
+              <Th key={column.key}>
+                {column.sortValue ? (
+                  <button
+                    type="button"
+                    onClick={() => toggleSort(column.key)}
+                    className="inline-flex items-center gap-1"
+                  >
+                    {column.header}
+                    {sortIcon(column)}
+                  </button>
+                ) : (
+                  column.header
+                )}
+              </Th>
+            ))}
+            <Th>Actions</Th>
+          </tr>
+        </thead>
+        <tbody>
+          {pageRows.map((row) => (
+            <tr key={row.id}>
+              {columns.map((column) => (
+                <Td key={column.key} className={column.className}>
+                  {column.render(row)}
+                </Td>
+              ))}
+              <Td>
+                <div className="flex items-center gap-2">
+                  <Link href={`${newHref.replace(/\/new$/, "")}/${row.id}`} className={buttonClasses("secondary")}>
+                    <Pencil aria-hidden="true" className="size-3" />
+                    EDIT
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setPending(row)}
+                    className={buttonClasses("danger")}
+                    aria-label={`Delete ${deleteName(row)}`}
+                  >
+                    <Trash2 aria-hidden="true" className="size-3" />
+                    DELETE
+                  </button>
+                </div>
+              </Td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+    );
+  }
 
   return (
     <Window
@@ -186,83 +278,7 @@ export function ResourceList<T extends { id: number }>({
           ))}
         </div>
 
-        {loading ? (
-          <p role="status" className="py-8 text-center font-pixel-lg text-xl text-muted-foreground">
-            Loading…
-          </p>
-        ) : error ? (
-          <p role="alert" className="py-8 text-center font-body text-sm font-bold text-btn-danger">
-            Could not load {title.toLowerCase()}. Try again.
-          </p>
-        ) : pageRows.length === 0 ? (
-          <EmptyState
-            title={rows.length === 0 ? emptyMessage : "No matches"}
-            action={
-              rows.length === 0 ? (
-                <Link href={newHref} className={buttonClasses("primary")}>
-                  <Plus aria-hidden="true" className="size-3" />
-                  {newLabel}
-                </Link>
-              ) : undefined
-            }
-          />
-        ) : (
-          <Table>
-            <thead>
-              <tr>
-                {columns.map((column) => {
-                  const sorted = sort?.key === column.key ? sort.direction : false;
-                  return column.sortValue ? (
-                    <Th key={column.key}>
-                      <button
-                        type="button"
-                        onClick={() => toggleSort(column.key)}
-                        className="inline-flex items-center gap-1"
-                      >
-                        {column.header}
-                        {sorted === "asc" ? (
-                          <ChevronUp aria-hidden="true" className="size-3" />
-                        ) : sorted === "desc" ? (
-                          <ChevronDown aria-hidden="true" className="size-3" />
-                        ) : null}
-                      </button>
-                    </Th>
-                  ) : (
-                    <Th key={column.key}>{column.header}</Th>
-                  );
-                })}
-                <Th>Actions</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {pageRows.map((row) => (
-                <tr key={row.id}>
-                  {columns.map((column) => (
-                    <Td key={column.key} className={column.className}>
-                      {column.render(row)}
-                    </Td>
-                  ))}
-                  <Td>
-                    <div className="flex items-center gap-2">
-                      <Link href={`${newHref.replace(/\/new$/, "")}/${row.id}`} className={buttonClasses("secondary")}>
-                        <Pencil aria-hidden="true" className="size-3" />
-                        EDIT
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => setPending(row)}
-                        className={buttonClasses("danger")}
-                        aria-label={`Delete ${deleteName(row)}`}
-                      >
-                        <Trash2 aria-hidden="true" className="size-3" />
-                      </button>
-                    </div>
-                  </Td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        )}
+        {body}
 
         {filtered.length > PAGE_SIZE && (
           <nav aria-label="Pagination" className="flex items-center justify-center gap-3">
@@ -274,9 +290,9 @@ export function ResourceList<T extends { id: number }>({
             >
               PREVIOUS
             </button>
-            <span role="status" className="font-pixel text-[9px] leading-relaxed">
+            <output className="font-pixel text-[9px] leading-relaxed">
               Page {currentPage} of {totalPages}
-            </span>
+            </output>
             <button
               type="button"
               disabled={currentPage >= totalPages}

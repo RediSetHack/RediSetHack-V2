@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LessonBlockView } from "@/components/lesson-blocks";
 import { StageCompletion } from "@/components/stage-completion";
-import { ApiError, getLesson, getRegions, getStages, getZones, type Lesson } from "@/lib/api-client";
+import { ApiError, getLesson, getRegions, getZones, type Lesson } from "@/lib/api-client";
 import { normalizeLessonBlocks } from "@/lib/lesson-blocks";
 import { Breadcrumb, StatusChip, Window, XPChip, Y2kButton } from "@/components/y2k";
 import { Y2kAlert } from "@/components/y2k-dialog";

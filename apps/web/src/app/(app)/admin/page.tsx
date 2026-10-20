@@ -40,6 +40,12 @@ async function loadCounts(token: string): Promise<Counts> {
   ]);
   const stages = stageLists.flat();
 
+  const eventBonus = event?.eventType === "bonus";
+  let eventLabel: string | null = null;
+  if (event) {
+    eventLabel = eventBonus ? `BONUS ×${event.xpMultiplier} XP` : "NORMAL DAY";
+  }
+
   return {
     regions: regions.length,
     zones: zones.length,
@@ -47,8 +53,8 @@ async function loadCounts(token: string): Promise<Counts> {
     quests: quests.length,
     badges: badges.length,
     characters: characters.length,
-    eventLabel: event ? (event.eventType === "bonus" ? `BONUS ×${event.xpMultiplier} XP` : "NORMAL DAY") : null,
-    eventBonus: event?.eventType === "bonus",
+    eventLabel,
+    eventBonus,
   };
 }
 

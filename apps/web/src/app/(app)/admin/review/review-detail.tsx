@@ -17,6 +17,11 @@ import {
 
 type Block = { type?: string; content?: string; language?: string; url?: string; alt?: string; caption?: string; prompt?: string; starterCode?: string };
 
+/** Stable key from a block's own fields — index keys break on reorder. */
+function blockKey(block: Block): string {
+  return [block.type, block.url, block.prompt, block.content].filter(Boolean).join("|");
+}
+
 function BlockView({ block }: Readonly<{ block: Block }>) {
   if (block.type === "code") {
     return (
@@ -148,7 +153,7 @@ export function ReviewDetail({ id }: Readonly<{ id: string }>) {
             {blocks.length === 0 ? (
               <p className="font-body text-sm text-muted-foreground">This revision has no Lesson blocks.</p>
             ) : (
-              blocks.map((block, index) => <BlockView key={index} block={block} />)
+              blocks.map((block) => <BlockView key={blockKey(block)} block={block} />)
             )}
           </div>
         </div>

@@ -8,7 +8,7 @@ async function highlight(code: string, language: string): Promise<string> {
   try {
     return await codeToHtml(code, {
       lang: language,
-      theme: "github-light",
+      theme: "css-variables",
     });
   } catch {
     // Unknown language to the highlighter — fall back to a plain block
@@ -110,8 +110,7 @@ function ImageBlockView({
   );
 }
 
-function UnsupportedBlockView({ type }: Readonly<{ type: string }>) {
-  void type;
+function UnsupportedBlockView() {
   return (
     <Y2kAlert
       open={true}
@@ -157,6 +156,6 @@ export function LessonBlockView({
         />
       );
     default:
-      return <UnsupportedBlockView type={(block as { type: string }).type} />;
+      return <UnsupportedBlockView />;
   }
 }

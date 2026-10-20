@@ -9,6 +9,12 @@ import { buttonClasses, SkeletonWindow, Window, Y2kButton, type Y2kButtonVariant
 
 /* ── Dialog / Alert ─────────────────────────────────────────── */
 
+let toastCounter = 0;
+const nextToastId = () => {
+  toastCounter += 1;
+  return toastCounter;
+};
+
 function DialogShell({
   title,
   children,
@@ -239,7 +245,7 @@ export function ToastProvider({ children }: Readonly<{ children: React.ReactNode
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const push = useCallback((message: string, variant: Toast["variant"] = "success") => {
-    const id = Date.now() + Math.random();
+    const id = nextToastId();
     setToasts((prev) => [...prev, { id, message, variant }]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -256,9 +262,8 @@ export function ToastProvider({ children }: Readonly<{ children: React.ReactNode
         className="fixed right-4 bottom-14 z-[60] flex flex-col gap-2"
       >
         {toasts.map((toast) => (
-          <div
+          <output
             key={toast.id}
-            role="status"
             className={cn(
               "y2k-toast flex items-center gap-2 border-2 border-border px-3 py-2 font-body text-sm font-bold shadow-[4px_4px_0_var(--border)]",
               toast.variant === "success" && "bg-[#59D98F] text-foreground",
@@ -271,7 +276,7 @@ export function ToastProvider({ children }: Readonly<{ children: React.ReactNode
               <X aria-hidden="true" className="size-4" />
             )}
             {toast.message}
-          </div>
+          </output>
         ))}
       </div>
     </ToastContext.Provider>

@@ -65,7 +65,7 @@ export function useCatalog(
   useEffect(() => {
     let cancelled = false;
 
-    (async () => {
+    void (async () => {
       setState((prev) => ({ ...prev, loading: true, error: false }));
       try {
         const regions = await getRegions(API_URL);

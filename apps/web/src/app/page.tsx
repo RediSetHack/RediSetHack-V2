@@ -1,11 +1,9 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { Map, ScrollText, Code2, Award, Star } from "lucide-react";
-import { CharacterSelector } from "@/components/character-selector";
 import { UnregisteredUserCard } from "@/components/unregistered-user-card";
 import {
   AvatarOrInitial,
-  Breadcrumb,
   Decorations,
   DesktopIcon,
   EmptyState,
@@ -13,7 +11,7 @@ import {
   XPChip,
   buttonClasses,
 } from "@/components/y2k";
-import { getCharacters, getCurrentUser, getLeaderboard, getProfile, getTodayEvent, getQuests, getRegions, getStages, getZones, type CharacterOption, type Leaderboard, type Profile } from "@/lib/api-client";
+import { getCurrentUser, getLeaderboard, getProfile, getTodayEvent, getRegions, getStages, getZones, type Leaderboard, type Profile } from "@/lib/api-client";
 import { findNovelResume } from "@/lib/novel-resume";
 
 const LANGUAGES = [
@@ -23,6 +21,31 @@ const LANGUAGES = [
   { label: "C", icon: <Code2 className="size-4" /> },
   { label: "Java", icon: <Code2 className="size-4" /> },
 ];
+
+/** The signed-in learner's "Continue" target: the first novel Stage, or the Map. */
+async function resolveResume(
+  apiUrl: string,
+  token: string,
+): Promise<{ href: string; label: string }> {
+  try {
+    const regions = await getRegions(apiUrl).catch(() => []);
+    const region = regions[0];
+    if (!region) return { href: "/map", label: "Map" };
+    const zones = await getZones(apiUrl, region.id).catch(() => []);
+    const zone = zones[0];
+    if (!zone) return { href: "/map", label: "Map" };
+    const stages = await getStages(apiUrl, token, zone.id).catch(() => []);
+    const resume = findNovelResume([{ zone, stages }]);
+    if (!resume) return { href: "/map", label: "Map" };
+    return {
+      href: `/map/${region.id}/${resume.zone.id}/${resume.stage.id}`,
+      label: resume.stage.title,
+    };
+  } catch (error) {
+    console.error("Failed to resolve resume:", error);
+    return { href: "/map", label: "Map" };
+  }
+}
 
 export default async function Home() {
   const { userId, getToken } = await auth();
@@ -34,12 +57,6 @@ export default async function Home() {
     "";
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-  let characters: CharacterOption[] = [];
-  try {
-    characters = await getCharacters(apiUrl);
-  } catch (error) {
-    console.error("Failed to load character catalog:", error);
-  }
 
   if (!userId) {
     let leaderboard: Leaderboard | null = null;
@@ -191,31 +208,9 @@ export default async function Home() {
     );
   }
 
-  let continueHref = "/map";
-  let continueLabel = "Map";
-  try {
-    if (token) {
-      const [regions, quests] = await Promise.all([
-        getRegions(apiUrl).catch(() => []),
-        getQuests(apiUrl, token).catch(() => []),
-      ]);
-      if (regions.length) {
-        const regionId = regions[0].id;
-        const zones = await getZones(apiUrl, regionId).catch(() => []);
-        if (zones.length) {
-          const zoneId = zones[0].id;
-          const stages = await getStages(apiUrl, token, zoneId).catch(() => []);
-          const resume = findNovelResume([{ zone: zones[0], stages }]);
-          if (resume) {
-            continueHref = `/map/${regionId}/${resume.zone.id}/${resume.stage.id}`;
-            continueLabel = resume.stage.title;
-          }
-        }
-      }
-    }
-  } catch (error) {
-    console.error("Failed to resolve resume:", error);
-  }
+  const resumeTarget = token ? await resolveResume(apiUrl, token) : { href: "/map", label: "Map" };
+  const continueHref = resumeTarget.href;
+  const continueLabel = resumeTarget.label;
 
   const rank = profile?.adventurerRank ?? profile?.level ?? 1;
   const totalXp = profile?.totalXp ?? dbUser?.totalXp ?? 0;

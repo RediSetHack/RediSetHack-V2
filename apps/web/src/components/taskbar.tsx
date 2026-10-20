@@ -70,9 +70,8 @@ export function Taskbar({
   ];
 
   return (
-    <div
+    <nav
       className="fixed inset-x-0 bottom-0 z-40 flex h-10 items-center gap-1 border-t-2 border-border bg-title-bar px-2"
-      role="navigation"
       aria-label="Taskbar"
     >
       <div className="relative">
@@ -154,6 +153,6 @@ export function Taskbar({
       <div className="ml-auto hidden sm:block">
         <Clock />
       </div>
-    </div>
+    </nav>
   );
 }

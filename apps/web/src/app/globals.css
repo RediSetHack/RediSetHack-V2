@@ -285,6 +285,35 @@
     #fff 10px
   );
 }
+/* Native <progress> styled as the Y2K bar: striped fill, hard border, radius 0. */
+.y2k-progress {
+  appearance: none;
+  -webkit-appearance: none;
+  border-radius: 0;
+}
+.y2k-progress::-webkit-progress-bar {
+  background: #fff;
+}
+.y2k-progress::-webkit-progress-value {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--primary) 0px,
+    var(--primary) 8px,
+    var(--border) 8px,
+    var(--border) 10px
+  );
+  background-size: 14px 14px;
+}
+.y2k-progress::-moz-progress-bar {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--primary) 0px,
+    var(--primary) 8px,
+    var(--border) 8px,
+    var(--border) 10px
+  );
+  background-size: 14px 14px;
+}
 .y2k-toast {
   animation: toast-in 160ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
@@ -314,7 +343,7 @@
   .y2k-march,
   .y2k-danger-pulse,
   .y2k-toast {
-    animation: none !important;
+    animation: none;
   }
   .y2k-window {
     opacity: 1;
@@ -325,9 +354,11 @@
   }
 }
 
-/* Shiki: single light theme (no dark mode per DESIGN.md). */
+/* Shiki: single light theme (no dark mode per DESIGN.md). The highlighter uses
+   the `css-variables` theme, so tokens reference --shiki-light* instead of
+   emitting inline colors — plain rules win, no !important needed. */
 .shiki,
 .shiki span {
-  color: var(--shiki-light) !important;
-  background-color: var(--shiki-light-bg) !important;
+  color: var(--shiki-light);
+  background-color: var(--shiki-light-bg);
 }

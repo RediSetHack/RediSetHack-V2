@@ -50,6 +50,8 @@ export function LessonBuilder({
 
   const add = (block: Record<string, unknown>) => onChange([...blocks, { key: newId("block"), block }]);
 
+  const preview = toLessonPayload(blocks).map((block, index) => ({ key: blocks[index]!.key, block }));
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
@@ -227,8 +229,8 @@ export function LessonBuilder({
       >
         <Window title="LESSON" controls={false} className="w-full">
           <ol className="flex flex-col gap-2">
-            {toLessonPayload(blocks).map((block, index) => (
-              <li key={index} className="border-2 border-border p-2">
+            {preview.map(({ key, block }) => (
+              <li key={key} className="border-2 border-border p-2">
                 <span className="font-pixel text-[9px] leading-relaxed uppercase">
                   {(block as { type: string }).type}
                 </span>

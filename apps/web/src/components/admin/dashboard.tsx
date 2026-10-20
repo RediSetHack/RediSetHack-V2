@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { Award, Flag, Globe, Layers, MapPin, Plus, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -51,6 +52,24 @@ export function AdminDashboard({
   const token = useToken();
   const catalog = useCatalog(token, { stages: true });
   const treeRegions = catalog.regions;
+  const treeFailed = catalog.error || error;
+  const treeEmpty = treeRegions.length === 0;
+
+  let eventBody: ReactNode;
+  if (error) {
+    eventBody = (
+      <p className="font-body text-sm font-bold text-muted-foreground">Event unavailable.</p>
+    );
+  } else if (eventLabel) {
+    eventBody = (
+      <div className="flex flex-col gap-2">
+        <StatusChip status={eventBonus ? "bonus" : "normal"} label={eventLabel} />
+        <p className="font-body text-sm font-bold text-foreground">Events are auto-generated — not editable.</p>
+      </div>
+    );
+  } else {
+    eventBody = <SkeletonWindow title="Loading…" label="Loading" />;
+  }
 
   const tiles: Tile[] = [
     { label: "Regions", count: regions, href: "/admin/regions", icon: Globe },
@@ -91,14 +110,14 @@ export function AdminDashboard({
       <div className="grid gap-4 lg:grid-cols-[1fr_16rem]">
         <Window title="CONTENT TREE">
           {catalog.loading ? (
-            <p role="status" className="py-4 text-center font-pixel-lg text-lg text-muted-foreground">
+            <output className="block py-4 text-center font-pixel-lg text-lg text-muted-foreground">
               Loading tree…
-            </p>
-          ) : catalog.error || error ? (
+            </output>
+          ) : treeFailed ? (
             <p role="alert" className="py-4 text-center font-body text-sm font-bold text-btn-danger">
               The content tree could not be loaded.
             </p>
-          ) : treeRegions.length === 0 ? (
+          ) : treeEmpty ? (
             <p className="py-4 text-center font-body text-sm font-bold text-muted-foreground">
               No Regions yet — create the first one.
             </p>
@@ -156,18 +175,8 @@ export function AdminDashboard({
             </ul>
           )}
         </Window>
-
         <Window title="TODAY'S EVENT">
-          {error ? (
-            <p className="font-body text-sm font-bold text-muted-foreground">Event unavailable.</p>
-          ) : eventLabel ? (
-            <div className="flex flex-col gap-2">
-              <StatusChip status={eventBonus ? "bonus" : "normal"} label={eventLabel} />
-              <p className="font-body text-sm font-bold text-foreground">Events are auto-generated — not editable.</p>
-            </div>
-          ) : (
-            <SkeletonWindow title="Loading…" label="Loading" />
-          )}
+          {eventBody}
         </Window>
       </div>
     </div>

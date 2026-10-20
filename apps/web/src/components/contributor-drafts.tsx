@@ -13,6 +13,14 @@ import { FieldLabel, StatusChip, Window, Y2kButton, Y2kInput, Y2kTextarea } from
 
 const BLANK = JSON.stringify([{ type: "text", content: "" }], null, 2);
 
+const STATUS_CHIP: Record<string, "completed" | "unlocked" | "not-passed" | "locked"> = {
+  approved: "completed",
+  submitted: "unlocked",
+  "revision-needed": "not-passed",
+};
+
+const chipStatus = (status: string) => STATUS_CHIP[status] ?? "locked";
+
 export function ContributorDrafts({ apiUrl, initial }: Readonly<{ apiUrl: string; initial: ContributorDraftItem[] }>) {
   const { getToken } = useAuth();
   const [drafts, setDrafts] = useState(initial);
@@ -77,7 +85,7 @@ export function ContributorDrafts({ apiUrl, initial }: Readonly<{ apiUrl: string
                 <button type="button" onClick={() => open(d)} className="font-pixel text-[9px] leading-relaxed underline">{d.title}</button>
                 <div className="mt-1 flex items-center gap-2">
                   <span className="font-body text-xs font-bold">Rev {d.revision}</span>
-                  <StatusChip status={d.status === "approved" ? "completed" : d.status === "submitted" ? "unlocked" : d.status === "revision-needed" ? "not-passed" : "locked"} label={d.status} />
+                  <StatusChip status={chipStatus(d.status)} label={d.status} />
                 </div>
               </li>
             ))}
@@ -103,7 +111,7 @@ export function ContributorDrafts({ apiUrl, initial }: Readonly<{ apiUrl: string
             <Y2kTextarea id="draft-blocks" value={blocks} onChange={(e) => setBlocks(e.target.value)} disabled={locked} rows={12} className="font-mono text-xs" />
           </div>
           {error && <p role="alert" className="font-body text-sm font-bold text-btn-danger">{error}</p>}
-          {notice && <p role="status" className="font-body text-sm font-bold">{notice}</p>}
+          {notice && <output className="block font-body text-sm font-bold">{notice}</output>}
           <div className="flex flex-wrap gap-2">
             <Y2kButton type="submit" disabled={locked}>SAVE</Y2kButton>
             {selected && (

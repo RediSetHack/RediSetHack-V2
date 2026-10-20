@@ -79,9 +79,9 @@ function QuestCard({ quest }: Readonly<{ quest: Quest }>) {
         </div>
         <div className="mt-4 flex items-center justify-end">
           {quest.lockReason ? (
-            <p role="status" className="font-body text-sm font-bold text-muted-foreground">
+            <output className="block font-body text-sm font-bold text-muted-foreground">
               {quest.lockReason}
-            </p>
+            </output>
           ) : (
             <StartQuestDialog quest={quest} />
           )}
@@ -132,7 +132,8 @@ export function QuestList({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div role="group" aria-label="Filter quests" className="flex flex-wrap gap-1">
+        <fieldset className="flex flex-wrap gap-1 border-0 p-0">
+          <legend className="sr-only">Filter quests</legend>
           {FILTERS.map((option) => (
             <button
               key={option.id}
@@ -148,7 +149,7 @@ export function QuestList({
               {option.label}
             </button>
           ))}
-        </div>
+        </fieldset>
         <Y2kInput
           type="search"
           value={search}
