@@ -343,7 +343,10 @@ export function SegmentedTracker({
   return (
     <ol aria-label="Question tracker" className="flex flex-wrap gap-1">
       {Array.from({ length: total }, (_, i) => {
-        const state = i === current ? "current" : answered.has(i) ? "answered" : "unanswered";
+        let state: "current" | "answered" | "unanswered";
+        if (i === current) state = "current";
+        else if (answered.has(i)) state = "answered";
+        else state = "unanswered";
         return (
           <li key={i}>
             <button
@@ -424,9 +427,9 @@ export function Pager({
           <ChevronLeft aria-hidden="true" className="size-3" /> Previous
         </span>
       )}
-      <span role="status" className="font-pixel text-[9px] leading-relaxed">
+      <output className="font-pixel text-[9px] leading-relaxed">
         {label}
-      </span>
+      </output>
       {page < totalPages ? (
         <a href={hrefFor(page + 1)} className={buttonClasses("secondary")}>
           Next <ChevronRight aria-hidden="true" className="size-3" />
@@ -482,7 +485,7 @@ export function SkeletonWindow({
 }: Readonly<{ title?: string; label?: string }>) {
   return (
     <Window title={title}>
-      <div role="status" aria-label={label} className="flex flex-col gap-3 py-4">
+      <output aria-label={label} className="flex flex-col gap-3 py-4">
         <div className="h-[18px] w-full border-2 border-border bg-white shadow-[2px_2px_0_var(--border)]">
           <div
             className="y2k-march h-full"
@@ -495,7 +498,7 @@ export function SkeletonWindow({
           />
         </div>
         <p className="font-pixel-lg text-xl text-muted-foreground">{label}…</p>
-      </div>
+      </output>
     </Window>
   );
 }

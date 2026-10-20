@@ -2,9 +2,8 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ShieldAlert } from "lucide-react";
-import { Window, Sparkle } from "@/components/y2k";
+import { Window, Sparkle, buttonClasses } from "@/components/y2k";
 import { AdminSidebar, AdminSignOut } from "@/components/admin/sidebar";
-import { buttonClasses } from "@/components/y2k";
 
 export default async function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const { userId } = await auth();

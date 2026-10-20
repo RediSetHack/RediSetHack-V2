@@ -158,13 +158,10 @@ export default async function RegionZonesPage({
                 );
                 const total = stages.length;
                 const done = stages.filter(({ status }) => status === "completed").length;
-                const chapterChip = completed ? (
-                  <StatusChip status="completed" />
-                ) : chapterResume ? (
-                  <StatusChip status="unlocked" label="Current" />
-                ) : (
-                  <StatusChip status="locked" label="Not started" />
-                );
+                let chapterChip;
+                if (completed) chapterChip = <StatusChip status="completed" />;
+                else if (chapterResume) chapterChip = <StatusChip status="unlocked" label="Current" />;
+                else chapterChip = <StatusChip status="locked" label="Not started" />;
                 return (
                   <li key={zone.id}>
                     <article className="border-2 border-border bg-window-body shadow-[4px_4px_0_var(--border)]">

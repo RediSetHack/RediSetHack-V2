@@ -2,8 +2,7 @@
 
 import type { ReactNode } from "react";
 import { AlertTriangle, ShieldAlert } from "lucide-react";
-import { FieldError, FieldLabel, Window, buttonClasses } from "@/components/y2k";
-import { SkeletonWindow } from "@/components/y2k";
+import { FieldError, FieldLabel, Window, buttonClasses, SkeletonWindow } from "@/components/y2k";
 
 /**
  * One labeled admin form field: uppercased label, the control, then its

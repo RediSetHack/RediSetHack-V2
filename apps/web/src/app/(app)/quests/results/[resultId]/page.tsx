@@ -81,13 +81,10 @@ export default async function QuestResultPage({
                 <ul className="mt-3 space-y-2">
                   {item.options.map((option) => {
                     const wasChosen = option.id === item.chosenOptionId;
-                    const optionIcon = option.isCorrect ? (
-                      <Check aria-hidden="true" className="size-4 shrink-0" />
-                    ) : wasChosen ? (
-                      <X aria-hidden="true" className="size-4 shrink-0" />
-                    ) : (
-                      <span className="size-4 shrink-0" aria-hidden="true" />
-                    );
+                    let optionIcon;
+                    if (option.isCorrect) optionIcon = <Check aria-hidden="true" className="size-4 shrink-0" />;
+                    else if (wasChosen) optionIcon = <X aria-hidden="true" className="size-4 shrink-0" />;
+                    else optionIcon = <span className="size-4 shrink-0" aria-hidden="true" />;
                     return (
                       <li
                         key={option.id}

@@ -4,11 +4,74 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { Award, Flag, Globe, Layers, MapPin, Plus, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { StatusChip, Window, buttonClasses, XPChip } from "@/components/y2k";
-import { SkeletonWindow } from "@/components/y2k";
-import { useCatalog, useToken } from "@/components/admin/use-catalog";
+import { StatusChip, Window, buttonClasses, XPChip, SkeletonWindow } from "@/components/y2k";
+import { useCatalog, useToken, type Catalog } from "@/components/admin/use-catalog";
 
 type Tile = Readonly<{ label: string; count: number | null; href: string; icon: LucideIcon; note?: string }>;
+
+function ContentTree({
+  regions,
+  zones,
+  stages,
+}: Readonly<{
+  regions: Catalog["regions"];
+  zones: Catalog["zones"];
+  stages: Catalog["stages"];
+}>) {
+  return (
+    <ul className="flex flex-col gap-1">
+      {regions.map((region) => {
+        const regionZones = zones.filter((zone) => zone.regionId === region.id);
+        return (
+          <li key={region.id}>
+            <details>
+              <summary className="flex items-center gap-2 font-body text-[13px] font-bold">
+                <span>{region.name}</span>
+                <Link href={`/admin/regions/${region.id}`} className="text-xs underline">
+                  Edit
+                </Link>
+              </summary>
+              <ul className="mt-1 ml-4 flex flex-col gap-1 border-l-2 border-border/40 pl-3">
+                {regionZones.length === 0 && (
+                  <li className="font-body text-xs text-muted-foreground">No Zones.</li>
+                )}
+                {regionZones.map((zone) => {
+                  const zoneStages = stages.filter((stage) => stage.zoneId === zone.id);
+                  return (
+                    <li key={zone.id}>
+                      <details>
+                        <summary className="flex items-center gap-2 font-body text-[13px] font-bold">
+                          <span>{zone.name}</span>
+                          <Link href={`/admin/zones/${zone.id}`} className="text-xs underline">
+                            Edit
+                          </Link>
+                        </summary>
+                        <ul className="mt-1 ml-4 flex flex-col gap-1 border-l-2 border-border/40 pl-3">
+                          {zoneStages.length === 0 && (
+                            <li className="font-body text-xs text-muted-foreground">No Stages.</li>
+                          )}
+                          {zoneStages.map((stage) => (
+                            <li key={stage.id} className="flex items-center gap-2 font-body text-[13px] font-bold">
+                              <span>{stage.title}</span>
+                              <XPChip xp={stage.xpReward} />
+                              <Link href={`/admin/stages/${stage.id}`} className="text-xs underline">
+                                Edit
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    </li>
+                  );
+                })}
+              </ul>
+            </details>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
 
 function StatTile({ tile }: Readonly<{ tile: Tile }>) {
   return (
@@ -54,6 +117,29 @@ export function AdminDashboard({
   const treeRegions = catalog.regions;
   const treeFailed = catalog.error || error;
   const treeEmpty = treeRegions.length === 0;
+
+  let treeBody: ReactNode;
+  if (catalog.loading) {
+    treeBody = (
+      <output className="block py-4 text-center font-pixel-lg text-lg text-muted-foreground">
+        Loading tree…
+      </output>
+    );
+  } else if (treeFailed) {
+    treeBody = (
+      <p role="alert" className="py-4 text-center font-body text-sm font-bold text-btn-danger">
+        The content tree could not be loaded.
+      </p>
+    );
+  } else if (treeEmpty) {
+    treeBody = (
+      <p className="py-4 text-center font-body text-sm font-bold text-muted-foreground">
+        No Regions yet — create the first one.
+      </p>
+    );
+  } else {
+    treeBody = <ContentTree regions={treeRegions} zones={catalog.zones} stages={catalog.stages} />;
+  }
 
   let eventBody: ReactNode;
   if (error) {
@@ -109,71 +195,7 @@ export function AdminDashboard({
 
       <div className="grid gap-4 lg:grid-cols-[1fr_16rem]">
         <Window title="CONTENT TREE">
-          {catalog.loading ? (
-            <output className="block py-4 text-center font-pixel-lg text-lg text-muted-foreground">
-              Loading tree…
-            </output>
-          ) : treeFailed ? (
-            <p role="alert" className="py-4 text-center font-body text-sm font-bold text-btn-danger">
-              The content tree could not be loaded.
-            </p>
-          ) : treeEmpty ? (
-            <p className="py-4 text-center font-body text-sm font-bold text-muted-foreground">
-              No Regions yet — create the first one.
-            </p>
-          ) : (
-            <ul className="flex flex-col gap-1">
-              {treeRegions.map((region) => {
-                const regionZones = catalog.zones.filter((zone) => zone.regionId === region.id);
-                return (
-                  <li key={region.id}>
-                    <details>
-                      <summary className="flex items-center gap-2 font-body text-[13px] font-bold">
-                        <span>{region.name}</span>
-                        <Link href={`/admin/regions/${region.id}`} className="text-xs underline">
-                          Edit
-                        </Link>
-                      </summary>
-                      <ul className="mt-1 ml-4 flex flex-col gap-1 border-l-2 border-border/40 pl-3">
-                        {regionZones.length === 0 && (
-                          <li className="font-body text-xs text-muted-foreground">No Zones.</li>
-                        )}
-                        {regionZones.map((zone) => {
-                          const zoneStages = catalog.stages.filter((stage) => stage.zoneId === zone.id);
-                          return (
-                            <li key={zone.id}>
-                              <details>
-                                <summary className="flex items-center gap-2 font-body text-[13px] font-bold">
-                                  <span>{zone.name}</span>
-                                  <Link href={`/admin/zones/${zone.id}`} className="text-xs underline">
-                                    Edit
-                                  </Link>
-                                </summary>
-                                <ul className="mt-1 ml-4 flex flex-col gap-1 border-l-2 border-border/40 pl-3">
-                                  {zoneStages.length === 0 && (
-                                    <li className="font-body text-xs text-muted-foreground">No Stages.</li>
-                                  )}
-                                  {zoneStages.map((stage) => (
-                                    <li key={stage.id} className="flex items-center gap-2 font-body text-[13px] font-bold">
-                                      <span>{stage.title}</span>
-                                      <XPChip xp={stage.xpReward} />
-                                      <Link href={`/admin/stages/${stage.id}`} className="text-xs underline">
-                                        Edit
-                                      </Link>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </details>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </details>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+          {treeBody}
         </Window>
         <Window title="TODAY'S EVENT">
           {eventBody}

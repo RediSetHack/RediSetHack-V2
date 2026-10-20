@@ -6,8 +6,10 @@ import { EmptyState, StatusChip, Window, XPChip } from "@/components/y2k";
 
 const ACTIVITY_HREF = { ctf: "/ctf?challenge=", coding: "/codelab?activity=" } as const;
 
-const chipStatus = (status: string) =>
-  status === "completed" ? "completed" : status === "available" ? "unlocked" : "locked";
+const chipStatus = (status: string) => {
+  if (status === "completed") return "completed";
+  return status === "available" ? "unlocked" : "locked";
+};
 
 function SideQuestDetail({ detail }: Readonly<{ detail: SideQuest | null }>) {
   if (!detail) {

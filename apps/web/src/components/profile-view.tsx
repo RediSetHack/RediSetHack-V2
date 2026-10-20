@@ -150,7 +150,7 @@ export function ProfileView({
               if (typeof openUserProfile === "function") {
                 openUserProfile();
               } else {
-                window.open("https://accounts.clerk.dev/user", "_blank");
+                window.open("https://accounts.clerk.dev/user", "_blank", "noopener,noreferrer");
               }
             }}
           >

@@ -90,11 +90,15 @@ function ZoneCard({ item }: Readonly<{ item: DiscoveryItem }>) {
 function StageCard({ item }: Readonly<{ item: DiscoveryItem }>) {
   const competencies = item.competencies ?? [];
   const locked = item.status === "locked";
-  const chipStatus = locked ? "locked" : item.status === "completed" ? "completed" : "unlocked";
   const href =
     !locked && item.regionId != null && item.zoneId != null
       ? `/map/${item.regionId}/${item.zoneId}/${item.id}`
       : undefined;
+
+  let chipStatus: "locked" | "completed" | "unlocked";
+  if (locked) chipStatus = "locked";
+  else if (item.status === "completed") chipStatus = "completed";
+  else chipStatus = "unlocked";
 
   const body = (
     <>

@@ -627,8 +627,10 @@ async function adminRequest(method: string, endpoint: string, token: string, bod
 
 /** The four admin verbs shared by every content resource, `POST`/`GET`/`PATCH`/`DELETE /v1/api/admin/{resource}[/:id]`. */
 function adminCrud<T>(resource: "regions" | "zones" | "stages" | "quests" | "badges" | "characters") {
-  const endpoint = (apiBaseUrl: string, id?: number | string) =>
-    `${apiBaseUrl.replace(/\/$/, "")}/v1/api/admin/${resource}${id === undefined ? "" : `/${id}`}`;
+  const endpoint = (apiBaseUrl: string, id?: number | string) => {
+    const suffix = id === undefined ? "" : "/" + id;
+    return `${apiBaseUrl.replace(/\/$/, "")}/v1/api/admin/${resource}${suffix}`;
+  };
   return {
     create: (apiBaseUrl: string, token: string, input: AdminInput, fetchFn: typeof fetch = fetch): Promise<T> =>
       adminRequest("POST", endpoint(apiBaseUrl), token, input, fetchFn) as Promise<T>,

@@ -2,12 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ResourceForm } from "@/components/admin/resource-form";
-import { EditLoadState, FormShell } from "@/components/admin/form-controls";
+import { EditLoadState, FormField, FormShell } from "@/components/admin/form-controls";
 import { QuestionBuilder } from "@/components/admin/question-builder";
 import { API_URL, useCatalog, useToken } from "@/components/admin/use-catalog";
 import { ApiError, deleteAdminQuest, getAdminQuest } from "@/lib/api-client";
 import { Y2kInput, Y2kTextarea, Y2kSelect } from "@/components/y2k";
-import { FormField } from "@/components/admin/form-controls";
 import { newQuestion, validateQuestionSet, type AdminQuestion } from "@/lib/admin-helpers";
 import { formatMmSs } from "@/lib/format";
 

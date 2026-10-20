@@ -31,7 +31,8 @@ export function newQuestion(): AdminQuestion {
 
 /* ── Slug ──────────────────────────────────────────────────────── */
 
-const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+/** Lowercase kebab, unambiguous so the matcher stays linear (no backtracking). */
+const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9]))*$/;
 
 /** Auto-fill source for the Slug field: `slugify(name)`. */
 export function defaultSlug(name: string): string {

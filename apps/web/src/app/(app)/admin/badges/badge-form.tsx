@@ -2,11 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ResourceForm } from "@/components/admin/resource-form";
-import { EditLoadState, FormShell } from "@/components/admin/form-controls";
+import { EditLoadState, FormField, FormShell } from "@/components/admin/form-controls";
 import { CriteriaBuilder, toCriteria, type CriteriaValue } from "@/components/admin/criteria-builder";
 import { API_URL, useCatalog, useToken } from "@/components/admin/use-catalog";
 import { AvatarOrInitial, Y2kInput, Y2kTextarea } from "@/components/y2k";
-import { FormField } from "@/components/admin/form-controls";
 import { ApiError, deleteAdminBadge, getAdminBadge } from "@/lib/api-client";
 import { defaultSlug } from "@/lib/admin-helpers";
 
