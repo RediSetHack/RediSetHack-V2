@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import type { LeaderboardEntry } from "@/lib/api-client";
 import {
   displayName,
-  findCurrentUserEntry,
   isCurrentUser,
   podiumEntries,
   podiumLayout,
@@ -95,11 +94,5 @@ describe("current learner", () => {
     expect(isCurrentUser(entries[1], "user-2")).toBe(true);
     expect(isCurrentUser(entries[1], "user-3")).toBe(false);
     expect(isCurrentUser(entries[1], null)).toBe(false);
-  });
-
-  it("finds the signed-in learner's own row", () => {
-    expect(findCurrentUserEntry(entries, "user-2")?.rank).toBe(2);
-    expect(findCurrentUserEntry(entries, "user-9")).toBeNull();
-    expect(findCurrentUserEntry(entries, null)).toBeNull();
   });
 });

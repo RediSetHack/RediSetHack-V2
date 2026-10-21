@@ -9,19 +9,24 @@ export interface LeaderboardPage {
   page: number;
   limit: number;
   total: number;
+  me: { rank: number; totalXp: number; level: number } | null;
 }
 
 @Injectable()
 export class GetLeaderboardUseCase {
   constructor(private readonly profiles: ProfileRepository) {}
 
-  async execute(page: number, limit: number): Promise<LeaderboardPage> {
-    const { rows, total } = await this.profiles.findLeaderboardPage(page, limit);
+  async execute(userId: string, page: number, limit: number): Promise<LeaderboardPage> {
+    const [{ rows, total }, standing] = await Promise.all([
+      this.profiles.findLeaderboardPage(page, limit),
+      this.profiles.findLeaderboardStanding(userId),
+    ]);
     const offset = (page - 1) * limit;
     const entries = rows.map(
       (row, index) =>
         new LeaderboardEntry(offset + index + 1, row.userId, row.name, row.totalXp, calculateLevel(row.totalXp)),
     );
-    return { entries, page, limit, total };
+    const me = standing && { ...standing, level: calculateLevel(standing.totalXp) };
+    return { entries, page, limit, total, me };
   }
 }

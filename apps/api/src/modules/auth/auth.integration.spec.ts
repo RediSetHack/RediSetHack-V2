@@ -170,6 +170,10 @@ describe('auth integration', () => {
     async findDailyLearningActivity() {
       return [];
     },
+    async findLeaderboardStanding(userId) {
+      const index = leaderboardRows.findIndex((row) => row.userId === userId);
+      return index < 0 ? null : { rank: index + 1, totalXp: leaderboardRows[index].totalXp };
+    },
     async findLeaderboardPage(page, limit) {
       const offset = (page - 1) * limit;
       return {
@@ -409,6 +413,7 @@ describe('auth integration', () => {
           level: 3,
         },
       ],
+      me: { rank: 1, totalXp: 900, level: 4 },
     });
   });
 
@@ -433,6 +438,7 @@ describe('auth integration', () => {
           level: 3,
         },
       ],
+      me: { rank: 1, totalXp: 900, level: 4 },
     });
   });
 

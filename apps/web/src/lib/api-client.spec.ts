@@ -774,6 +774,7 @@ describe("api-client", () => {
           limit: 10,
           total: 25,
           entries: [{ rank: 11, userId: "user_1", name: "Ada", totalXp: 900, level: 4 }],
+          me: null,
         }),
       });
 

@@ -18,7 +18,6 @@ import { FeedbackState } from "@/components/y2k-dialog";
 import { formatXp } from "@/lib/format";
 import {
   displayName,
-  findCurrentUserEntry,
   isCurrentUser,
   podiumEntries,
   podiumLayout,
@@ -121,7 +120,7 @@ export function LeaderboardView({
 
   const { entries, page, limit, total } = leaderboard;
   const podium = podiumEntries(entries, page);
-  const currentEntry = findCurrentUserEntry(entries, currentUserId);
+  const currentEntry = leaderboard.me;
   const totalPages = getPageInfo(page, limit, total).totalPages;
   const hrefFor = (target: number) => `?page=${target}`;
 

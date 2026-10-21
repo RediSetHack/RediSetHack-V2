@@ -25,6 +25,7 @@ const repo = (userId: string | null): ProfileRepository => ({
   ]),
   setSharing: vi.fn(),
   findLeaderboardPage: vi.fn(),
+  findLeaderboardStanding: vi.fn(),
 });
 
 describe("GetSharedProfileUseCase", () => {

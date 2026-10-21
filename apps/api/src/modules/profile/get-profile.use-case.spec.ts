@@ -24,6 +24,7 @@ describe("GetProfileUseCase", () => {
       findUserIdByShareId: vi.fn(),
       setSharing: vi.fn(),
       findLeaderboardPage: vi.fn(),
+      findLeaderboardStanding: vi.fn(),
     };
     const useCase = new GetProfileUseCase(profiles);
 
@@ -45,6 +46,7 @@ describe("GetProfileUseCase", () => {
       findUserIdByShareId: vi.fn(),
       setSharing: vi.fn(),
       findLeaderboardPage: vi.fn(),
+      findLeaderboardStanding: vi.fn(),
     };
     const useCase = new GetProfileUseCase(profiles);
 

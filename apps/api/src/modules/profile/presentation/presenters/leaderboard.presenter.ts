@@ -6,6 +6,7 @@ export class LeaderboardPresenter {
       page: page.page,
       limit: page.limit,
       total: page.total,
+      me: page.me,
       entries: page.entries.map((entry) => ({
         rank: entry.rank,
         userId: entry.userId,

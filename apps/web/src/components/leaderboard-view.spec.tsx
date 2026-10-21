@@ -29,6 +29,7 @@ function makeLeaderboard(overrides: Partial<Leaderboard> = {}): Leaderboard {
       makeEntry({ rank: 2, userId: "user-2", name: "Grace Hopper", totalXp: 900, level: 3 }),
       makeEntry({ rank: 3, userId: "user-3", name: "Alan Turing", totalXp: 640, level: 3 }),
     ],
+    me: { rank: 2, totalXp: 900, level: 3 },
     ...overrides,
   };
 }
@@ -204,8 +205,17 @@ describe("Your rank card", () => {
     expect(markup.indexOf("YOUR RANK #2")).toBeGreaterThan(markup.indexOf("</table>"));
   });
 
-  it("is hidden when the signed-in learner is not on this page", () => {
-    const markup = render(makeLeaderboard(), "user-99");
+  it("follows the learner onto a page they are not ranked on", () => {
+    const markup = render(
+      makeLeaderboard({ page: 3, me: { rank: 42, totalXp: 1240, level: 4 } }),
+      "user-99",
+    );
+
+    expect(markup).toContain("YOUR RANK #42 · 1,240 XP");
+  });
+
+  it("is hidden when the learner has no rank", () => {
+    const markup = render(makeLeaderboard({ me: null }), "user-99");
 
     expect(markup).not.toContain("YOUR RANK #");
   });
