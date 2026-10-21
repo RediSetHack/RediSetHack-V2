@@ -330,6 +330,36 @@
   );
   background-size: 14px 14px;
 }
+/* Indeterminate progress: a striped fill that slides across the track, for
+   work whose end is unknown (a running program, a pending request). */
+.y2k-progress-indeterminate {
+  position: relative;
+  overflow: hidden;
+}
+.y2k-progress-indeterminate::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: 40%;
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--primary) 0px,
+    var(--primary) 8px,
+    var(--border) 8px,
+    var(--border) 10px
+  );
+  background-size: 14px 14px;
+  animation: progress-indeterminate 0.9s linear infinite;
+}
+@keyframes progress-indeterminate {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}
 .y2k-toast {
   animation: toast-in 160ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
@@ -361,6 +391,10 @@
   .y2k-danger-pulse,
   .y2k-toast {
     animation: none;
+  }
+  .y2k-progress-indeterminate::after {
+    animation: none;
+    transform: translateX(0);
   }
   .y2k-window {
     opacity: 1;

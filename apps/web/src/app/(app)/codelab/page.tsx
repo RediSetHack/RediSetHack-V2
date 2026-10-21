@@ -12,7 +12,7 @@ export default async function CodelabPage({
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
   return (
-    <div className="flex-1 mx-auto w-full max-w-4xl p-6 sm:p-10">
+    <div className="flex-1 mx-auto w-full max-w-5xl p-6 sm:p-10">
       <CodelabEditor
         apiUrl={apiUrl}
         initialLanguage={params.language}

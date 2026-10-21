@@ -79,6 +79,16 @@ describe("Progress", () => {
     const markup = renderToStaticMarkup(<Progress value={40} max={100} march />);
     expect(markup).toContain("y2k-march");
   });
+
+  it("renders an indeterminate bar without a value", () => {
+    const markup = renderToStaticMarkup(
+      <Progress indeterminate label="Running your code" />,
+    );
+    expect(markup).toContain('role="progressbar"');
+    expect(markup).toContain('aria-label="Running your code"');
+    expect(markup).toContain("y2k-progress-indeterminate");
+    expect(markup).not.toContain("value=");
+  });
 });
 
 describe("SegmentedTracker", () => {
