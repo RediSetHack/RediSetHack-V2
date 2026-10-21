@@ -1090,6 +1090,7 @@ export function StageNode({
           className,
         )}
       >
+        <span className="sr-only">Locked — finish the previous Stage first.</span>
         <div className="flex size-8 shrink-0 items-center justify-center border-2 border-border bg-window-body font-pixel text-[10px]">
           {stageNumber}
         </div>

@@ -268,7 +268,38 @@ describe("StageNode", () => {
     expect(markup).toContain('aria-disabled="true"');
   });
 
-  it("renders unlocked/completed state with interactive link and status chip", () => {
+  it("renders locked state as a non-link non-button with accessible lock reason", () => {
+    const markup = renderToStaticMarkup(
+      <StageNode
+        stageNumber={3}
+        title="Firewall Breach"
+        xpReward={250}
+        status="locked"
+        href="/map/1/1/3"
+      />,
+    );
+    expect(markup).not.toContain("<a ");
+    expect(markup).not.toContain("<button");
+    expect(markup).not.toContain("href=");
+    expect(markup).toContain("Locked — finish the previous Stage first.");
+  });
+
+  it("renders unlocked state as a link with Unlocked chip", () => {
+    const markup = renderToStaticMarkup(
+      <StageNode
+        stageNumber={2}
+        title="Packet Sniffing"
+        xpReward={75}
+        status="available"
+        href="/map/1/1/2"
+      />,
+    );
+    expect(markup).toContain('href="/map/1/1/2"');
+    expect(markup).toContain("Unlocked");
+    expect(markup).toContain("75 XP");
+  });
+
+  it("renders completed state as a link with Completed chip", () => {
     const markup = renderToStaticMarkup(
       <StageNode
         stageNumber={1}
