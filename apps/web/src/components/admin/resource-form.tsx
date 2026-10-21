@@ -6,15 +6,12 @@ import { useRouter } from "next/navigation";
 import { AlertTriangle, Trash2 } from "lucide-react";
 import { Y2kButton, buttonClasses } from "@/components/y2k";
 import { ConfirmDialog, SaveButton, useToast } from "@/components/y2k-dialog";
-import { FormActions, FormErrorAlert } from "@/components/admin/form-controls";
+import { DeleteMessage, FormActions, FormErrorAlert } from "@/components/admin/form-controls";
 import { API_URL, useToken } from "@/components/admin/use-catalog";
 import { useAdminAccess } from "@/components/admin/admin-access";
 import { ApiError, type AdminInput } from "@/lib/api-client";
 import { fieldText, parseFieldIssues } from "@/lib/admin-helpers";
 import { useState } from "react";
-
-const DELETE_COPY =
-  "If learners have progress, Results or XP on this content it will be archived and hidden from learners; otherwise it is deleted.";
 
 /**
  * Drives every New/Edit admin form: field state, required-field validation,
@@ -134,7 +131,7 @@ export function ResourceForm({
         <Link href={hub} className={buttonClasses("secondary")}>
           CANCEL
         </Link>
-        <SaveButton type="submit" busy={busy}>{mode === "create" ? `CREATE ${resource.toUpperCase()}` : "SAVE"}</SaveButton>
+        <SaveButton type="submit" busy={busy}>SAVE</SaveButton>
       </FormActions>
 
       {mode === "edit" && deleteItem && (
@@ -159,13 +156,7 @@ export function ResourceForm({
         confirmLabel={deleting ? "DELETING…" : "DELETE"}
         cancelLabel="CANCEL"
         onConfirm={() => void runDelete()}
-        message={
-          <>
-            <p>{`Delete ${name}? This cannot be undone.`}</p>
-            {cascadeWarning && <p className="mt-2">{cascadeWarning}</p>}
-            <p className="mt-2 text-sm text-muted-foreground">{DELETE_COPY}</p>
-          </>
-        }
+        message={<DeleteMessage name={name} cascadeWarning={cascadeWarning} />}
       />
     </form>
   );

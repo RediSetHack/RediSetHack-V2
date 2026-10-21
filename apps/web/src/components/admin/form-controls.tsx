@@ -113,3 +113,18 @@ export function EditLoadState({
   }
   return null;
 }
+
+/** ADR-0005: deleting content may archive it instead, so the copy never says "cascade". */
+export const DELETE_COPY =
+  "If learners have progress, Results or XP on this content it will be archived and hidden from learners; otherwise it is deleted.";
+
+/** The body of every admin delete confirmation. */
+export function DeleteMessage({ name, cascadeWarning }: Readonly<{ name: string; cascadeWarning?: string }>) {
+  return (
+    <>
+      <p>{`Delete ${name}? This cannot be undone.`}</p>
+      {cascadeWarning && <p className="mt-2">{cascadeWarning}</p>}
+      <p className="mt-2 text-sm text-muted-foreground">{DELETE_COPY}</p>
+    </>
+  );
+}

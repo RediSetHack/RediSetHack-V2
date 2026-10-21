@@ -35,7 +35,8 @@ export function regionFields({
           value={fieldText(values.name, "")}
           onChange={(event) => {
             set("name", event.target.value);
-            set("slug", defaultSlug(event.target.value));
+            // Keep following the name until the admin edits the slug by hand.
+            if (values.slug === defaultSlug(fieldText(values.name))) set("slug", defaultSlug(event.target.value));
           }}
         />
       </FormField>
