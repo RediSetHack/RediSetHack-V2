@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import type { LeaderboardMe } from "@repo/contracts";
 
 import { ProfileRepository } from "../domain/ports/profile.repository.js";
 import { LeaderboardEntry } from "../domain/entities/leaderboard-entry.entity.js";
@@ -9,7 +10,7 @@ export interface LeaderboardPage {
   page: number;
   limit: number;
   total: number;
-  me: { rank: number; totalXp: number; level: number } | null;
+  me: LeaderboardMe | null;
 }
 
 @Injectable()
