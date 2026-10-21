@@ -3,46 +3,52 @@ import { getPageInfo } from "@/lib/pagination";
 import type { Leaderboard, LeaderboardEntry } from "@/lib/api-client";
 import {
   AvatarOrInitial,
-  EmptyState,
   Pager,
+  PixelTrophy,
   Table,
+  Tbody,
   Td,
   Th,
-  TrophyIcon,
+  Thead,
+  Tr,
   Window,
   XPChip,
 } from "@/components/y2k";
+import { FeedbackState } from "@/components/y2k-dialog";
 import { formatXp } from "@/lib/format";
-
-function EntryName({
-  entry,
+import {
+  displayName,
+  findCurrentUserEntry,
   isCurrentUser,
-}: Readonly<{ entry: LeaderboardEntry; isCurrentUser: boolean }>) {
-  return (
-    <>
-      {entry.name ?? "Anonymous"}
-      {isCurrentUser && <span className="text-muted-foreground"> (you)</span>}
-    </>
-  );
-}
+  podiumEntries,
+  podiumOrderClass,
+  podiumPlaceLabel,
+  type PodiumPlace,
+} from "@/lib/leaderboard";
 
-function TopRankCard({
+function PodiumCard({
   entry,
-  isCurrentUser,
-  tallest,
-}: Readonly<{ entry: LeaderboardEntry; isCurrentUser: boolean; tallest?: boolean }>) {
+  place,
+}: Readonly<{ entry: LeaderboardEntry; place: PodiumPlace }>) {
+  const isFirst = place === 1;
   return (
     <li
       className={cn(
         "flex flex-col items-center gap-2 border-2 border-border bg-window-body p-4 text-center shadow-[4px_4px_0_var(--border)]",
-        tallest && "sm:mt-[-8px]",
-        isCurrentUser && "outline outline-2 outline-sparkle",
+        podiumOrderClass(place),
+        isFirst && "sm:px-6 sm:py-6",
       )}
     >
-      <TrophyIcon className="size-6" />
-      <AvatarOrInitial name={entry.name ?? "Anonymous"} className="size-12" />
-      <p className="font-pixel text-[9px] leading-relaxed">
-        <EntryName entry={entry} isCurrentUser={isCurrentUser} />
+      <span className="font-pixel text-[9px] leading-relaxed text-muted-foreground">
+        {podiumPlaceLabel(place)}
+      </span>
+      <PixelTrophy size={isFirst ? 48 : 32} />
+      <AvatarOrInitial
+        name={displayName(entry)}
+        className={cn("size-12", isFirst && "size-16")}
+      />
+      <p className="max-w-full break-words font-pixel text-[9px] leading-relaxed text-foreground">
+        {displayName(entry)}
       </p>
       <p className="font-body text-sm font-bold">LV {entry.level}</p>
       <XPChip xp={entry.totalXp} />
@@ -52,20 +58,25 @@ function TopRankCard({
 
 function LeaderboardRow({
   entry,
-  isCurrentUser,
-}: Readonly<{ entry: LeaderboardEntry; isCurrentUser: boolean }>) {
+  you,
+}: Readonly<{ entry: LeaderboardEntry; you: boolean }>) {
   return (
-    <tr
-      className={cn(isCurrentUser && "bg-accent/40")}
-      aria-current={isCurrentUser ? "true" : undefined}
+    <Tr
+      className={cn(you && "bg-accent/40 hover:bg-accent/50")}
+      aria-current={you ? "true" : undefined}
     >
       <Td>{entry.rank}</Td>
       <Td>
-        <EntryName entry={entry} isCurrentUser={isCurrentUser} />
+        {displayName(entry)}
+        {you && <span className="text-muted-foreground"> (you)</span>}
       </Td>
       <Td>LV {entry.level}</Td>
-      <Td className="text-right">{formatXp(entry.totalXp)}</Td>
-    </tr>
+      <Td className="text-right">
+        <span className="font-pixel-lg text-lg leading-none">
+          {formatXp(entry.totalXp)}
+        </span>
+      </Td>
+    </Tr>
   );
 }
 
@@ -80,91 +91,84 @@ export function LeaderboardView({
 }>) {
   if (error) {
     return (
-      <Window title="LEADERBOARD.EXE">
-        <p role="alert" className="font-body text-sm font-bold text-btn-danger">
-          The leaderboard could not be loaded. Try again shortly.
-        </p>
-      </Window>
+      <FeedbackState
+        error
+        errorMessage="The leaderboard could not be loaded. Please try again."
+      >
+        {null}
+      </FeedbackState>
     );
   }
 
   if (!leaderboard || leaderboard.entries.length === 0) {
     return (
-      <Window title="LEADERBOARD.EXE">
-        <EmptyState title="No one has earned XP yet." />
-      </Window>
+      <FeedbackState
+        empty
+        emptyTitle="LEADERBOARD.EXE"
+        emptyMessage="No one has earned XP yet."
+      >
+        {null}
+      </FeedbackState>
     );
   }
 
   const { entries, page, limit, total } = leaderboard;
-  const topEntries = page === 1 ? entries.filter((e) => e.rank <= 3) : [];
-  const restEntries = page === 1 ? entries.filter((e) => e.rank > 3) : entries;
-  const currentEntry = leaderboard.entries.find((e) => e.userId === currentUserId);
-
-  const hrefFor = (p: number) => `?page=${p}`;
+  const podium = podiumEntries(entries, page);
+  const currentEntry = findCurrentUserEntry(entries, currentUserId);
+  const totalPages = getPageInfo(page, limit, total).totalPages;
+  const hrefFor = (target: number) => `?page=${target}`;
 
   return (
     <div className="flex flex-col gap-6">
       <Window title="LEADERBOARD.EXE">
-        {topEntries.length > 0 && (
-          <ol className="grid grid-cols-1 items-end gap-3 sm:grid-cols-3">
-            {topEntries[0] && (
-              <TopRankCard
-                entry={topEntries[0]}
-                isCurrentUser={topEntries[0].userId === currentUserId}
-              />
-            )}
-            {topEntries[1] && (
-              <TopRankCard
-                entry={topEntries[1]}
-                isCurrentUser={topEntries[1].userId === currentUserId}
-                tallest
-              />
-            )}
-            {topEntries[2] && (
-              <TopRankCard
-                entry={topEntries[2]}
-                isCurrentUser={topEntries[2].userId === currentUserId}
-              />
-            )}
+        <h1 className="mb-4 font-pixel text-[18px] leading-relaxed text-foreground">
+          Leaderboard
+        </h1>
+
+        {podium.length > 0 && (
+          <ol
+            aria-label="Top three learners"
+            className="mb-4 grid grid-cols-1 items-end gap-3 sm:grid-cols-3"
+          >
+            {podium.map(({ entry, place }) => (
+              <PodiumCard key={entry.userId} entry={entry} place={place} />
+            ))}
           </ol>
         )}
 
-        {restEntries.length > 0 && (
-          <div className="mt-4">
-            <Table>
-              <thead>
-                <tr>
-                  <Th>Rank</Th>
-                  <Th>Name</Th>
-                  <Th>Adventurer Level</Th>
-                  <Th className="text-right">XP</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {restEntries.map((entry) => (
-                  <LeaderboardRow
-                    key={entry.userId}
-                    entry={entry}
-                    isCurrentUser={entry.userId === currentUserId}
-                  />
-                ))}
-              </tbody>
-            </Table>
-          </div>
-        )}
+        <Table>
+          <Thead>
+            <Tr>
+              <Th>Rank</Th>
+              <Th>Name</Th>
+              <Th>Level</Th>
+              <Th className="text-right">XP</Th>
+            </Tr>
+          </Thead>
+          <Tbody>
+            {entries.map((entry) => (
+              <LeaderboardRow
+                key={entry.userId}
+                entry={entry}
+                you={isCurrentUser(entry, currentUserId)}
+              />
+            ))}
+          </Tbody>
+        </Table>
 
         <div className="mt-4">
-          <Pager page={page} totalPages={getPageInfo(page, limit, total).totalPages} hrefFor={hrefFor} />
+          <Pager page={page} totalPages={totalPages} hrefFor={hrefFor} />
         </div>
       </Window>
 
       {currentEntry && (
-        <Window title="YOUR RANK" className="sm:max-w-sm">
-          <p className="font-body text-sm font-bold">
-            YOUR RANK #{currentEntry.rank} · {formatXp(currentEntry.totalXp)}
-          </p>
-        </Window>
+        <div className="sticky bottom-4 z-20 ml-auto w-full sm:max-w-xs">
+          <Window title="YOUR RANK" bodyClassName="px-3 py-2">
+            <p className="font-pixel-lg text-lg leading-none text-foreground">
+              YOUR RANK #{currentEntry.rank} · {formatXp(currentEntry.totalXp)}
+            </p>
+          </Window>
+        </div>
       )}
     </div>
   );

@@ -1273,6 +1273,38 @@ export function PixelCloud({ size = 28, className }: Readonly<{ size?: number; c
   );
 }
 
+/**
+ * Pixel-art trophy on a 10x9 grid: rim, tapering cup, stem and base. The dark
+ * copy behind the gold one is a 1px pixel shadow, so the cup keeps its edge on
+ * the cream window body.
+ */
+const PIXEL_TROPHY_PATH =
+  "M3 0h6v1H3zM2 1h8v2H2zM3 3h6v1H3zM4 4h4v1H4zM5 5h2v2H5zM3 7h6v1H3zM2 8h8v1H2z";
+
+export function PixelTrophy({
+  size = 28,
+  className,
+}: Readonly<{ size?: number; className?: ClassValue }>) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 11 10"
+      width={size}
+      height={(size / 11) * 10}
+      className={cn("text-primary", className)}
+      fill="currentColor"
+      shapeRendering="crispEdges"
+    >
+      <path
+        d={PIXEL_TROPHY_PATH}
+        transform="translate(1 1)"
+        style={{ fill: "var(--border)" }}
+      />
+      <path d={PIXEL_TROPHY_PATH} />
+    </svg>
+  );
+}
+
 export function Decorations() {
   return (
     <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
