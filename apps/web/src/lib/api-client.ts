@@ -594,7 +594,7 @@ export async function submitContributorDraft(apiBaseUrl: string, token: string, 
 /** `GET /v1/api/admin/stages/:id` has no server-computed learner status. */
 export type AdminStageRecord = Omit<Stage, "status" | "lockReason">;
 /** `GET /v1/api/admin/quests/:id` answers the learner-completion fields with the authoring payload. */
-export type AdminQuestRecord = Omit<Quest, "completed" | "lockReason"> & {
+export type AdminQuestRecord = Omit<Quest, "completed" | "lockReason" | "bestResult"> & {
   questions: QuestQuestionAuthoring[];
 };
 export type AdminInput = Record<string, unknown>;

@@ -22,7 +22,7 @@ function makeRepo(overrides: Partial<QuestRepository> = {}): QuestRepository {
     findAll: vi.fn(),
     findById: vi.fn(),
     findQuestions: vi.fn().mockResolvedValue(questions),
-    findPassedQuestIds: vi.fn(),
+    findBestResults: vi.fn(),
     findActiveSession: vi.fn(),
     findSessionById: vi.fn(),
     createSession: vi.fn(),

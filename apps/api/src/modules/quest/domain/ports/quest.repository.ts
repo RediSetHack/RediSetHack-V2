@@ -1,3 +1,5 @@
+import type { QuestBestResult } from '@repo/contracts';
+
 import { Quest, QuestQuestion } from '../entities/quest.entity.js';
 import {
   QuestResult,
@@ -26,7 +28,11 @@ export abstract class QuestRepository {
   abstract findAll(): Promise<Quest[]>;
   abstract findById(questId: number): Promise<Quest | null>;
   abstract findQuestions(questId: number): Promise<QuestQuestion[]>;
-  abstract findPassedQuestIds(userId: string): Promise<Set<number>>;
+  // The learner's best Result per Quest: the highest-scoring attempt and
+  // whether that attempt passed. Quests they never took are absent.
+  abstract findBestResults(
+    userId: string,
+  ): Promise<Map<number, QuestBestResult>>;
   abstract findActiveSession(
     userId: string,
     questId: number,

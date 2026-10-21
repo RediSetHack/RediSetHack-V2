@@ -18,7 +18,7 @@ import {
 } from '@repo/db';
 
 import { DB } from '../../../database/database.module.js';
-import { COMPETENCIES } from '@repo/contracts';
+import { COMPETENCIES, type QuestBestResult } from '@repo/contracts';
 import {
   Quest,
   QuestOption,
@@ -140,12 +140,23 @@ export class DrizzleQuestRepository implements QuestRepository {
     );
   }
 
-  async findPassedQuestIds(userId: string): Promise<Set<number>> {
+  async findBestResults(
+    userId: string,
+  ): Promise<Map<number, QuestBestResult>> {
     const rows = await this.database.query.results.findMany({
-      where: and(eq(results.userId, userId), eq(results.passed, true)),
-      columns: { questId: true },
+      where: eq(results.userId, userId),
+      columns: { questId: true, score: true, passed: true },
     });
-    return new Set(rows.map((row) => row.questId));
+    const best = new Map<number, QuestBestResult>();
+    for (const row of rows) {
+      const current = best.get(row.questId);
+      // A passing attempt always scores at least the passing score, so the
+      // highest-scoring attempt is the one that decides "passed".
+      if (!current || row.score > current.score) {
+        best.set(row.questId, { score: row.score, passed: row.passed });
+      }
+    }
+    return best;
   }
 
   async findActiveSession(

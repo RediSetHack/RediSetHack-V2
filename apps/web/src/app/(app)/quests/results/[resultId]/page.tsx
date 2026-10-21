@@ -1,12 +1,8 @@
 import { auth } from "@clerk/nextjs/server";
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { Check, X } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { ApiError, getQuestResult, getQuests, type Quest } from "@/lib/api-client";
-import { StatusChip, Window, buttonClasses, EmptyState } from "@/components/y2k";
 import { ErrorAlert } from "@/components/y2k-dialog";
 import { QuestResultNotFound } from "@/components/quest-result-not-found";
+import { QuestResultReviewPanel } from "@/components/quest-result-review";
 
 // The parent (app)/layout.tsx already redirects unauthenticated learners to
 // /sign-in before this page renders, so no auth guard is needed here.
@@ -15,8 +11,14 @@ export default async function QuestResultPage({
 }: Readonly<{ params: Promise<{ resultId: string }> }>) {
   const { resultId } = await params;
   const resultIdNumber = Number(resultId);
-  if (!Number.isInteger(resultIdNumber)) {
-    notFound();
+  const notFound = (
+    <div className="mx-auto flex w-full max-w-2xl flex-1 items-center justify-center p-6 sm:p-10">
+      <QuestResultNotFound />
+    </div>
+  );
+
+  if (!Number.isInteger(resultIdNumber) || resultIdNumber <= 0) {
+    return notFound;
   }
 
   const { getToken } = await auth();
@@ -31,11 +33,7 @@ export default async function QuestResultPage({
     review = await getQuestResult(apiUrl, token, resultIdNumber);
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) {
-      return (
-        <div className="mx-auto flex w-full max-w-2xl flex-1 items-center justify-center p-6 sm:p-10">
-          <QuestResultNotFound />
-        </div>
-      );
+      return notFound;
     }
     return (
       <div className="mx-auto w-full max-w-2xl flex-1 p-6 sm:p-10">
@@ -49,106 +47,20 @@ export default async function QuestResultPage({
 
   let quest: Quest | undefined;
   try {
-    quest = (await getQuests(apiUrl, token ?? "")).find((item) => item.id === review.questId);
+    quest = (await getQuests(apiUrl, token ?? "")).find(
+      (item) => item.id === review.questId,
+    );
   } catch {
     // The review remains useful if the current Quest catalog is temporarily unavailable.
   }
-  const submittedAt = new Date(review.submittedAt).toLocaleString("en-US");
-  const xpAwarded = review.xpAwarded ?? 0;
 
   return (
     <div className="mx-auto w-full max-w-2xl flex-1 space-y-4 p-6 sm:p-10">
-      <Window title={`RESULT ${review.resultId}`}>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="font-pixel text-lg leading-relaxed text-foreground">
-              {quest?.title ?? "Quest Review"}
-            </h1>
-            <p className="mt-2 font-pixel-lg text-xl text-foreground">Score: {review.score}%</p>
-            <p className="mt-2 font-body text-sm font-bold text-muted-foreground">
-              Submitted {submittedAt}
-            </p>
-          </div>
-          <StatusChip
-            status={review.passed ? "passed" : "not-passed"}
-            label={review.passed ? "Passed" : "Not passed"}
-          />
-        </div>
-        <dl className="mt-4 grid grid-cols-2 gap-2 border-t-2 border-border pt-3 font-body text-sm font-bold">
-          <div>
-            <dt className="text-muted-foreground">Passing score</dt>
-            <dd className="text-foreground">
-              {review.passingScore !== undefined
-                ? `${review.passingScore}%`
-                : quest
-                  ? `${quest.passingScore}%`
-                  : "—"}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">XP awarded</dt>
-            <dd className="text-foreground">{xpAwarded} XP</dd>
-          </div>
-        </dl>
-      </Window>
-
-      {review.breakdown.length === 0 ? (
-        <Window title="NO QUESTIONS">
-          <EmptyState title="No questions to review." />
-        </Window>
-      ) : (
-        <ol className="space-y-4">
-          {review.breakdown.map((item, questionIndex) => (
-            <li key={item.questionId}>
-              <Window title={`QUESTION ${questionIndex + 1}`}>
-                <div className="flex items-start justify-between gap-3">
-                  <p className="font-body text-base font-bold text-foreground">{item.prompt}</p>
-                  <StatusChip
-                    status={item.isCorrect ? "passed" : "not-passed"}
-                    label={item.isCorrect ? "Correct" : "Incorrect"}
-                  />
-                </div>
-                <ul className="mt-3 space-y-2">
-                  {item.options.map((option) => {
-                    const wasChosen = option.id === item.chosenOptionId;
-                    let optionIcon;
-                    if (option.isCorrect) optionIcon = <Check aria-hidden="true" className="size-4 shrink-0" />;
-                    else if (wasChosen) optionIcon = <X aria-hidden="true" className="size-4 shrink-0" />;
-                    else optionIcon = <span className="size-4 shrink-0" aria-hidden="true" />;
-                    return (
-                      <li
-                        key={option.id}
-                        className={cn(
-                          "flex items-center gap-2 border-2 border-border px-3 py-2 font-body text-sm font-bold shadow-[2px_2px_0_var(--border)]",
-                          option.isCorrect && "bg-[#59D98F] text-foreground",
-                          wasChosen && !option.isCorrect && "bg-btn-danger text-white",
-                          !option.isCorrect && !wasChosen && "bg-white text-muted-foreground",
-                        )}
-                      >
-                        {optionIcon}
-                        <span>{option.text}</span>
-                        <span className="ml-auto flex flex-wrap gap-1 font-pixel text-[8px] leading-relaxed uppercase">
-                          {option.isCorrect && <span>Correct answer</span>}
-                          {wasChosen && <span>Your answer</span>}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </Window>
-            </li>
-          ))}
-        </ol>
-      )}
-
-      <div className="flex flex-wrap gap-2">
-        <Link href={`/quests/${review.questId}/session`} className={buttonClasses("primary")}>
-          Retake Quest
-        </Link>
-        <Link href="/quests" className={buttonClasses("secondary")}>
-          Back to Quests
-        </Link>
-      </div>
+      <QuestResultReviewPanel
+        review={review}
+        questTitle={quest?.title ?? "Quest Review"}
+        fallbackPassingScore={quest?.passingScore}
+      />
     </div>
   );
 }

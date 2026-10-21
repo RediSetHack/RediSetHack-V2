@@ -24,7 +24,7 @@ describe('Quest listing integration (GET /v1/api/quests)', () => {
   let app: INestApplication;
 
   const quests = new Map<number, Quest>();
-  const passedQuestIds = new Set<number>();
+  const bestResults = new Map<number, { score: number; passed: boolean }>();
 
   const fakeQuests: QuestRepository = {
     async findAll() {
@@ -36,8 +36,8 @@ describe('Quest listing integration (GET /v1/api/quests)', () => {
     async findQuestions() {
       throw new Error('not used in this test');
     },
-    async findPassedQuestIds() {
-      return passedQuestIds;
+    async findBestResults() {
+      return bestResults;
     },
     async findActiveSession() {
       throw new Error('not used in this test');
@@ -72,7 +72,7 @@ describe('Quest listing integration (GET /v1/api/quests)', () => {
 
   beforeEach(async () => {
     quests.clear();
-    passedQuestIds.clear();
+    bestResults.clear();
 
     const moduleRef = await Test.createTestingModule({
       controllers: [ListQuestsController],
@@ -120,7 +120,7 @@ describe('Quest listing integration (GET /v1/api/quests)', () => {
       new Quest(1, 10, 'Loop fundamentals', 'Covers loops.', 300, 70, 100),
     );
     quests.set(2, new Quest(2, 10, 'Conditionals', null, 180, 60, 50));
-    passedQuestIds.add(1);
+    bestResults.set(1, { score: 90, passed: true });
 
     const res = await request(app.getHttpServer())
       .get('/v1/api/quests')
@@ -138,6 +138,7 @@ describe('Quest listing integration (GET /v1/api/quests)', () => {
         xpReward: 100,
         initialAssessment: false,
         completed: true,
+        bestResult: { score: 90, passed: true },
         lockReason: null,
       },
       {
@@ -150,6 +151,7 @@ describe('Quest listing integration (GET /v1/api/quests)', () => {
         xpReward: 50,
         initialAssessment: false,
         completed: false,
+        bestResult: null,
         lockReason: null,
       },
     ]);

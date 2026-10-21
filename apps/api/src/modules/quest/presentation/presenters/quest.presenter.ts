@@ -3,7 +3,7 @@ import { StartedQuestSession } from '../../application/start-quest.use-case.js';
 import { resolveCompetencies } from '@repo/contracts';
 
 export class QuestPresenter {
-  static toListItem({ quest, completed, lockReason }: QuestWithStatus) {
+  static toListItem({ quest, completed, bestResult, lockReason }: QuestWithStatus) {
     return {
       id: quest.id,
       stageId: quest.stageId,
@@ -14,6 +14,7 @@ export class QuestPresenter {
       xpReward: quest.xpReward,
       initialAssessment: quest.initialAssessment,
       completed,
+      bestResult,
       lockReason,
     };
   }

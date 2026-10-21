@@ -45,6 +45,42 @@ describe("QuestSchema", () => {
   it("throws ZodError on an invalid payload", () => {
     expect(() => QuestSchema.parse({ id: 1, completed: "yes" })).toThrow();
   });
+
+  it("carries the learner's best Result when the server sends one", () => {
+    const payload = {
+      id: 1,
+      stageId: 1,
+      title: "Loop fundamentals",
+      description: null,
+      timeLimitSeconds: 300,
+      passingScore: 70,
+      xpReward: 100,
+      initialAssessment: false,
+      completed: true,
+      bestResult: { score: 90, passed: true },
+      lockReason: null,
+    };
+
+    expect(QuestSchema.parse(payload)).toEqual(payload);
+  });
+
+  it("accepts a Quest with no best Result", () => {
+    const payload = {
+      id: 1,
+      stageId: 1,
+      title: "Loop fundamentals",
+      description: null,
+      timeLimitSeconds: 300,
+      passingScore: 70,
+      xpReward: 100,
+      initialAssessment: false,
+      completed: false,
+      bestResult: null,
+      lockReason: null,
+    };
+
+    expect(QuestSchema.parse(payload)).toEqual(payload);
+  });
 });
 
 describe("QuestListResponseSchema", () => {

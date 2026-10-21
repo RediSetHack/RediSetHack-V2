@@ -30,12 +30,16 @@ export class FakeQuestRepository implements QuestRepository {
   async findQuestions(questId: number) {
     return questId === this.quest.id ? this.questions : [];
   }
-  async findPassedQuestIds(userId: string) {
-    return new Set(
-      [...this.results.values()]
-        .filter((r) => r.userId === userId && r.passed)
-        .map((r) => r.questId),
-    );
+  async findBestResults(userId: string) {
+    const best = new Map<number, { score: number; passed: boolean }>();
+    for (const result of this.results.values()) {
+      if (result.userId !== userId) continue;
+      const current = best.get(result.questId);
+      if (!current || result.score > current.score) {
+        best.set(result.questId, { score: result.score, passed: result.passed });
+      }
+    }
+    return best;
   }
   async findActiveSession(userId: string, questId: number) {
     return (
