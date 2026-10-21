@@ -1,6 +1,7 @@
 import { SignUp } from "@clerk/nextjs";
 import { MinimalHeader } from "@/components/app-shell";
-import { Decorations } from "@/components/y2k";
+import { Decorations, Window } from "@/components/y2k";
+import { clerkY2kAppearance } from "@/lib/clerk-appearance";
 
 export default function SignUpPage() {
   return (
@@ -8,12 +9,13 @@ export default function SignUpPage() {
       <Decorations />
       <MinimalHeader />
       <main className="relative z-10 flex flex-1 items-center justify-center p-4">
-        <div className="w-full max-w-md">
+        <Window title="SIGN_UP.EXE" className="w-full max-w-md">
           <SignUp
             fallbackRedirectUrl="/sign-up/complete"
             forceRedirectUrl="/sign-up/complete"
+            appearance={clerkY2kAppearance}
           />
-        </div>
+        </Window>
       </main>
     </div>
   );
