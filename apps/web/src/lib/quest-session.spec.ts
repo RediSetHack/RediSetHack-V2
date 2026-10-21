@@ -3,9 +3,11 @@ import {
   accumulateAnswer,
   clockSkewMs,
   formatCountdown,
+  isCountdownDanger,
   isExpired,
   secondsRemaining,
   toSubmission,
+  unansweredSubmitMessage,
 } from "./quest-session.js";
 
 describe("accumulateAnswer", () => {
@@ -41,34 +43,49 @@ describe("toSubmission", () => {
 
 describe("isExpired", () => {
   it("is false before the deadline", () => {
-    expect(isExpired("2026-09-15T12:05:00.000Z", Date.parse("2026-09-15T12:04:00.000Z"))).toBe(
-      false,
-    );
+    expect(
+      isExpired(
+        "2026-09-15T12:05:00.000Z",
+        Date.parse("2026-09-15T12:04:00.000Z"),
+      ),
+    ).toBe(false);
   });
 
   it("is true exactly at the deadline", () => {
-    expect(isExpired("2026-09-15T12:05:00.000Z", Date.parse("2026-09-15T12:05:00.000Z"))).toBe(
-      true,
-    );
+    expect(
+      isExpired(
+        "2026-09-15T12:05:00.000Z",
+        Date.parse("2026-09-15T12:05:00.000Z"),
+      ),
+    ).toBe(true);
   });
 
   it("is true after the deadline", () => {
-    expect(isExpired("2026-09-15T12:05:00.000Z", Date.parse("2026-09-15T12:06:00.000Z"))).toBe(
-      true,
-    );
+    expect(
+      isExpired(
+        "2026-09-15T12:05:00.000Z",
+        Date.parse("2026-09-15T12:06:00.000Z"),
+      ),
+    ).toBe(true);
   });
 });
 
 describe("secondsRemaining", () => {
   it("counts down toward the deadline", () => {
     expect(
-      secondsRemaining("2026-09-15T12:05:00.000Z", Date.parse("2026-09-15T12:04:30.000Z")),
+      secondsRemaining(
+        "2026-09-15T12:05:00.000Z",
+        Date.parse("2026-09-15T12:04:30.000Z"),
+      ),
     ).toBe(30);
   });
 
   it("never goes negative once expired", () => {
     expect(
-      secondsRemaining("2026-09-15T12:05:00.000Z", Date.parse("2026-09-15T12:10:00.000Z")),
+      secondsRemaining(
+        "2026-09-15T12:05:00.000Z",
+        Date.parse("2026-09-15T12:10:00.000Z"),
+      ),
     ).toBe(0);
   });
 });
@@ -76,6 +93,23 @@ describe("secondsRemaining", () => {
 describe("formatCountdown", () => {
   it("formats minutes and seconds with a zero-padded seconds field", () => {
     expect(formatCountdown(65)).toBe("1:05");
+  });
+
+  describe("quest session submission copy", () => {
+    it("uses the danger state at ten seconds and below", () => {
+      expect(isCountdownDanger(11)).toBe(false);
+      expect(isCountdownDanger(10)).toBe(true);
+      expect(isCountdownDanger(0)).toBe(true);
+    });
+
+    it("includes the unanswered count with correct singular grammar", () => {
+      expect(unansweredSubmitMessage(1)).toBe(
+        "You have 1 unanswered question. Submit anyway?",
+      );
+      expect(unansweredSubmitMessage(3)).toBe(
+        "You have 3 unanswered questions. Submit anyway?",
+      );
+    });
   });
 
   it("formats zero as 0:00", () => {
@@ -89,16 +123,21 @@ describe("formatCountdown", () => {
 
 describe("clockSkewMs", () => {
   it("is the server clock minus the local clock", () => {
-    expect(clockSkewMs("2026-09-15T12:00:10.000Z", Date.parse("2026-09-15T12:00:00.000Z"))).toBe(
-      10_000,
-    );
+    expect(
+      clockSkewMs(
+        "2026-09-15T12:00:10.000Z",
+        Date.parse("2026-09-15T12:00:00.000Z"),
+      ),
+    ).toBe(10_000);
   });
 
   it("keeps the countdown on the server deadline when the device clock is fast", () => {
     // Device is 30s ahead of the server; the server says 60s remain.
     const deviceNow = Date.parse("2026-09-15T12:00:30.000Z");
     const skew = clockSkewMs("2026-09-15T12:00:00.000Z", deviceNow);
-    expect(secondsRemaining("2026-09-15T12:01:00.000Z", deviceNow, skew)).toBe(60);
+    expect(secondsRemaining("2026-09-15T12:01:00.000Z", deviceNow, skew)).toBe(
+      60,
+    );
     expect(isExpired("2026-09-15T12:01:00.000Z", deviceNow, skew)).toBe(false);
   });
 
