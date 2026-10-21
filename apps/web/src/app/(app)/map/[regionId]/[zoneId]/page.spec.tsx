@@ -71,16 +71,11 @@ describe("zone stages page", () => {
     expect(markup).toContain("Networking 101");
   });
 
-  it("renders the error-with-retry state when Stages fail to load", async () => {
+  it("renders the error-with-retry state and keeps breadcrumb links when Stages fail to load", async () => {
     mockGetStages.mockRejectedValue(new Error("boom"));
     const markup = renderToStaticMarkup(await ZoneStagesPage(params));
     expect(markup).toContain("Stages could not be loaded. Please try again.");
     expect(markup).toContain("Try again");
-  });
-
-  it("keeps the Region breadcrumb link when Stages fail to load", async () => {
-    mockGetStages.mockRejectedValue(new Error("boom"));
-    const markup = renderToStaticMarkup(await ZoneStagesPage(params));
     expect(markup).toContain('href="/map"');
     expect(markup).toContain('href="/map/1"');
   });
