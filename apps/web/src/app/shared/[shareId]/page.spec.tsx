@@ -24,16 +24,7 @@ vi.mock("@/lib/api-client", () => ({
 }));
 
 import SharedProfilePage from "./page";
-
-const sharedProfile = {
-  adventurerRank: 3,
-  totalXp: 450,
-  character: { name: "Kalayaan", slug: "kalayaan", imageUrl: null },
-  badges: [{ name: "Pull Shark", slug: "pull-shark", imageUrl: null, count: 3 }],
-  accomplishments: { novelsCompleted: 1, sideQuestsCompleted: 2, ctfsSolved: 0 },
-  currentStreak: 2,
-  longestStreak: 5,
-};
+import { sharedProfileFixture } from "@/test/fixtures";
 
 async function renderPage() {
   return renderToStaticMarkup(
@@ -44,7 +35,7 @@ async function renderPage() {
 describe("shared profile page", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetSharedProfile.mockResolvedValue(sharedProfile);
+    mockGetSharedProfile.mockResolvedValue(sharedProfileFixture);
     mockGetBadgeDefinitions.mockResolvedValue([
       {
         id: 1,

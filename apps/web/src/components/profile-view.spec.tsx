@@ -2,7 +2,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 import { ProfileView } from "./profile-view";
-import type { LearningStreak, Profile } from "@/lib/api-client";
+import { profileFixture, streakFixture } from "@/test/fixtures";
+import type { CharacterOption } from "@/lib/api-client";
 
 vi.mock("@clerk/nextjs", () => ({
   useAuth: () => ({ getToken: vi.fn().mockResolvedValue("tok") }),
@@ -13,39 +14,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
 }));
 
-const profile: Profile = {
-  userId: "user-1",
-  character: { id: 1, name: "Kalayaan", slug: "kalayaan", imageUrl: null },
-  totalXp: 1240,
-  level: 4,
-  adventurerRank: 4,
-  accomplishments: { novelsCompleted: 3, sideQuestsCompleted: 5, ctfsSolved: 2 },
-  sharing: { shareId: null },
-  badges: [
-    {
-      badgeDefinitionId: 7,
-      name: "Pull Shark",
-      slug: "pull-shark",
-      imageUrl: null,
-      count: 3,
-      latestAwardedAt: "2026-10-01T00:00:00.000Z",
-    },
-  ],
-  activity: [],
-  initialCompetencyBaseline: null,
-};
-
-const streak: LearningStreak = {
-  timeZone: "Asia/Manila",
-  today: "2026-10-20",
-  from: "2026-10-20",
-  to: "2026-10-20",
-  currentStreak: 1,
-  longestStreak: 3,
-  days: [{ date: "2026-10-20", reading: 1, assessed: 0 }],
-};
-
-const characters = [
+const characters: CharacterOption[] = [
   { id: 1, name: "Kalayaan", slug: "kalayaan", description: "The coder", imageUrl: null },
   { id: 2, name: "Ada", slug: "ada", description: "The first programmer", imageUrl: null },
 ];
@@ -55,9 +24,9 @@ type ViewOverrides = Partial<Parameters<typeof ProfileView>[0]>;
 function renderView(overrides: ViewOverrides = {}) {
   return renderToStaticMarkup(
     <ProfileView
-      profile={profile}
+      profile={profileFixture}
       profileError={false}
-      streak={streak}
+      streak={streakFixture}
       characters={characters}
       charactersError={false}
       badgeDescriptions={{ "pull-shark": "Earned for pulling three quests" }}
@@ -127,7 +96,7 @@ const cases: ReadonlyArray<{
   },
   {
     label: "the Badge empty state",
-    overrides: { profile: { ...profile, badges: [] } },
+    overrides: { profile: { ...profileFixture, badges: [] } },
     expected: [
       "No Badges earned yet — complete Quests and Codelab challenges to start earning them.",
     ],

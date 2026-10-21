@@ -44,6 +44,7 @@ vi.mock("@/components/profile-view", () => ({
 }));
 
 import ProfilePage from "./page";
+import { profileFixture } from "@/test/fixtures";
 
 describe("profile page", () => {
   beforeEach(() => {
@@ -56,27 +57,7 @@ describe("profile page", () => {
       primaryEmailAddress: { emailAddress: "jai@example.com" },
       emailAddresses: [{ emailAddress: "jai@example.com" }],
     });
-    mockGetProfile.mockResolvedValue({
-      userId: "user-1",
-      character: { id: 1, name: "Kalayaan", slug: "kalayaan", imageUrl: null },
-      totalXp: 1240,
-      level: 4,
-      adventurerRank: 4,
-      accomplishments: { novelsCompleted: 3, sideQuestsCompleted: 5, ctfsSolved: 2 },
-      sharing: { shareId: null },
-      badges: [
-        {
-          badgeDefinitionId: 7,
-          name: "Pull Shark",
-          slug: "pull-shark",
-          imageUrl: null,
-          count: 3,
-          latestAwardedAt: "2026-10-01T00:00:00.000Z",
-        },
-      ],
-      activity: [],
-      initialCompetencyBaseline: null,
-    });
+    mockGetProfile.mockResolvedValue(profileFixture);
     mockGetCharacters.mockResolvedValue([]);
     mockGetLearningStreak.mockResolvedValue(null);
     mockGetBadgeDefinitions.mockResolvedValue([
