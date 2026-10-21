@@ -39,7 +39,7 @@ export const clerkY2kAppearance = {
       borderRadius: "0px",
       backgroundColor: "#FFF5DC",
       color: "#1A0A2E",
-      "&:hover": { filter: "brightness(1.04)" },
+      "&:hover": { filter: "brightness(1.08)" },
       "&:active": { transform: "translate(3px, 3px)", boxShadow: "none" },
     },
     dividerLine: {
@@ -55,7 +55,7 @@ export const clerkY2kAppearance = {
     },
     formButtonPrimary: {
       fontFamily: "var(--font-pixel)",
-      fontSize: "10px",
+      fontSize: "9px",
       textTransform: "uppercase",
       border: "2px solid #1A0A2E",
       boxShadow: "3px 3px 0 #1A0A2E",
@@ -75,7 +75,7 @@ export const clerkY2kAppearance = {
       color: "#1A0A2E",
       "&:focus": {
         outline: "none",
-        boxShadow: "2px 2px 0 #FF69B4",
+        boxShadow: "2px 2px 0 var(--accent)",
       },
     },
     formFieldLabel: {

@@ -137,9 +137,7 @@ export function CharacterPicker({
   const [error, setError] = useState<string | null>(initialError);
 
   const activeChar =
-    characters.find((c) => c.id === (hoveredId ?? selectedId)) ??
-    characters.find((c) => c.id === selectedId) ??
-    null;
+    characters.find((c) => c.id === (hoveredId ?? selectedId)) ?? null;
 
   const handleConfirm = async () => {
     if (!selectedId) return;
@@ -184,7 +182,7 @@ export function CharacterPicker({
                 onMouseLeave={() => setHoveredId(null)}
                 onFocus={() => setHoveredId(char.id)}
                 onBlur={() => setHoveredId(null)}
-                className={`group relative flex items-center gap-3 border-2 border-border bg-window-body p-3 text-left shadow-[3px_3px_0_var(--border)] transition-[box-shadow,transform] duration-[80ms] hover:brightness-[1.03] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none ${
+                className={`group relative flex items-center gap-3 border-2 border-border bg-window-body p-3 text-left shadow-[3px_3px_0_var(--border)] transition-[box-shadow,transform] duration-[80ms] hover:brightness-[1.08] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none ${
                   isSelected
                     ? "border-accent shadow-[3px_3px_0_var(--accent)] outline outline-2 outline-accent"
                     : ""
