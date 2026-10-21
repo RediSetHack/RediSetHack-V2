@@ -1,80 +1,9 @@
-import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
-import { Check, Lock, X } from "lucide-react";
+import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 import { getSideQuest, getSideQuests, type SideQuest, type SideQuestListItem } from "@/lib/api-client";
-import { EmptyState, StatusChip, Window, XPChip } from "@/components/y2k";
-
-const ACTIVITY_HREF = { ctf: "/ctf?challenge=", coding: "/codelab?activity=" } as const;
-
-const chipStatus = (status: string) => {
-  if (status === "completed") return "completed";
-  return status === "available" ? "unlocked" : "locked";
-};
-
-function SideQuestDetail({ detail }: Readonly<{ detail: SideQuest | null }>) {
-  if (!detail) {
-    return (
-      <Window title="Side Quest">
-        <p role="alert" className="font-body text-sm font-bold text-btn-danger">Could not load this Side Quest.</p>
-      </Window>
-    );
-  }
-  return (
-    <Window title={detail.title}>
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="font-body text-sm font-bold">{detail.summary}</span>
-        <XPChip xp={detail.xpReward} />
-        <StatusChip status={chipStatus(detail.status)} label={detail.status.replace("_", " ")} />
-      </div>
-      {detail.requirements.length > 0 && (
-        <ul className="mt-3 space-y-1 font-body text-sm font-bold">
-          {detail.requirements.map((r) => (
-            <li key={r.message} className="flex items-center gap-2">
-              {r.met ? <Check aria-hidden="true" className="size-4" /> : <X aria-hidden="true" className="size-4" />}
-              {r.message}
-            </li>
-          ))}
-        </ul>
-      )}
-      {detail.brief && <p className="mt-2 font-body text-sm font-bold">{detail.brief}</p>}
-      {detail.activity && (
-        <div className="mt-3">
-          <Link href={`${ACTIVITY_HREF[detail.activity.type]}${detail.activity.id}`} className="font-pixel text-[9px] leading-relaxed underline">
-            OPEN ACTIVITY
-          </Link>
-        </div>
-      )}
-    </Window>
-  );
-}
-
-function SideQuestList({ quests }: Readonly<{ quests: SideQuestListItem[] | null }>) {
-  if (quests === null) {
-    return <p role="alert" className="font-body text-sm font-bold text-btn-danger">Could not load Side Quests.</p>;
-  }
-  if (quests.length === 0) {
-    return <EmptyState title="No Side Quests yet." />;
-  }
-  return (
-    <ul className="space-y-2">
-      {quests.map((q) => (
-        <li key={q.id} className="border-2 border-border bg-window-body p-3 shadow-[3px_3px_0_var(--border)]">
-          <Link href={`/side-quests?quest=${q.id}`} className="font-pixel text-[9px] leading-relaxed underline">{q.title}</Link>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className="font-body text-xs font-bold">{q.summary}</span>
-            <XPChip xp={q.xpReward} />
-            <StatusChip status={chipStatus(q.status)} label={q.status.replace("_", " ")} />
-          </div>
-          {q.lockReasons.map((r) => (
-            <p key={r.message} className="mt-1 flex items-center gap-2 font-body text-xs font-bold text-muted-foreground">
-              <Lock aria-hidden="true" className="size-3" /> {r.message}
-            </p>
-          ))}
-        </li>
-      ))}
-    </ul>
-  );
-}
+import { SideQuestDetail, SideQuestList } from "@/components/side-quests";
+import { Breadcrumb, Sparkle, Window, buttonClasses } from "@/components/y2k";
 
 export default async function SideQuestsPage({
   searchParams,
@@ -93,9 +22,11 @@ export default async function SideQuestsPage({
       detail = null;
     }
     return (
-      <div className="flex-1 mx-auto w-full max-w-4xl p-6 sm:p-10 space-y-4">
-        <Link href="/side-quests" className="font-body text-sm font-bold underline">All Side Quests</Link>
-        <SideQuestDetail detail={detail} />
+      <div className="mx-auto w-full max-w-4xl flex-1 space-y-4 p-6 sm:p-10">
+        <Link href="/side-quests" className={buttonClasses("ghost")}>
+          <ChevronLeft aria-hidden="true" className="size-3" /> ALL SIDE QUESTS
+        </Link>
+        <SideQuestDetail detail={detail} error={detail === null} />
       </div>
     );
   }
@@ -108,11 +39,21 @@ export default async function SideQuestsPage({
   }
 
   return (
-    <div className="flex-1 mx-auto w-full max-w-5xl p-6 sm:p-10 space-y-6">
-      <Window title="SIDE-QUESTS.EXE">
-        <p className="mb-4 font-body text-sm font-bold text-muted-foreground">Optional objectives. The main story never waits on them.</p>
-        <SideQuestList quests={quests} />
+    <div className="mx-auto w-full max-w-5xl flex-1 space-y-6 p-6 sm:p-10">
+      <Window title={<Breadcrumb items={[{ label: "SIDE-QUESTS" }]} />}>
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <h1 className="font-pixel text-xl leading-relaxed text-foreground">
+              Side Quests
+            </h1>
+            <p className="mt-2 font-body text-sm font-bold text-muted-foreground">
+              Optional objectives. The main story never waits on them.
+            </p>
+          </div>
+          <Sparkle size={20} />
+        </div>
       </Window>
+      <SideQuestList quests={quests} error={quests === null} />
     </div>
   );
 }

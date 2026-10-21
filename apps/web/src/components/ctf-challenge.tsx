@@ -2,21 +2,30 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "@clerk/nextjs";
-import { Flag } from "lucide-react";
+import { Check, Download, Flag, Target, X, Zap } from "lucide-react";
 import {
   ApiError,
   getCtfArtifact,
   getCtfChallenge,
   submitCtfFlag,
   type CtfArtifact,
-  type CtfAttempt,
   type CtfChallenge,
 } from "@/lib/api-client";
+import { artifactFileName, CTF_DIFFICULTY_LABELS, flagVerdict } from "@/lib/ctf";
 import { StatusChip, Window, XPChip, Y2kButton, Y2kInput } from "@/components/y2k";
+import { FeedbackState } from "@/components/y2k-dialog";
 
-function verdict(result: CtfAttempt): string {
-  if (!result.correct) return "Not the flag. Check the artifact and try again.";
-  return result.alreadySolved ? "Correct — you already solved this one." : `Correct! +${result.xpAwarded} XP earned.`;
+/** Saves the artifact to the learner's machine. */
+function downloadArtifact(name: string, content: string) {
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = artifactFileName(name);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 export function CtfChallengeView({ apiUrl, challengeId }: Readonly<{ apiUrl: string; challengeId: number }>) {
@@ -24,8 +33,10 @@ export function CtfChallengeView({ apiUrl, challengeId }: Readonly<{ apiUrl: str
   const [challenge, setChallenge] = useState<CtfChallenge | null>(null);
   const [artifact, setArtifact] = useState<CtfArtifact | null>(null);
   const [flag, setFlag] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [verdict, setVerdict] = useState<ReturnType<typeof flagVerdict> | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     void (async () => {
@@ -35,42 +46,99 @@ export function CtfChallengeView({ apiUrl, challengeId }: Readonly<{ apiUrl: str
         setChallenge(c);
         setArtifact(a);
       } catch (e) {
-        setError(e instanceof ApiError && e.status === 403 ? "This challenge is locked until you finish the earlier stage." : "Could not load this challenge.");
+        setLoadError(e instanceof ApiError && e.status === 403 ? "This challenge is locked until you finish the earlier Stage." : "Could not load this challenge.");
       }
     })();
   }, [apiUrl, challengeId, getToken]);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
-    setMessage(null);
+    setVerdict(null);
+    setSubmitError(null);
+    setSubmitting(true);
     try {
       const result = await submitCtfFlag(apiUrl, (await getToken()) ?? "", challengeId, flag);
-      setMessage(verdict(result));
+      setVerdict(flagVerdict(result));
       if (result.correct) setChallenge((c) => (c ? { ...c, solved: true } : c));
     } catch (e) {
-      setMessage(e instanceof ApiError && e.status === 429 ? e.message : "Could not submit the flag.");
+      setSubmitError(e instanceof ApiError && e.status === 429 ? e.message : "Could not submit the flag.");
+    } finally {
+      setSubmitting(false);
     }
   }
 
-  if (error) return <p role="alert" className="font-body text-sm font-bold text-btn-danger">{error}</p>;
-  if (!challenge || !artifact) return <p className="font-body text-sm font-bold text-muted-foreground">Loading…</p>;
+  if (loadError) {
+    return (
+      <FeedbackState error errorMessage={loadError}>
+        {null}
+      </FeedbackState>
+    );
+  }
+
+  if (!challenge || !artifact) {
+    return (
+      <FeedbackState
+        loading
+        loadingTitle="CTF.EXE"
+        loadingLabel="Loading challenge"
+      >
+        {null}
+      </FeedbackState>
+    );
+  }
 
   return (
     <div className="space-y-4">
-      <Window title={challenge.title}>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="font-body text-sm font-bold">{challenge.category} · {challenge.difficulty}</span>
-          <XPChip xp={challenge.xpReward} />
-          {challenge.solved && <StatusChip status="solved" />}
-        </div>
-        <p className="mt-2 font-body text-sm font-bold">{challenge.brief}</p>
+      <Window
+        title={challenge.title}
+        actions={
+          challenge.solved ? (
+            <StatusChip status="solved" />
+          ) : (
+            <StatusChip status="not-taken" label="Unsolved" />
+          )
+        }
+      >
+        <dl className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex items-center gap-1 font-body text-[13px] font-bold text-foreground">
+            <dt className="sr-only">Category</dt>
+            <dd className="inline-flex items-center gap-1">
+              <Target aria-hidden="true" className="size-4" />
+              {challenge.category}
+            </dd>
+          </div>
+          <div className="inline-flex items-center gap-1 font-body text-[13px] font-bold text-foreground">
+            <dt className="sr-only">Difficulty</dt>
+            <dd className="inline-flex items-center gap-1">
+              <Zap aria-hidden="true" className="size-4" />
+              {CTF_DIFFICULTY_LABELS[challenge.difficulty]}
+            </dd>
+          </div>
+          <div>
+            <dt className="sr-only">XP reward</dt>
+            <dd>
+              <XPChip xp={challenge.xpReward} />
+            </dd>
+          </div>
+        </dl>
+        <p className="mt-3 font-body text-sm font-bold text-foreground">{challenge.brief}</p>
       </Window>
 
-      <Window title={artifact.name}>
-        <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-sm">{artifact.content}</pre>
+      <Window
+        title={artifact.name}
+        actions={
+          <Y2kButton
+            variant="secondary"
+            onClick={() => downloadArtifact(artifact.name, artifact.content)}
+          >
+            <Download aria-hidden="true" className="size-3" /> DOWNLOAD
+          </Y2kButton>
+        }
+      >
+        <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-sm text-foreground">{artifact.content}</pre>
       </Window>
 
-      <Window title="Flag Submission">
+      <Window title="FLAG SUBMISSION">
         <form onSubmit={onSubmit} className="flex flex-wrap items-center gap-2">
           <div className="flex flex-1 items-center gap-2">
             <Flag aria-hidden="true" className="size-4" />
@@ -83,9 +151,28 @@ export function CtfChallengeView({ apiUrl, challengeId }: Readonly<{ apiUrl: str
               className="flex-1"
             />
           </div>
-          <Y2kButton type="submit" disabled={flag.trim() === ""}>SUBMIT</Y2kButton>
+          <Y2kButton type="submit" disabled={flag.trim() === "" || submitting}>
+            {submitting ? "SUBMITTING…" : "SUBMIT"}
+          </Y2kButton>
         </form>
-        {message && <output className="mt-2 block font-body text-sm font-bold">{message}</output>}
+        {verdict && (
+          <output
+            role="status"
+            className={`mt-3 flex items-start gap-2 font-body text-sm font-bold ${verdict.tone === "success" ? "text-success" : "text-btn-danger"}`}
+          >
+            {verdict.tone === "success" ? (
+              <Check aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            ) : (
+              <X aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            )}
+            {verdict.message}
+          </output>
+        )}
+        {submitError && (
+          <p role="alert" className="mt-3 font-body text-sm font-bold text-btn-danger">
+            {submitError}
+          </p>
+        )}
       </Window>
     </div>
   );
