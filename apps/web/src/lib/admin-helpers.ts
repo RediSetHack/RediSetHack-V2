@@ -1,5 +1,6 @@
 import type { BadgeCriteria, LessonBlock, QuestQuestionAuthoring } from "@repo/contracts";
 import { slugify } from "@/lib/format";
+import { ApiError } from "@/lib/api-client";
 
 /** A Quest question as the admin form edits it; matches the API's authoring shape. */
 export type AdminQuestion = QuestQuestionAuthoring;
@@ -112,6 +113,17 @@ export function criteriaSummary(criteria: BadgeCriteria): string {
     case "category":
       return `Zone ${criteria.zoneId} completion`;
   }
+}
+
+/* ── API authorization triage ─────────────────────────────────── */
+
+/**
+ * True when the API refused the call because the caller is not an admin.
+ * The admin routes answer `403 Forbidden`, so this is the signal the Control
+ * Panel swaps itself for the ACCESS DENIED window.
+ */
+export function isForbidden(cause: unknown): boolean {
+  return cause instanceof ApiError && cause.status === 403;
 }
 
 /* ── API validation-message triage ─────────────────────────────── */

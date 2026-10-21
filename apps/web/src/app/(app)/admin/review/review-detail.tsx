@@ -6,6 +6,7 @@ import { Y2kButton, Y2kTextarea, Window } from "@/components/y2k";
 import { Y2kDialog, useToast } from "@/components/y2k-dialog";
 import { EditLoadState } from "@/components/admin/form-controls";
 import { API_URL, useToken } from "@/components/admin/use-catalog";
+import { useAdminAccess } from "@/components/admin/admin-access";
 import {
   ApiError,
   getReviewRevision,
@@ -54,6 +55,7 @@ export function ReviewDetail({ id }: Readonly<{ id: string }>) {
   const token = useToken();
   const toast = useToast();
   const router = useRouter();
+  const { report } = useAdminAccess();
   const [item, setItem] = useState<ReviewQueueItem | null>(null);
   const [status, setStatus] = useState<"loading" | "not-found" | "error" | "ready">("loading");
   const [reason, setReason] = useState("");
@@ -74,13 +76,16 @@ export function ReviewDetail({ id }: Readonly<{ id: string }>) {
           setStatus("ready");
         }
       })
-      .catch(() => {
+      .catch((cause: unknown) => {
+        // A `403` means the session lost its admin rights: the shell swaps
+        // itself for the ACCESS DENIED window.
+        if (report(cause)) return;
         if (!cancelled) setStatus("error");
       });
     return () => {
       cancelled = true;
     };
-  }, [token, id]);
+  }, [token, id, report]);
 
   const decide = async (decision: ReviewDecisionInput["decision"]) => {
     if (!token || !item) return;
@@ -94,6 +99,7 @@ export function ReviewDetail({ id }: Readonly<{ id: string }>) {
       toast.push(`Decision recorded: ${decision}.`);
       router.push("/admin/review");
     } catch (cause) {
+      if (report(cause)) return;
       toast.push(cause instanceof ApiError ? cause.message : "Could not record the decision.", "error");
     } finally {
       setBusy(false);
@@ -112,6 +118,7 @@ export function ReviewDetail({ id }: Readonly<{ id: string }>) {
       toast.push("Lesson unpublished.");
       router.push("/admin/review");
     } catch (cause) {
+      if (report(cause)) return;
       toast.push(cause instanceof ApiError ? cause.message : "Could not unpublish.", "error");
     } finally {
       setBusy(false);

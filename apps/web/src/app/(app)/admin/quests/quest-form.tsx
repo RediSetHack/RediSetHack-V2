@@ -5,6 +5,7 @@ import { ResourceForm } from "@/components/admin/resource-form";
 import { EditLoadState, FormField, FormShell } from "@/components/admin/form-controls";
 import { QuestionBuilder } from "@/components/admin/question-builder";
 import { API_URL, useCatalog, useToken } from "@/components/admin/use-catalog";
+import { useAdminAccess } from "@/components/admin/admin-access";
 import { ApiError, deleteAdminQuest, getAdminQuest } from "@/lib/api-client";
 import { Y2kInput, Y2kTextarea, Y2kSelect } from "@/components/y2k";
 import { fieldText, newQuestion, validateQuestionSet, type AdminQuestion } from "@/lib/admin-helpers";
@@ -40,6 +41,7 @@ function questInitial(
 
 export function QuestForm({ mode, id }: Readonly<{ mode: "create" | "edit"; id?: string }>) {
   const token = useToken();
+  const { report } = useAdminAccess();
   const catalog = useCatalog(token, { stages: true });
   const [initial, setInitial] = useState<QuestValues | null>(mode === "create" ? questInitial() : null);
   const [status, setStatus] = useState<"loading" | "not-found" | "error" | "ready">(mode === "create" ? "ready" : "loading");
@@ -54,12 +56,15 @@ export function QuestForm({ mode, id }: Readonly<{ mode: "create" | "edit"; id?:
         setStatus("ready");
       })
       .catch((cause: unknown) => {
+        // A `403` means the session lost its admin rights: the shell swaps
+        // itself for the ACCESS DENIED window.
+        if (report(cause)) return;
         if (!cancelled) setStatus(cause instanceof ApiError && cause.status === 404 ? "not-found" : "error");
       });
     return () => {
       cancelled = true;
     };
-  }, [mode, id, token]);
+  }, [mode, id, token, report]);
 
   const stageOptions = useMemo(() => {
     const regionName = new Map(catalog.regions.map((region) => [region.id, region.name]));
@@ -116,7 +121,7 @@ export function QuestForm({ mode, id }: Readonly<{ mode: "create" | "edit"; id?:
   );
 
   return (
-    <FormShell title={mode === "create" ? "NEW_QUEST.EXE" : "EDIT_QUEST.EXE"}>
+    <FormShell title={mode === "create" ? "NEW_QUEST.EXE" : "EDIT_QUEST.EXE"} entityName={initial.title}>
       <ResourceForm
         resource="Quest"
         mode={mode}
