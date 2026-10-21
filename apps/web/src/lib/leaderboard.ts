@@ -49,8 +49,14 @@ export function podiumOrderClass(place: PodiumPlace): string {
 }
 
 /** The badge under each podium card, e.g. "1ST PLACE". */
+const PODIUM_PLACE_LABEL: Record<PodiumPlace, string> = {
+  1: "1ST PLACE",
+  2: "2ND PLACE",
+  3: "3RD PLACE",
+};
+
 export function podiumPlaceLabel(place: PodiumPlace): string {
-  return place === 1 ? "1ST PLACE" : place === 2 ? "2ND PLACE" : "3RD PLACE";
+  return PODIUM_PLACE_LABEL[place];
 }
 
 /** True when the row belongs to the signed-in learner. */
