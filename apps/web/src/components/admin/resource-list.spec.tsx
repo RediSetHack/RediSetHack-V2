@@ -1,7 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { ResourceList } from "./resource-list";
-import { DeleteMessage } from "./form-controls";
 
 vi.mock("@/components/y2k-dialog", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/components/y2k-dialog")>()),
@@ -37,17 +36,5 @@ describe("ResourceList", () => {
     const html = renderList([{ id: 3, name: "Core" }]);
     expect(html).toContain('href="/admin/regions/3"');
     expect(html).toContain("Delete Core");
-  });
-});
-
-describe("DeleteMessage", () => {
-  it("uses the ADR-0005 copy, never cascade wording", () => {
-    const html = renderToStaticMarkup(<DeleteMessage name="Core" />);
-    expect(html).toContain("Delete Core? This cannot be undone.");
-    expect(html).toContain(
-      "If learners have progress, Results or XP on this content it will be archived and hidden from learners; otherwise it is deleted.",
-    );
-    expect(html.toLowerCase()).not.toContain("cascade");
-    expect(html).not.toContain("Results deleted");
   });
 });

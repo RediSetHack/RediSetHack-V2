@@ -7,6 +7,7 @@ import {
   criteriaSummary,
   criteriaToSentence,
   defaultSlug,
+  nextSlug,
   newOption,
   newQuestion,
   parseFieldIssues,
@@ -194,5 +195,16 @@ describe("fieldText", () => {
       expect(fieldText(value)).toBe("");
       expect(fieldText(value, "python")).toBe("python");
     }
+  });
+});
+
+describe("nextSlug", () => {
+  it("follows the name while the slug is still the auto-filled one", () => {
+    expect(nextSlug("", "", "Core")).toBe("core");
+    expect(nextSlug("core", "Core", "Core Skills")).toBe("core-skills");
+  });
+
+  it("keeps a hand-edited slug", () => {
+    expect(nextSlug("custom", "Core", "Core Skills")).toBe("custom");
   });
 });

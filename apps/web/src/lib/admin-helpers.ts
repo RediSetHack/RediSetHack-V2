@@ -40,6 +40,12 @@ export function defaultSlug(name: string): string {
   return slugify(name);
 }
 
+/** The slug after a rename: follows the name until the admin has edited the slug by hand. */
+export function nextSlug(slug: unknown, oldName: unknown, newName: string): string {
+  const current = fieldText(slug);
+  return current === defaultSlug(fieldText(oldName)) ? defaultSlug(newName) : current;
+}
+
 /** `null` when the slug is acceptable, otherwise the inline field message. */
 export function slugError(value: string): string | null {
   const slug = value.trim();

@@ -2,7 +2,7 @@
 
 import { Y2kInput, Y2kTextarea } from "@/components/y2k";
 import { FormField } from "@/components/admin/form-controls";
-import { fieldText, defaultSlug } from "@/lib/admin-helpers";
+import { fieldText, nextSlug } from "@/lib/admin-helpers";
 
 export type RegionValues = {
   id: number;
@@ -35,8 +35,7 @@ export function regionFields({
           value={fieldText(values.name, "")}
           onChange={(event) => {
             set("name", event.target.value);
-            // Keep following the name until the admin edits the slug by hand.
-            if (values.slug === defaultSlug(fieldText(values.name))) set("slug", defaultSlug(event.target.value));
+            set("slug", nextSlug(values.slug, values.name, event.target.value));
           }}
         />
       </FormField>

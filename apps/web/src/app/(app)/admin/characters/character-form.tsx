@@ -7,7 +7,7 @@ import { AvatarOrInitial, Y2kInput, Y2kTextarea } from "@/components/y2k";
 import { API_URL, useToken } from "@/components/admin/use-catalog";
 import { useAdminAccess } from "@/components/admin/admin-access";
 import { ApiError, deleteAdminCharacter, getAdminCharacter } from "@/lib/api-client";
-import { fieldText, defaultSlug } from "@/lib/admin-helpers";
+import { fieldText, nextSlug } from "@/lib/admin-helpers";
 
 type CharacterValues = { id: number; name: string; slug: string; description: string; imageUrl: string };
 
@@ -67,7 +67,7 @@ export function CharacterForm({ mode, id }: Readonly<{ mode: "create" | "edit"; 
           value={fieldText(values.name, "")}
           onChange={(event) => {
             set("name", event.target.value);
-            set("slug", defaultSlug(event.target.value));
+            set("slug", nextSlug(values.slug, values.name, event.target.value));
           }}
         />
       </FormField>

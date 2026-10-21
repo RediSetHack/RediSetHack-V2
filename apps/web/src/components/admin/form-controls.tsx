@@ -115,7 +115,7 @@ export function EditLoadState({
 }
 
 /** ADR-0005: deleting content may archive it instead, so the copy never says "cascade". */
-export const DELETE_COPY =
+const DELETE_COPY =
   "If learners have progress, Results or XP on this content it will be archived and hidden from learners; otherwise it is deleted.";
 
 /** The body of every admin delete confirmation. */
