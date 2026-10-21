@@ -12,6 +12,8 @@ export const CODELAB_LANGUAGES: readonly {
   { id: "java", label: "Java" },
 ];
 
+const LANGUAGE_IDS = CODELAB_LANGUAGES.map((l) => l.id);
+
 /** The "Hello, world!" starter each language opens with. */
 export const STARTER_EXAMPLES: Record<Language, string> = {
   python: 'print("Hello, world!")',
@@ -23,9 +25,13 @@ export const STARTER_EXAMPLES: Record<Language, string> = {
 
 export function isLanguage(value: string | undefined): value is Language {
   return (
-    value !== undefined &&
-    (CODELAB_LANGUAGES.map((l) => l.id) as readonly string[]).includes(value)
+    value !== undefined && (LANGUAGE_IDS as readonly string[]).includes(value)
   );
+}
+
+/** The learner-facing name of a language, e.g. "C++". */
+export function languageLabel(language: Language): string {
+  return CODELAB_LANGUAGES.find((l) => l.id === language)?.label ?? language;
 }
 
 export function starterCodeFor(language: Language): string {
@@ -33,11 +39,39 @@ export function starterCodeFor(language: Language): string {
 }
 
 /**
- * True while the editor still holds the language's starter code — an empty
- * field counts as untouched, since there is nothing to lose.
+ * The code a session opened with — a Lesson Exercise's prefilled starter, or
+ * a coding activity's starter.
  */
-export function isUntouchedCode(code: string, language: Language): boolean {
-  return code === "" || code === starterCodeFor(language);
+export type SessionStarter = {
+  readonly language: Language;
+  readonly code: string;
+};
+
+/**
+ * The starter code for a language. A session that opened with its own starter
+ * keeps that starter for the language it belongs to, so switching away and
+ * back does not lose it.
+ */
+export function starterFor(
+  language: Language,
+  sessionStarter?: SessionStarter | null,
+): string {
+  return sessionStarter?.language === language
+    ? sessionStarter.code
+    : starterCodeFor(language);
+}
+
+/**
+ * True while the editor still holds the starter code — an empty field counts
+ * as untouched, since there is nothing to lose.
+ */
+export function isUntouchedCode(
+  code: string,
+  language: Language,
+  sessionStarter?: SessionStarter | null,
+): boolean {
+  if (code === "") return true;
+  return code === starterFor(language, sessionStarter);
 }
 
 /**
@@ -48,9 +82,10 @@ export function codeAfterLanguageChange(
   code: string,
   currentLanguage: Language,
   nextLanguage: Language,
+  sessionStarter?: SessionStarter | null,
 ): string {
-  return isUntouchedCode(code, currentLanguage)
-    ? starterCodeFor(nextLanguage)
+  return isUntouchedCode(code, currentLanguage, sessionStarter)
+    ? starterFor(nextLanguage, sessionStarter)
     : code;
 }
 
