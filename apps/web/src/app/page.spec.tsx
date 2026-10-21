@@ -69,7 +69,7 @@ describe("Landing / Home Page", () => {
       mockCurrentUser.mockResolvedValue(null);
     });
 
-    it("renders WELCOME.EXE hero with h1, sub-copy, SIGN UP, and SIGN IN", async () => {
+    it("renders the visitor landing page", async () => {
       const html = renderToStaticMarkup(await Home());
       expect(html).toContain("WELCOME.EXE");
       expect(html).toContain("<h1");
@@ -78,10 +78,6 @@ describe("Landing / Home Page", () => {
       expect(html).toContain("SIGN UP");
       expect(html).toContain('href="/sign-in"');
       expect(html).toContain("SIGN IN");
-    });
-
-    it("renders the 4 staggered feature windows", async () => {
-      const html = renderToStaticMarkup(await Home());
       expect(html).toContain("MAP.EXE");
       expect(html).toContain("Progress through Regions and Zones");
       expect(html).toContain("QUESTS.EXE");
@@ -90,33 +86,17 @@ describe("Landing / Home Page", () => {
       expect(html).toContain("Run code in five languages");
       expect(html).toContain("BADGES.EXE");
       expect(html).toContain("Collect Badges and earn XP");
-    });
-
-    it("renders the five-language desktop icon strip", async () => {
-      const html = renderToStaticMarkup(await Home());
       expect(html).toContain("Python");
       expect(html).toContain("JavaScript");
       expect(html).toContain("C++");
       expect(html).toContain("C");
       expect(html).toContain("Java");
-    });
-
-    it("renders TOP LEARNERS teaser with 3 learner rows", async () => {
-      const html = renderToStaticMarkup(await Home());
       expect(html).toContain("TOP LEARNERS");
       expect(html).toContain("#1");
       expect(html).toContain("#2");
       expect(html).toContain("#3");
-    });
-
-    it("renders footer with copyright and ××× divider", async () => {
-      const html = renderToStaticMarkup(await Home());
       expect(html).toContain("© RediSetHack");
       expect(html).toContain("×××");
-    });
-
-    it("contains no emoji or gradient text", async () => {
-      const html = renderToStaticMarkup(await Home());
       // No emojis in the supplementary unicode plane
       expect(html).not.toMatch(/[\uD800-\uDBFF][\uDC00-\uDFFF]/);
       expect(html).not.toContain("bg-gradient");
@@ -173,7 +153,7 @@ describe("Landing / Home Page", () => {
       ]);
     });
 
-    it("renders Continue card linking to the next unlocked Stage with Region › Zone, title, and XP", async () => {
+    it("renders the learner dashboard and Continue card", async () => {
       const html = renderToStaticMarkup(await Home());
       expect(html).toContain("CONTINUE.EXE");
       expect(html).toContain("Continue where you left off");
@@ -182,26 +162,14 @@ describe("Landing / Home Page", () => {
       expect(html).toContain("50 XP");
       expect(html).toContain('href="/map/10/20/30"');
       expect(html).toContain("CONTINUE");
-    });
-
-    it("renders today's Event card with bonus XP indicator", async () => {
-      const html = renderToStaticMarkup(await Home());
       expect(html).toContain("TODAY.EXE");
       expect(html).toContain("BONUS DAY ×2 XP");
-    });
-
-    it("renders the 3 stat tiles: Rank, Total XP, and Badges count", async () => {
-      const html = renderToStaticMarkup(await Home());
       expect(html).toContain("RANK.EXE");
       expect(html).toContain("LV 3");
       expect(html).toContain("XP.EXE");
       expect(html).toContain("500 XP");
       expect(html).toContain("BADGES.EXE");
       expect(html).toContain("2");
-    });
-
-    it("renders quick links for QUESTS and CODELAB", async () => {
-      const html = renderToStaticMarkup(await Home());
       expect(html).toContain('href="/quests"');
       expect(html).toContain("QUESTS");
       expect(html).toContain('href="/codelab"');
