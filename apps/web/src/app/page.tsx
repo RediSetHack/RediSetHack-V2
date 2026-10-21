@@ -1,6 +1,7 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { Map, ScrollText, Code2, Award, Star } from "lucide-react";
+import { AppShell, MinimalHeader } from "@/components/app-shell";
 import { UnregisteredUserCard } from "@/components/unregistered-user-card";
 import {
   AvatarOrInitial,
@@ -11,7 +12,7 @@ import {
   XPChip,
   buttonClasses,
 } from "@/components/y2k";
-import { getCurrentUser, getLeaderboard, getProfile, getTodayEvent, getRegions, getStages, getZones, type Leaderboard, type Profile } from "@/lib/api-client";
+import { getCurrentUser, getLeaderboard, getProfile, getTodayEvent, getRegions, getStages, getZones, type Leaderboard, type Profile, type DailyEvent } from "@/lib/api-client";
 import { findNovelResume } from "@/lib/novel-resume";
 
 const LANGUAGES = [
@@ -50,7 +51,9 @@ async function resolveResume(
 export default async function Home() {
   const { userId, getToken } = await auth();
   const user = userId ? await currentUser() : null;
-  const isAdmin = user?.publicMetadata?.role === "admin";
+  const role = (user?.publicMetadata?.role as string | undefined) ?? "user";
+  const isAdmin = role === "admin";
+  const isContributor = isAdmin || role === "contributor";
   const userEmail =
     user?.primaryEmailAddress?.emailAddress ??
     user?.emailAddresses?.[0]?.emailAddress ??
@@ -64,7 +67,9 @@ export default async function Home() {
   let dbUser = null;
   let isNewUserWithoutAccount = false;
   let profile: Profile | null = null;
-  let event = null;
+  let profileError = false;
+  let event: DailyEvent | null = null;
+  let eventError = false;
 
   if (token) {
     try {
@@ -76,7 +81,9 @@ export default async function Home() {
       dbUser = me.status === "fulfilled" ? me.value : null;
       isNewUserWithoutAccount = !dbUser;
       profile = p.status === "fulfilled" ? p.value : null;
+      profileError = p.status === "rejected";
       event = ev.status === "fulfilled" ? ev.value : null;
+      eventError = ev.status === "rejected";
     } catch (error) {
       console.error("Failed to load user profile:", error);
     }
@@ -102,15 +109,15 @@ export default async function Home() {
   const badgeCount = profile?.badges?.reduce((sum, b) => sum + b.count, 0) ?? 0;
 
   return (
-    <div className="y2k-grid relative min-h-screen">
-      <Decorations />
-      <main className="relative z-10 mx-auto flex w-full max-w-[1200px] flex-col gap-6 px-4 py-8">
-        <header className="flex flex-col items-center gap-2 text-center">
-          <h1 className="font-pixel text-lg leading-relaxed sm:text-xl md:text-2xl">
-            REDISETHACK
-          </h1>
-        </header>
-
+    <AppShell
+      profile={profile}
+      profileError={profileError}
+      event={event}
+      eventError={eventError}
+      isAdmin={isAdmin}
+      isContributor={isContributor}
+    >
+      <div className="flex flex-col gap-6">
         <Window title="DASHBOARD.EXE">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-col gap-1">
@@ -196,8 +203,8 @@ export default async function Home() {
             CODELAB
           </Link>
         </section>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }
 
@@ -213,15 +220,10 @@ async function VisitorHome({ apiUrl, getToken }: Readonly<{ apiUrl: string; getT
     }
 
     return (
-      <div className="y2k-grid relative min-h-screen">
+      <div className="y2k-grid relative flex min-h-screen flex-col pb-12">
         <Decorations />
-        <main className="relative z-10 mx-auto flex w-full max-w-[1200px] flex-col gap-6 px-4 py-8">
-          <header className="flex flex-col items-center gap-2 text-center">
-            <h1 className="font-pixel text-lg leading-relaxed sm:text-xl md:text-2xl">
-              REDISETHACK
-            </h1>
-          </header>
-
+        <MinimalHeader />
+        <main className="relative z-10 mx-auto flex w-full max-w-[1200px] flex-1 flex-col gap-6 px-4 py-8">
           <Window title="WELCOME.EXE">
             <div className="flex flex-col items-start gap-4">
               <h2 className="font-pixel text-base leading-relaxed sm:text-lg">
@@ -244,7 +246,7 @@ async function VisitorHome({ apiUrl, getToken }: Readonly<{ apiUrl: string; getT
           </Window>
 
           <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Window title="MAP.EXE" className="animate-[y2k-window_200ms_cubic-bezier(0.34,1.56,0.64,1)_both] [animation-delay:80ms]">
+            <Window title="MAP.EXE">
               <div className="flex flex-col gap-2">
                 <Map aria-hidden="true" className="size-5" />
                 <p className="font-body text-sm font-bold">
@@ -252,7 +254,7 @@ async function VisitorHome({ apiUrl, getToken }: Readonly<{ apiUrl: string; getT
                 </p>
               </div>
             </Window>
-            <Window title="QUESTS.EXE" className="animate-[y2k-window_200ms_cubic-bezier(0.34,1.56,0.64,1)_both] [animation-delay:160ms]">
+            <Window title="QUESTS.EXE">
               <div className="flex flex-col gap-2">
                 <ScrollText aria-hidden="true" className="size-5" />
                 <p className="font-body text-sm font-bold">
@@ -260,7 +262,7 @@ async function VisitorHome({ apiUrl, getToken }: Readonly<{ apiUrl: string; getT
                 </p>
               </div>
             </Window>
-            <Window title="CODELAB.EXE" className="animate-[y2k-window_200ms_cubic-bezier(0.34,1.56,0.64,1)_both] [animation-delay:240ms]">
+            <Window title="CODELAB.EXE">
               <div className="flex flex-col gap-2">
                 <Code2 aria-hidden="true" className="size-5" />
                 <p className="font-body text-sm font-bold">
@@ -268,7 +270,7 @@ async function VisitorHome({ apiUrl, getToken }: Readonly<{ apiUrl: string; getT
                 </p>
               </div>
             </Window>
-            <Window title="BADGES.EXE" className="animate-[y2k-window_200ms_cubic-bezier(0.34,1.56,0.64,1)_both] [animation-delay:320ms]">
+            <Window title="BADGES.EXE">
               <div className="flex flex-col gap-2">
                 <Award aria-hidden="true" className="size-5" />
                 <p className="font-body text-sm font-bold">

@@ -1,4 +1,5 @@
 import { SharedProfileView } from "@/components/shared-profile-view";
+import { MinimalHeader } from "@/components/app-shell";
 import { ApiError, getSharedProfile, type SharedProfile } from "@/lib/api-client";
 import { Decorations, Window } from "@/components/y2k";
 
@@ -14,14 +15,15 @@ export default async function SharedProfilePage({ params }: Readonly<{ params: P
     error = !(e instanceof ApiError && e.status === 404);
   }
   return (
-    <main className="relative min-h-screen y2k-grid flex-1 mx-auto w-full max-w-4xl p-6 sm:p-10 space-y-6">
+    <div className="y2k-grid relative flex min-h-screen flex-col pb-12">
       <Decorations />
-      <div className="relative z-10 space-y-6">
+      <MinimalHeader />
+      <main className="relative z-10 mx-auto w-full max-w-4xl flex-1 p-6 sm:p-10 space-y-6">
         <Window title="SHARED_PROFILE.EXE">
           <p className="font-pixel text-[11px] leading-relaxed">Adventurer profile</p>
         </Window>
         <SharedProfileView profile={profile} error={error} />
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }

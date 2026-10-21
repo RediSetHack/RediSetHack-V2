@@ -9,9 +9,22 @@ import { AvatarOrInitial, Progress } from "@/components/y2k";
 
 export function PlayerChip({
   profile,
-  isAdmin,
-}: Readonly<{ profile: Profile | null; isAdmin: boolean }>) {
+  isAdmin = false,
+  error = false,
+}: Readonly<{
+  profile: Profile | null;
+  isAdmin?: boolean;
+  error?: boolean;
+}>) {
   const { signOut } = useClerk();
+
+  if (error) {
+    return (
+      <p role="alert" className="font-body text-xs font-bold text-btn-danger">
+        Your profile could not be loaded.
+      </p>
+    );
+  }
 
   if (!profile) {
     return null;

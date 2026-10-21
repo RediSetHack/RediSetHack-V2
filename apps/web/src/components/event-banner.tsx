@@ -10,6 +10,9 @@ function dismissalKey(): string {
 }
 
 function isDismissedToday(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
   try {
     return window.localStorage.getItem(dismissalKey()) === "1";
   } catch {
@@ -43,12 +46,14 @@ export function EventBanner({
           onClick={() => {
             setDismissed(true);
             try {
-              window.localStorage.setItem(dismissalKey(), "1");
+              if (typeof window !== "undefined") {
+                window.localStorage.setItem(dismissalKey(), "1");
+              }
             } catch {
               /* storage unavailable — dismissal stays in-memory */
             }
           }}
-          className="relative z-10"
+          className="relative z-10 hover:text-btn-danger"
         >
           <X aria-hidden="true" className="size-4" />
         </button>
@@ -56,7 +61,10 @@ export function EventBanner({
     >
       <div role="status" aria-live="polite" className="flex flex-wrap items-center gap-2">
         {isBonus ? (
-          <span className="inline-flex items-center gap-1 border-2 border-border bg-sparkle px-2 py-0.5 font-pixel text-[8px] leading-relaxed text-white">
+          <span
+            data-testid="bonus-badge"
+            className="y2k-marching-ants inline-flex items-center gap-1 border-2 border-dashed border-border bg-sparkle px-2 py-0.5 font-pixel text-[8px] leading-relaxed text-white"
+          >
             <Sparkle size={12} />
             BONUS DAY ×{event.xpMultiplier} XP
           </span>
