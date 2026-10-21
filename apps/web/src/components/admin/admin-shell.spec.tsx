@@ -17,27 +17,27 @@ beforeEach(() => {
   mocks.pathname = "/admin";
 });
 
+function renderChrome(forbidden = false, page = "Dashboard content"): string {
+  return renderToStaticMarkup(
+    <AdminChrome forbidden={forbidden}>
+      <div data-testid="page">{page}</div>
+    </AdminChrome>,
+  );
+}
+
 describe("AdminChrome", () => {
   it("renders the Control Panel window, the breadcrumb and the Back to app link", () => {
-    const html = renderToStaticMarkup(
-      <AdminChrome forbidden={false}>
-        <div data-testid="page">Dashboard</div>
-      </AdminChrome>,
-    );
+    const html = renderChrome();
     expect(html).toContain("CONTROL_PANEL.EXE");
     expect(html).toContain('aria-label="Breadcrumb"');
     expect(html).toContain("Back to app");
     expect(html).toContain('href="/map"');
-    expect(html).toContain("Dashboard");
+    expect(html).toContain("Dashboard content");
   });
 
   it("marks the current section in the sidebar", () => {
     mocks.pathname = "/admin/quests";
-    const html = renderToStaticMarkup(
-      <AdminChrome forbidden={false}>
-        <div />
-      </AdminChrome>,
-    );
+    const html = renderChrome();
     expect(html).toMatch(/<a[^>]*aria-current="page"[^>]*href="\/admin\/quests"/);
     expect(html).not.toMatch(/<a[^>]*aria-current="page"[^>]*href="\/admin\/regions"/);
     // The current icon reads as pressed.
@@ -45,20 +45,12 @@ describe("AdminChrome", () => {
   });
 
   it("marks the Dashboard as current on the dashboard route", () => {
-    const html = renderToStaticMarkup(
-      <AdminChrome forbidden={false}>
-        <div />
-      </AdminChrome>,
-    );
+    const html = renderChrome();
     expect(html).toMatch(/<a[^>]*aria-current="page"[^>]*href="\/admin"/);
   });
 
   it("collapses the sidebar to a dropdown below the lg breakpoint", () => {
-    const html = renderToStaticMarkup(
-      <AdminChrome forbidden={false}>
-        <div />
-      </AdminChrome>,
-    );
+    const html = renderChrome();
     // The mobile dropdown is shown until the lg breakpoint, the pinned
     // sidebar only from it on.
     expect(html).toContain("lg:hidden");
@@ -67,11 +59,7 @@ describe("AdminChrome", () => {
   });
 
   it("swaps the page for the ACCESS DENIED window when the API refused it", () => {
-    const html = renderToStaticMarkup(
-      <AdminChrome forbidden>
-        <div data-testid="page">Dashboard content</div>
-      </AdminChrome>,
-    );
+    const html = renderChrome(true);
     expect(html).toContain("ACCESS DENIED");
     expect(html).toContain("BACK TO MAP");
     expect(html).toContain("SIGN OUT");

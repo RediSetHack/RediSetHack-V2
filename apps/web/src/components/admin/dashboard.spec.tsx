@@ -3,11 +3,24 @@ import { describe, expect, it, vi } from "vitest";
 import { AdminDashboardView, ContentTreeView, dashboardTiles } from "./dashboard";
 import { buildContentTree } from "@/lib/admin-tree";
 import { badge, character, quest, region, stage, zone } from "@/lib/admin-fixtures";
+import type { DailyEvent } from "@/lib/api-client";
 
 vi.mock("@clerk/nextjs", () => ({
   useAuth: () => ({ getToken: () => Promise.resolve("token") }),
   useClerk: () => ({ signOut: vi.fn() }),
 }));
+
+type DashboardCatalog = Parameters<typeof AdminDashboardView>[0]["catalog"];
+
+function renderDashboard(
+  catalog: DashboardCatalog,
+  event: DailyEvent | null = null,
+  eventError = false,
+): string {
+  return renderToStaticMarkup(
+    <AdminDashboardView catalog={catalog} event={event} eventError={eventError} />,
+  );
+}
 
 const tree = buildContentTree({
   regions: [region(1, "Linux Basics")],
@@ -51,7 +64,7 @@ describe("ContentTreeView", () => {
 });
 
 describe("AdminDashboardView", () => {
-  const catalog = {
+  const catalog: DashboardCatalog = {
     regions: [region(1, "Linux Basics"), region(2, "Networks")],
     zones: [zone(10, 1, "Shell")],
     stages: [stage(100, 10, "Intro")],
@@ -62,19 +75,29 @@ describe("AdminDashboardView", () => {
     error: false,
   };
 
+  const bonusEvent: DailyEvent = {
+    id: 1,
+    eventDate: "2026-10-21",
+    eventType: "bonus",
+    xpMultiplier: 2,
+  };
+
+  const normalEvent: DailyEvent = {
+    id: 1,
+    eventDate: "2026-10-21",
+    eventType: "normal",
+    xpMultiplier: 1,
+  };
+
   it("shows one count per catalog listing", () => {
-    const html = renderToStaticMarkup(
-      <AdminDashboardView catalog={catalog} event={null} eventError={false} />,
-    );
+    const html = renderDashboard(catalog);
     expect(html).toContain("ADMIN_DASHBOARD.EXE");
     expect(html).toContain(">2<"); // Regions
     expect(html).toContain(">1<"); // Zones
   });
 
   it("links every tile to its list", () => {
-    const html = renderToStaticMarkup(
-      <AdminDashboardView catalog={catalog} event={null} eventError={false} />,
-    );
+    const html = renderDashboard(catalog);
     expect(html).toContain('href="/admin/regions"');
     expect(html).toContain('href="/admin/zones"');
     expect(html).toContain('href="/admin/stages"');
@@ -84,9 +107,7 @@ describe("AdminDashboardView", () => {
   });
 
   it("offers the four quick-create buttons", () => {
-    const html = renderToStaticMarkup(
-      <AdminDashboardView catalog={catalog} event={null} eventError={false} />,
-    );
+    const html = renderDashboard(catalog);
     expect(html).toContain("NEW REGION");
     expect(html).toContain("NEW STAGE");
     expect(html).toContain("NEW QUEST");
@@ -98,9 +119,7 @@ describe("AdminDashboardView", () => {
   });
 
   it("renders the content tree from the same catalog it counts", () => {
-    const html = renderToStaticMarkup(
-      <AdminDashboardView catalog={catalog} event={null} eventError={false} />,
-    );
+    const html = renderDashboard(catalog);
     expect(html).toContain("CONTENT TREE");
     expect(html).toContain("Linux Basics");
     expect(html).toContain("Shell");
@@ -109,60 +128,36 @@ describe("AdminDashboardView", () => {
   });
 
   it("shows a placeholder while the catalog loads", () => {
-    const html = renderToStaticMarkup(
-      <AdminDashboardView catalog={{ ...catalog, loading: true }} event={null} eventError={false} />,
-    );
+    const html = renderDashboard({ ...catalog, loading: true });
     expect(html).toContain("Loading tree…");
     expect(html).not.toContain("Linux Basics");
   });
 
   it("shows the empty state when there is no content yet", () => {
-    const html = renderToStaticMarkup(
-      <AdminDashboardView
-        catalog={{ ...catalog, regions: [], zones: [], stages: [], quests: [] }}
-        event={null}
-        eventError={false}
-      />,
-    );
+    const html = renderDashboard({ ...catalog, regions: [], zones: [], stages: [], quests: [] });
     expect(html).toContain("No Regions yet — create the first one.");
   });
 
   it("shows the error copy when the catalog failed to load", () => {
-    const html = renderToStaticMarkup(
-      <AdminDashboardView catalog={{ ...catalog, error: true }} event={null} eventError={false} />,
-    );
+    const html = renderDashboard({ ...catalog, error: true });
     expect(html).toContain('role="alert"');
     expect(html).toContain("The content tree could not be loaded.");
   });
 
   it("shows today's Event, read-only", () => {
-    const html = renderToStaticMarkup(
-      <AdminDashboardView
-        catalog={catalog}
-        event={{ id: 1, eventDate: "2026-10-21", eventType: "bonus", xpMultiplier: 2 }}
-        eventError={false}
-      />,
-    );
+    const html = renderDashboard(catalog, bonusEvent);
     expect(html).toContain("TODAY&#x27;S EVENT");
     expect(html).toContain("BONUS ×2 XP");
     expect(html).toContain("Events are auto-generated — not editable.");
   });
 
   it("shows the normal day copy for a normal Event", () => {
-    const html = renderToStaticMarkup(
-      <AdminDashboardView
-        catalog={catalog}
-        event={{ id: 1, eventDate: "2026-10-21", eventType: "normal", xpMultiplier: 1 }}
-        eventError={false}
-      />,
-    );
+    const html = renderDashboard(catalog, normalEvent);
     expect(html).toContain("NORMAL DAY");
   });
 
   it("hides the Event copy when the Event failed to load", () => {
-    const html = renderToStaticMarkup(
-      <AdminDashboardView catalog={catalog} event={null} eventError={true} />,
-    );
+    const html = renderDashboard(catalog, null, true);
     expect(html).toContain("Event unavailable.");
   });
 });
