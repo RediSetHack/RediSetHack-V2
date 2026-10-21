@@ -33,6 +33,20 @@ function makeLeaderboard(overrides: Partial<Leaderboard> = {}): Leaderboard {
   };
 }
 
+function render(
+  leaderboard: Leaderboard | null,
+  currentUserId: string | null = null,
+  error = false,
+): string {
+  return renderToStaticMarkup(
+    <LeaderboardView
+      leaderboard={leaderboard}
+      error={error}
+      currentUserId={currentUserId}
+    />,
+  );
+}
+
 /** The markup of the element that holds `needle`, from its opening tag. */
 function elementAround(markup: string, needle: string, tag: string): string {
   const index = markup.indexOf(needle);
@@ -44,9 +58,7 @@ function elementAround(markup: string, needle: string, tag: string): string {
 
 describe("Leaderboard podium", () => {
   it("shows the top three of page 1", () => {
-    const markup = renderToStaticMarkup(
-      <LeaderboardView leaderboard={makeLeaderboard()} error={false} currentUserId={null} />,
-    );
+    const markup = render(makeLeaderboard());
 
     expect(markup).toContain("1ST PLACE");
     expect(markup).toContain("2ND PLACE");
@@ -57,9 +69,7 @@ describe("Leaderboard podium", () => {
   });
 
   it("centres the first place and makes it the tallest card", () => {
-    const markup = renderToStaticMarkup(
-      <LeaderboardView leaderboard={makeLeaderboard()} error={false} currentUserId={null} />,
-    );
+    const markup = render(makeLeaderboard());
 
     const first = elementAround(markup, "1ST PLACE", "li");
     const second = elementAround(markup, "2ND PLACE", "li");
@@ -74,16 +84,12 @@ describe("Leaderboard podium", () => {
   });
 
   it("hides the podium after the first page", () => {
-    const markup = renderToStaticMarkup(
-      <LeaderboardView
-        leaderboard={makeLeaderboard({
-          page: 2,
-          total: 40,
-          entries: [makeEntry({ rank: 21, userId: "user-21" })],
-        })}
-        error={false}
-        currentUserId={null}
-      />,
+    const markup = render(
+      makeLeaderboard({
+        page: 2,
+        total: 40,
+        entries: [makeEntry({ rank: 21, userId: "user-21" })],
+      }),
     );
 
     expect(markup).not.toContain("1ST PLACE");
@@ -91,18 +97,14 @@ describe("Leaderboard podium", () => {
   });
 
   it("only shows the places that exist", () => {
-    const markup = renderToStaticMarkup(
-      <LeaderboardView
-        leaderboard={makeLeaderboard({
-          total: 2,
-          entries: [
-            makeEntry({ rank: 1, userId: "user-1" }),
-            makeEntry({ rank: 2, userId: "user-2", name: "Grace Hopper" }),
-          ],
-        })}
-        error={false}
-        currentUserId={null}
-      />,
+    const markup = render(
+      makeLeaderboard({
+        total: 2,
+        entries: [
+          makeEntry({ rank: 1, userId: "user-1" }),
+          makeEntry({ rank: 2, userId: "user-2", name: "Grace Hopper" }),
+        ],
+      }),
     );
 
     expect(markup).toContain("1ST PLACE");
@@ -111,14 +113,12 @@ describe("Leaderboard podium", () => {
   });
 
   it("falls back to Anonymous and shows the level and the XP of each learner", () => {
-    const markup = renderToStaticMarkup(
-      <LeaderboardView
-        leaderboard={makeLeaderboard({
-          entries: [makeEntry({ rank: 1, userId: "user-1", name: null, level: 2, totalXp: 150 })],
-        })}
-        error={false}
-        currentUserId={null}
-      />,
+    const markup = render(
+      makeLeaderboard({
+        entries: [
+          makeEntry({ rank: 1, userId: "user-1", name: null, level: 2, totalXp: 150 }),
+        ],
+      }),
     );
 
     expect(markup).toContain("Anonymous");
@@ -129,9 +129,7 @@ describe("Leaderboard podium", () => {
 
 describe("Leaderboard ranking table", () => {
   it("lists the rank, the name, the level and the XP", () => {
-    const markup = renderToStaticMarkup(
-      <LeaderboardView leaderboard={makeLeaderboard()} error={false} currentUserId={null} />,
-    );
+    const markup = render(makeLeaderboard());
 
     expect(markup).toContain(">Rank<");
     expect(markup).toContain(">Name<");
@@ -142,9 +140,7 @@ describe("Leaderboard ranking table", () => {
   });
 
   it("highlights the current learner's row and marks it as (you)", () => {
-    const markup = renderToStaticMarkup(
-      <LeaderboardView leaderboard={makeLeaderboard()} error={false} currentUserId="user-2" />,
-    );
+    const markup = render(makeLeaderboard(), "user-2");
 
     const row = elementAround(markup, "(you)", "tr");
     expect(row).toContain("bg-accent/40");
@@ -153,9 +149,7 @@ describe("Leaderboard ranking table", () => {
   });
 
   it("leaves the other rows unmarked", () => {
-    const markup = renderToStaticMarkup(
-      <LeaderboardView leaderboard={makeLeaderboard()} error={false} currentUserId="user-2" />,
-    );
+    const markup = render(makeLeaderboard(), "user-2");
 
     const row = elementAround(markup, "Ada Lovelace", "tr");
     expect(row).not.toContain("(you)");
@@ -165,13 +159,7 @@ describe("Leaderboard ranking table", () => {
 
 describe("Leaderboard pager", () => {
   it("shows the page count and disables previous on the first page", () => {
-    const markup = renderToStaticMarkup(
-      <LeaderboardView
-        leaderboard={makeLeaderboard({ total: 60 })}
-        error={false}
-        currentUserId={null}
-      />,
-    );
+    const markup = render(makeLeaderboard({ total: 60 }));
 
     expect(markup).toContain("Page 1 of 3");
     expect(markup).toContain('aria-disabled="true"');
@@ -179,13 +167,7 @@ describe("Leaderboard pager", () => {
   });
 
   it("disables next on the last page", () => {
-    const markup = renderToStaticMarkup(
-      <LeaderboardView
-        leaderboard={makeLeaderboard({ page: 3, total: 60 })}
-        error={false}
-        currentUserId={null}
-      />,
-    );
+    const markup = render(makeLeaderboard({ page: 3, total: 60 }));
 
     expect(markup).toContain("Page 3 of 3");
     expect(markup).toContain('href="?page=2"');
@@ -195,25 +177,19 @@ describe("Leaderboard pager", () => {
 
 describe("Your rank card", () => {
   it("pins the rank and the XP of the signed-in learner", () => {
-    const markup = renderToStaticMarkup(
-      <LeaderboardView leaderboard={makeLeaderboard()} error={false} currentUserId="user-2" />,
-    );
+    const markup = render(makeLeaderboard(), "user-2");
 
     expect(markup).toContain("YOUR RANK #2 · 900 XP");
   });
 
   it("stays visible while the leaderboard scrolls", () => {
-    const markup = renderToStaticMarkup(
-      <LeaderboardView leaderboard={makeLeaderboard()} error={false} currentUserId="user-2" />,
-    );
+    const markup = render(makeLeaderboard(), "user-2");
 
     expect(markup).toContain("sticky bottom-4");
   });
 
   it("is hidden when the signed-in learner is not on this page", () => {
-    const markup = renderToStaticMarkup(
-      <LeaderboardView leaderboard={makeLeaderboard()} error={false} currentUserId="user-99" />,
-    );
+    const markup = render(makeLeaderboard(), "user-99");
 
     expect(markup).not.toContain("YOUR RANK #");
   });
@@ -221,21 +197,13 @@ describe("Your rank card", () => {
 
 describe("Leaderboard states", () => {
   it("shows the empty state when nobody has earned XP yet", () => {
-    const markup = renderToStaticMarkup(
-      <LeaderboardView
-        leaderboard={makeLeaderboard({ total: 0, entries: [] })}
-        error={false}
-        currentUserId={null}
-      />,
-    );
+    const markup = render(makeLeaderboard({ total: 0, entries: [] }));
 
     expect(markup).toContain("No one has earned XP yet.");
   });
 
   it("shows the error state with a retry when the leaderboard fails to load", () => {
-    const markup = renderToStaticMarkup(
-      <LeaderboardView leaderboard={null} error currentUserId={null} />,
-    );
+    const markup = render(null, null, true);
 
     expect(markup).toContain("The leaderboard could not be loaded. Please try again.");
     expect(markup).toContain("Try again");
