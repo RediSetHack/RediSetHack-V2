@@ -21,7 +21,7 @@ export const users = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [uniqueIndex("users_email_unique").on(table.email), uniqueIndex("users_share_token_unique").on(table.shareToken), index("users_total_xp_id_index").on(table.totalXp.desc(), table.id)],
+  (table) => [uniqueIndex("users_email_unique").on(table.email), uniqueIndex("users_share_token_unique").on(table.shareToken), index("users_total_xp_id_index").on(table.totalXp.desc().nullsFirst(), table.id)],
 );
 
 // A Clerk ID is terminally retired after deletion; keep no personal data here.

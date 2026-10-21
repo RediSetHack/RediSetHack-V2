@@ -2126,7 +2126,7 @@
               "expression": "total_xp",
               "isExpression": false,
               "asc": false,
-              "nulls": "last"
+              "nulls": "first"
             },
             {
               "expression": "id",
