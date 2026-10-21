@@ -8,6 +8,7 @@ import { Y2kButton, buttonClasses } from "@/components/y2k";
 import { ConfirmDialog, SaveButton, useToast } from "@/components/y2k-dialog";
 import { FormActions, FormErrorAlert } from "@/components/admin/form-controls";
 import { API_URL, useToken } from "@/components/admin/use-catalog";
+import { useAdminAccess } from "@/components/admin/admin-access";
 import { ApiError, type AdminInput } from "@/lib/api-client";
 import { fieldText, parseFieldIssues } from "@/lib/admin-helpers";
 import { useState } from "react";
@@ -53,7 +54,8 @@ export function ResourceForm({
 }>) {
   const router = useRouter();
   const toast = useToast();
-  const token = useToken();
+  const { token } = useToken();
+  const { report } = useAdminAccess();
   const name = itemName ?? resource;
   const [values, setValues] = useState(initialValues);
   const [busy, setBusy] = useState(false);
@@ -91,6 +93,9 @@ export function ResourceForm({
       router.push(hub);
       router.refresh();
     } catch (cause) {
+      // A `403` means the session lost its admin rights: the shell swaps
+      // itself for the ACCESS DENIED window.
+      if (report(cause)) return;
       handleApiError(cause, setFieldErrors, setFormError);
     } finally {
       setBusy(false);
@@ -106,6 +111,7 @@ export function ResourceForm({
       router.push(hub);
       router.refresh();
     } catch (cause) {
+      if (report(cause)) return;
       toast.push(cause instanceof ApiError ? cause.message : "Could not delete. Try again.", "error");
     } finally {
       setDeleting(false);

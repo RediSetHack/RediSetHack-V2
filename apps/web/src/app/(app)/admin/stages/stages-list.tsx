@@ -7,8 +7,8 @@ import { deleteAdminStage, type Stage } from "@/lib/api-client";
 import { formatXp } from "@/lib/format";
 
 export function StagesList() {
-  const token = useToken();
-  const catalog = useCatalog(token, { stages: true });
+  const auth = useToken();
+  const catalog = useCatalog(auth, { stages: true });
 
   const regionByZone = useMemo(() => new Map(catalog.zones.map((zone) => [zone.id, zone.regionId])), [catalog.zones]);
   const regionName = useMemo(() => new Map(catalog.regions.map((region) => [region.id, region.name])), [catalog.regions]);

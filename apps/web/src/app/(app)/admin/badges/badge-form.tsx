@@ -6,6 +6,7 @@ import { ResourceForm } from "@/components/admin/resource-form";
 import { EditLoadState, FormField, FormShell } from "@/components/admin/form-controls";
 import { CriteriaBuilder, toCriteria, toCriteriaValue, type CriteriaValue } from "@/components/admin/criteria-builder";
 import { API_URL, useCatalog, useToken } from "@/components/admin/use-catalog";
+import { useAdminAccess } from "@/components/admin/admin-access";
 import { AvatarOrInitial, Y2kInput, Y2kTextarea } from "@/components/y2k";
 import { ApiError, deleteAdminBadge, getAdminBadge } from "@/lib/api-client";
 import { fieldText, defaultSlug } from "@/lib/admin-helpers";
@@ -25,8 +26,10 @@ function badgeInitial(badge?: { id: number; name: string; slug: string; descript
 }
 
 export function BadgeForm({ mode, id }: Readonly<{ mode: "create" | "edit"; id?: string }>) {
-  const token = useToken();
-  const catalog = useCatalog(token, { stages: false });
+  const auth = useToken();
+  const { token } = auth;
+  const { report } = useAdminAccess();
+  const catalog = useCatalog(auth, { stages: false });
   const [initial, setInitial] = useState<BadgeValues | null>(mode === "create" ? badgeInitial() : null);
   const [status, setStatus] = useState<"loading" | "not-found" | "error" | "ready">(mode === "create" ? "ready" : "loading");
 
@@ -40,12 +43,18 @@ export function BadgeForm({ mode, id }: Readonly<{ mode: "create" | "edit"; id?:
         setStatus("ready");
       })
       .catch((cause: unknown) => {
-        if (!cancelled) setStatus(cause instanceof ApiError && cause.status === 404 ? "not-found" : "error");
+        // A canceled request must not report: the page that replaced this
+        // one owns the shell state now.
+        if (cancelled) return;
+        // A `403` means the session lost its admin rights: the shell swaps
+        // itself for the ACCESS DENIED window.
+        if (report(cause)) return;
+        setStatus(cause instanceof ApiError && cause.status === 404 ? "not-found" : "error");
       });
     return () => {
       cancelled = true;
     };
-  }, [mode, id, token]);
+  }, [mode, id, token, report]);
 
   const zoneOptions = useMemo(() => {
     const regionName = new Map(catalog.regions.map((region) => [region.id, region.name]));
@@ -94,7 +103,7 @@ export function BadgeForm({ mode, id }: Readonly<{ mode: "create" | "edit"; id?:
   );
 
   return (
-    <FormShell title={mode === "create" ? "NEW_BADGE.EXE" : "EDIT_BADGE.EXE"}>
+    <FormShell title={mode === "create" ? "NEW_BADGE.EXE" : "EDIT_BADGE.EXE"} entityName={initial.name}>
       <ResourceForm
         resource="Badge"
         mode={mode}

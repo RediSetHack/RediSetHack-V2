@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { AlertTriangle, ShieldAlert } from "lucide-react";
 import { FieldError, FieldLabel, Window, buttonClasses, SkeletonWindow } from "@/components/y2k";
+import { AdminPageTitle } from "@/components/admin/admin-access";
 
 /**
  * One labeled admin form field: uppercased label, the control, then its
@@ -35,9 +36,22 @@ export function FormField({
   );
 }
 
-/** The window every New/Edit page wraps its fields in. */
-export function FormShell({ title, children }: Readonly<{ title: string; children: ReactNode }>) {
-  return <Window title={title}>{children}</Window>;
+/**
+ * The window every New/Edit page wraps its fields in. `entityName` publishes
+ * the edited item's name, so the shell's breadcrumb can read
+ * `ADMIN › Quests › Edit "Intro Quiz"`.
+ */
+export function FormShell({
+  title,
+  entityName,
+  children,
+}: Readonly<{ title: string; entityName?: string; children: ReactNode }>) {
+  return (
+    <Window title={title}>
+      {entityName ? <AdminPageTitle title={entityName} /> : null}
+      {children}
+    </Window>
+  );
 }
 
 export function FormActions({ children }: Readonly<{ children: ReactNode }>) {

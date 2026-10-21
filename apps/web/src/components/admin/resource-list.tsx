@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useToast, ConfirmDialog } from "@/components/y2k-dialog";
 import { EmptyState, Table, Td, Th, Window, buttonClasses } from "@/components/y2k";
 import { API_URL, useToken } from "@/components/admin/use-catalog";
+import { useAdminAccess } from "@/components/admin/admin-access";
 import { ApiError } from "@/lib/api-client";
 
 /** One column: `sortValue`/`render` receive the row; `value` also feeds search and sort. */
@@ -92,7 +93,8 @@ export function ResourceList<T extends { id: number }>({
   cascadeWarning?: string;
 }>) {
   const toast = useToast();
-  const token = useToken();
+  const { token } = useToken();
+  const { report } = useAdminAccess();
   const [query, setQuery] = useState("");
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const [sort, setSort] = useState<ListSort | null>(null);
@@ -129,6 +131,9 @@ export function ResourceList<T extends { id: number }>({
       toast.push(`${deleteName(pending)} deleted.`);
       onDeleted?.();
     } catch (cause) {
+      // A `403` means the session lost its admin rights: the shell swaps
+      // itself for the ACCESS DENIED window.
+      if (report(cause)) return;
       toast.push(cause instanceof ApiError ? cause.message : "Could not delete. Try again.", "error");
     } finally {
       setBusy(false);

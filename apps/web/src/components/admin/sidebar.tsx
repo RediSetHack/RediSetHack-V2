@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useClerk } from "@clerk/nextjs";
 import {
   Award,
   ClipboardCheck,
@@ -15,7 +14,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Window, Y2kButton, buttonClasses } from "@/components/y2k";
+import { Window, buttonClasses } from "@/components/y2k";
 
 type SidebarItem = Readonly<{ href: string; label: string; icon: LucideIcon }>;
 
@@ -101,15 +100,5 @@ export function AdminSidebar() {
         </Window>
       </div>
     </>
-  );
-}
-
-/** Sign-out button for the Access Denied window (Clerk needs a client boundary). */
-export function AdminSignOut({ children = "Sign out" }: Readonly<{ children?: React.ReactNode }>) {
-  const { signOut } = useClerk();
-  return (
-    <Y2kButton variant="danger" onClick={() => signOut({ redirectUrl: "/" })}>
-      {children}
-    </Y2kButton>
   );
 }

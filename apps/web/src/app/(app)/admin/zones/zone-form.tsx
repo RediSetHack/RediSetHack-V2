@@ -4,12 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import { ResourceForm } from "@/components/admin/resource-form";
 import { EditLoadState, FormShell } from "@/components/admin/form-controls";
 import { API_URL, useCatalog, useToken } from "@/components/admin/use-catalog";
+import { useAdminAccess } from "@/components/admin/admin-access";
 import { ApiError, deleteAdminZone, getAdminZone } from "@/lib/api-client";
 import { makeZoneFields, zoneInitial, zoneInput, type ZoneValues } from "./zone-fields";
 
 export function ZoneForm({ mode, id }: Readonly<{ mode: "create" | "edit"; id?: string }>) {
-  const token = useToken();
-  const catalog = useCatalog(token, { stages: false });
+  const auth = useToken();
+  const { token } = auth;
+  const { report } = useAdminAccess();
+  const catalog = useCatalog(auth, { stages: false });
   const [initial, setInitial] = useState<ZoneValues | null>(mode === "create" ? zoneInitial() : null);
   const [status, setStatus] = useState<"loading" | "not-found" | "error" | "ready">(mode === "create" ? "ready" : "loading");
 
@@ -23,12 +26,18 @@ export function ZoneForm({ mode, id }: Readonly<{ mode: "create" | "edit"; id?: 
         setStatus("ready");
       })
       .catch((cause: unknown) => {
-        if (!cancelled) setStatus(cause instanceof ApiError && cause.status === 404 ? "not-found" : "error");
+        // A canceled request must not report: the page that replaced this
+        // one owns the shell state now.
+        if (cancelled) return;
+        // A `403` means the session lost its admin rights: the shell swaps
+        // itself for the ACCESS DENIED window.
+        if (report(cause)) return;
+        setStatus(cause instanceof ApiError && cause.status === 404 ? "not-found" : "error");
       });
     return () => {
       cancelled = true;
     };
-  }, [mode, id, token]);
+  }, [mode, id, token, report]);
 
   const regionOptions = useMemo(
     () => catalog.regions.map((region) => ({ value: region.id, label: region.name })),
@@ -41,7 +50,7 @@ export function ZoneForm({ mode, id }: Readonly<{ mode: "create" | "edit"; id?: 
   if (!initial) return null;
 
   return (
-    <FormShell title={mode === "create" ? "NEW_ZONE.EXE" : "EDIT_ZONE.EXE"}>
+    <FormShell title={mode === "create" ? "NEW_ZONE.EXE" : "EDIT_ZONE.EXE"} entityName={initial.name}>
       <ResourceForm
         resource="Zone"
         mode={mode}

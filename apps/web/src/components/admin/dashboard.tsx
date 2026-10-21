@@ -2,78 +2,96 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { Award, Flag, Globe, Layers, MapPin, Plus, Users } from "lucide-react";
+import { Award, ChevronRight, Flag, Globe, Layers, MapPin, Plus, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { StatusChip, Window, buttonClasses, XPChip, SkeletonWindow } from "@/components/y2k";
-import { useCatalog, useToken, type Catalog } from "@/components/admin/use-catalog";
+import { StatusChip, Window, buttonClasses, XPChip } from "@/components/y2k";
+import { useCatalog, useToken } from "@/components/admin/use-catalog";
+import { buildContentTree, countCatalog, type CatalogCounts, type ContentNode, type ContentTree } from "@/lib/admin-tree";
+import type { BadgeDefinition, Character, DailyEvent, Quest, Region, Stage, Zone } from "@/lib/api-client";
 
 type Tile = Readonly<{ label: string; count: number | null; href: string; icon: LucideIcon; note?: string }>;
 
-function ContentTree({
-  regions,
-  zones,
-  stages,
-}: Readonly<{
-  regions: Catalog["regions"];
-  zones: Catalog["zones"];
-  stages: Catalog["stages"];
-}>) {
+/**
+ * The six stat tiles, in the order PAGES.md §15.2 lists them. Each tile
+ * links to the listing it counts.
+ */
+export function dashboardTiles(counts: CatalogCounts, ready: boolean): Tile[] {
+  const count = (value: number) => (ready ? value : null);
+  return [
+    { label: "Regions", count: count(counts.regions), href: "/admin/regions", icon: Globe },
+    { label: "Zones", count: count(counts.zones), href: "/admin/zones", icon: Layers },
+    { label: "Stages", count: count(counts.stages), href: "/admin/stages", icon: MapPin },
+    { label: "Quests", count: count(counts.quests), href: "/admin/quests", icon: Flag },
+    { label: "Badges", count: count(counts.badges), href: "/admin/badges", icon: Award },
+    { label: "Characters", count: count(counts.characters), href: "/admin/characters", icon: Users },
+  ];
+}
+
+function EditLink({ href }: Readonly<{ href: string }>) {
+  return (
+    <Link
+      href={href}
+      className="text-xs underline"
+      onClick={(event) => event.stopPropagation()}
+    >
+      Edit
+    </Link>
+  );
+}
+
+function TreeBranch({ node }: Readonly<{ node: ContentNode }>) {
+  const label = (
+    <>
+      {node.children.length > 0 && (
+        <ChevronRight
+          aria-hidden="true"
+          className="size-3 shrink-0 transition-transform group-open:rotate-90"
+        />
+      )}
+      <span>{node.name}</span>
+      {node.xpReward !== null && <XPChip xp={node.xpReward} />}
+      <EditLink href={node.editHref} />
+    </>
+  );
+
+  if (node.children.length === 0) {
+    return (
+      <div className="flex items-center gap-2 font-body text-[13px] font-bold">{label}</div>
+    );
+  }
+
+  return (
+    <details className="group">
+      <summary className="flex items-center gap-2 font-body text-[13px] font-bold">{label}</summary>
+      <ul className="mt-1 ml-4 flex flex-col gap-1 border-l-2 border-border/40 pl-3">
+        {node.children.map((child) => (
+          <li key={`${child.kind}-${child.id}`}>
+            <TreeBranch node={child} />
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
+
+/**
+ * The collapsible Region › Zone › Stage › Quest outline, every node carrying
+ * its Edit link.
+ */
+export function ContentTreeView({ tree }: Readonly<{ tree: ContentTree }>) {
   return (
     <ul className="flex flex-col gap-1">
-      {regions.map((region) => {
-        const regionZones = zones.filter((zone) => zone.regionId === region.id);
-        return (
-          <li key={region.id}>
-            <details>
-              <summary className="flex items-center gap-2 font-body text-[13px] font-bold">
-                <span>{region.name}</span>
-                <Link href={`/admin/regions/${region.id}`} className="text-xs underline">
-                  Edit
-                </Link>
-              </summary>
-              <ul className="mt-1 ml-4 flex flex-col gap-1 border-l-2 border-border/40 pl-3">
-                {regionZones.length === 0 && (
-                  <li className="font-body text-xs text-muted-foreground">No Zones.</li>
-                )}
-                {regionZones.map((zone) => {
-                  const zoneStages = stages.filter((stage) => stage.zoneId === zone.id);
-                  return (
-                    <li key={zone.id}>
-                      <details>
-                        <summary className="flex items-center gap-2 font-body text-[13px] font-bold">
-                          <span>{zone.name}</span>
-                          <Link href={`/admin/zones/${zone.id}`} className="text-xs underline">
-                            Edit
-                          </Link>
-                        </summary>
-                        <ul className="mt-1 ml-4 flex flex-col gap-1 border-l-2 border-border/40 pl-3">
-                          {zoneStages.length === 0 && (
-                            <li className="font-body text-xs text-muted-foreground">No Stages.</li>
-                          )}
-                          {zoneStages.map((stage) => (
-                            <li key={stage.id} className="flex items-center gap-2 font-body text-[13px] font-bold">
-                              <span>{stage.title}</span>
-                              <XPChip xp={stage.xpReward} />
-                              <Link href={`/admin/stages/${stage.id}`} className="text-xs underline">
-                                Edit
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
-                      </details>
-                    </li>
-                  );
-                })}
-              </ul>
-            </details>
-          </li>
-        );
-      })}
+      {tree.regions.map((region) => (
+        <li key={`region-${region.id}`}>
+          <TreeBranch node={region} />
+        </li>
+      ))}
     </ul>
   );
 }
 
-function StatTile({ tile }: Readonly<{ tile: Tile }>) {
+/** One stat tile: the count, and a link to the listing it counts. */
+export function StatTile({ tile }: Readonly<{ tile: Tile }>) {
   return (
     <Link
       href={tile.href}
@@ -91,85 +109,112 @@ function StatTile({ tile }: Readonly<{ tile: Tile }>) {
   );
 }
 
-export function AdminDashboard({
-  regions,
-  zones,
-  stages,
-  quests,
-  badges,
-  characters,
-  eventLabel,
-  eventBonus,
-  error,
-}: Readonly<{
-  regions: number;
-  zones: number;
-  stages: number;
-  quests: number;
-  badges: number;
-  characters: number;
-  eventLabel: string | null;
-  eventBonus: boolean;
+/** The catalog rows the dashboard renders from. */
+export type DashboardCatalog = Readonly<{
+  regions: readonly Region[];
+  zones: readonly Zone[];
+  stages: readonly Stage[];
+  quests: readonly Quest[];
+  badges: readonly BadgeDefinition[];
+  characters: readonly Character[];
+  loading: boolean;
   error: boolean;
+}>;
+
+/**
+ * The admin dashboard (PAGES.md §15.2): six count tiles that link to the
+ * listings they count, quick-create buttons, the content tree and a
+ * read-only card for today's Event.
+ *
+ * The tiles and the tree are built from the same catalog load, so a tile can
+ * never disagree with the list it opens.
+ */
+export function AdminDashboardView({
+  catalog,
+  event,
+  eventError,
+}: Readonly<{
+  catalog: DashboardCatalog;
+  event: DailyEvent | null;
+  eventError: boolean;
 }>) {
-  const token = useToken();
-  const catalog = useCatalog(token, { stages: true });
-  const treeRegions = catalog.regions;
-  const treeFailed = catalog.error || error;
-  const treeEmpty = treeRegions.length === 0;
+  const loading = catalog.loading;
+
+  const counts = countCatalog({
+    regions: catalog.regions,
+    zones: catalog.zones,
+    stages: catalog.stages,
+    quests: catalog.quests,
+    badges: catalog.badges,
+    characters: catalog.characters,
+  });
+
+  const tree = buildContentTree({
+    regions: catalog.regions,
+    zones: catalog.zones,
+    stages: catalog.stages,
+    quests: catalog.quests,
+  });
 
   let treeBody: ReactNode;
-  if (catalog.loading) {
+  if (loading) {
     treeBody = (
       <output className="block py-4 text-center font-pixel-lg text-lg text-muted-foreground">
         Loading tree…
       </output>
     );
-  } else if (treeFailed) {
+  } else if (catalog.error) {
     treeBody = (
       <p role="alert" className="py-4 text-center font-body text-sm font-bold text-btn-danger">
         The content tree could not be loaded.
       </p>
     );
-  } else if (treeEmpty) {
+  } else if (tree.regions.length === 0) {
     treeBody = (
       <p className="py-4 text-center font-body text-sm font-bold text-muted-foreground">
         No Regions yet — create the first one.
       </p>
     );
   } else {
-    treeBody = <ContentTree regions={treeRegions} zones={catalog.zones} stages={catalog.stages} />;
+    treeBody = <ContentTreeView tree={tree} />;
   }
 
   let eventBody: ReactNode;
-  if (error) {
+  if (eventError) {
     eventBody = (
       <p className="font-body text-sm font-bold text-muted-foreground">Event unavailable.</p>
     );
-  } else if (eventLabel) {
+  } else if (event) {
+    const bonus = event.eventType === "bonus";
     eventBody = (
       <div className="flex flex-col gap-2">
-        <StatusChip status={eventBonus ? "bonus" : "normal"} label={eventLabel} />
+        <StatusChip
+          status={bonus ? "bonus" : "normal"}
+          label={bonus ? `BONUS ×${event.xpMultiplier} XP` : "NORMAL DAY"}
+        />
         <p className="font-body text-sm font-bold text-foreground">Events are auto-generated — not editable.</p>
       </div>
     );
   } else {
-    eventBody = <SkeletonWindow title="Loading…" label="Loading" />;
+    eventBody = (
+      <p className="font-body text-sm font-bold text-muted-foreground">No Event today.</p>
+    );
   }
 
-  const tiles: Tile[] = [
-    { label: "Regions", count: regions, href: "/admin/regions", icon: Globe },
-    { label: "Zones", count: zones, href: "/admin/zones", icon: Layers },
-    { label: "Stages", count: stages, href: "/admin/stages", icon: MapPin },
-    { label: "Quests", count: quests, href: "/admin/quests", icon: Flag },
-    { label: "Badges", count: badges, href: "/admin/badges", icon: Award },
-    { label: "Characters", count: characters, href: "/admin/characters", icon: Users },
-  ];
+  // A failed load has no counts to show: the tiles must not pass off a
+  // missing number as a real one.
+  const tiles = dashboardTiles(counts, !loading && !catalog.error);
 
   return (
     <div className="flex flex-col gap-4">
       <Window title="ADMIN_DASHBOARD.EXE">
         <div className="flex flex-col gap-4">
+          {catalog.error && (
+            <p role="alert" className="font-body text-sm font-bold text-btn-danger">
+              The catalog could not be loaded, so the counts are unavailable.
+            </p>
+          )}
+
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             {tiles.map((tile) => (
               <StatTile key={tile.href} tile={tile} />
@@ -202,5 +247,25 @@ export function AdminDashboard({
         </Window>
       </div>
     </div>
+  );
+}
+
+/** Loads the catalog and hands it to the dashboard view. */
+export function AdminDashboard({
+  event,
+  eventError,
+}: Readonly<{
+  event: DailyEvent | null;
+  eventError: boolean;
+}>) {
+  const auth = useToken();
+  const catalog = useCatalog(auth, { stages: true, quests: true, badges: true, characters: true });
+
+  return (
+    <AdminDashboardView
+      catalog={catalog}
+      event={event}
+      eventError={eventError}
+    />
   );
 }

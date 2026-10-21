@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ClipboardCheck } from "lucide-react";
 import { EmptyState, Table, Td, Th, Window, buttonClasses } from "@/components/y2k";
 import { API_URL, useToken } from "@/components/admin/use-catalog";
+import { useAdminAccess } from "@/components/admin/admin-access";
 import { ApiError, getReviewQueue, type ReviewQueueItem } from "@/lib/api-client";
 
 function formatDate(value: string | null): string {
@@ -14,7 +15,8 @@ function formatDate(value: string | null): string {
 }
 
 export function ReviewQueueList() {
-  const token = useToken();
+  const { token } = useToken();
+  const { report } = useAdminAccess();
   const [rows, setRows] = useState<ReviewQueueItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,16 +34,20 @@ export function ReviewQueueList() {
           setLoading(false);
         }
       } catch (cause) {
-        if (!cancelled) {
-          setError(cause instanceof ApiError ? cause.message : "Could not load the review queue.");
-          setLoading(false);
-        }
+        // A canceled request must not report: the page that replaced this one
+        // owns the shell state now.
+        if (cancelled) return;
+        // A `403` means the session lost its admin rights: the shell swaps
+        // itself for the ACCESS DENIED window.
+        if (report(cause)) return;
+        setError(cause instanceof ApiError ? cause.message : "Could not load the review queue.");
+        setLoading(false);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [token, report]);
 
   let body: ReactNode;
   if (loading) {
