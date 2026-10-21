@@ -54,7 +54,9 @@ const characters = [
   { id: 2, name: "Ada", slug: "ada", description: "The first programmer", imageUrl: null },
 ];
 
-function renderView(overrides: Partial<Parameters<typeof ProfileView>[0]> = {}) {
+type ViewOverrides = Partial<Parameters<typeof ProfileView>[0]>;
+
+function renderView(overrides: ViewOverrides = {}) {
   return renderToStaticMarkup(
     <ProfileView
       profile={profile}
@@ -70,10 +72,16 @@ function renderView(overrides: Partial<Parameters<typeof ProfileView>[0]> = {}) 
   );
 }
 
-const renderedExpectations = [
-  [
-    "the Profile windows",
-    [
+/** Every rendering of the Profile, with the text it has to show. */
+const cases: ReadonlyArray<{
+  label: string;
+  overrides: ViewOverrides;
+  expected: readonly string[];
+}> = [
+  {
+    label: "the Profile windows",
+    overrides: {},
+    expected: [
       "CHARACTER.EXE",
       "STATS.EXE",
       "LEARNING_STREAK.EXE",
@@ -82,61 +90,75 @@ const renderedExpectations = [
       "ACCOUNT.EXE",
       "SHARED_PROFILE.EXE",
     ],
-  ],
-  [
-    "the Character summary",
-    [
+  },
+  {
+    label: "the Character summary",
+    overrides: {},
+    expected: [
       "Kalayaan",
       "Adventurer Rank 4",
       "1,240 XP",
       'aria-label="XP to Adventurer Rank 5"',
     ],
-  ],
-  ["the stat tiles", ["Stages completed", "Quests passed", "Badges", "Rank"]],
-  [
-    "the Badge tiles",
-    ["Pull Shark", "Earned ×3", "Earned for pulling three quests"],
-  ],
-  [
-    "the Learning Streak counts",
-    [
+  },
+  {
+    label: "the stat tiles",
+    overrides: {},
+    expected: ["Stages completed", "Quests passed", "Badges", "Rank"],
+  },
+  {
+    label: "the Badge tiles",
+    overrides: {},
+    expected: ["Pull Shark", "Earned ×3", "Earned for pulling three quests"],
+  },
+  {
+    label: "the Learning Streak counts",
+    overrides: {},
+    expected: [
       "Current streak: <strong>2 days</strong>",
       "Longest streak: <strong>5 days</strong>",
     ],
-  ],
-  [
-    "the Character radio-card grid",
-    ['role="radiogroup"', 'role="radio"', "SAVE CHARACTER"],
-  ],
-  ["the account details", ["jai@example.com", "MANAGE ACCOUNT", "SIGN OUT"]],
-] as const;
+  },
+  {
+    label: "the Character radio-card grid",
+    overrides: {},
+    expected: ['role="radiogroup"', 'role="radio"', "SAVE CHARACTER"],
+  },
+  {
+    label: "the account details",
+    overrides: {},
+    expected: ["jai@example.com", "MANAGE ACCOUNT", "SIGN OUT"],
+  },
+  {
+    label: "the Badge empty state",
+    overrides: { profile: { ...profile, badges: [] } },
+    expected: [
+      "No Badges earned yet — complete Quests and Codelab challenges to start earning them.",
+    ],
+  },
+  {
+    label: "a profile that could not be loaded",
+    overrides: { profile: null, profileError: true },
+    expected: [
+      'role="alert"',
+      "Your profile could not be loaded. Please try again later.",
+    ],
+  },
+  {
+    label: "a character catalog that could not be loaded",
+    overrides: { characters: [], charactersError: true },
+    expected: [
+      'role="alert"',
+      "The character catalog could not be loaded. Please try again later.",
+    ],
+  },
+];
 
 describe("ProfileView (PAGES.md §14)", () => {
-  it.each(renderedExpectations)("shows %s", (_label, expected) => {
-    const view = renderView();
+  it.each(cases)("shows $label", ({ overrides, expected }) => {
+    const view = renderView(overrides);
     for (const text of expected) {
       expect(view).toContain(text);
     }
-  });
-
-  it("shows the Badge empty state when nothing is earned", () => {
-    const view = renderView({ profile: { ...profile, badges: [] } });
-    expect(view).toContain(
-      "No Badges earned yet — complete Quests and Codelab challenges to start earning them.",
-    );
-  });
-
-  it("explains a profile that could not be loaded", () => {
-    const failed = renderView({ profile: null, profileError: true });
-    expect(failed).toContain('role="alert"');
-    expect(failed).toContain("Your profile could not be loaded. Please try again later.");
-  });
-
-  it("explains that the character catalog could not be loaded", () => {
-    const failed = renderView({ characters: [], charactersError: true });
-    expect(failed).toContain('role="alert"');
-    expect(failed).toContain(
-      "The character catalog could not be loaded. Please try again later.",
-    );
   });
 });
