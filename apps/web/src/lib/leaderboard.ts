@@ -35,28 +35,39 @@ export function podiumEntries(
 }
 
 /**
- * Visual order of the podium: 2nd on the left, 1st in the middle, 3rd on the
- * right. The markup keeps rank order so assistive tech reads 1, 2, 3.
+ * Where a podium card sits in the visual row: 2nd on the left, 1st in the
+ * middle, 3rd on the right. The markup keeps rank order so assistive tech
+ * reads 1, 2, 3.
  */
-const PODIUM_ORDER_CLASS: Record<PodiumPlace, string> = {
-  1: "sm:order-2",
-  2: "sm:order-1",
-  3: "sm:order-3",
-};
+export type PodiumPosition = "left" | "centre" | "right";
 
-export function podiumOrderClass(place: PodiumPlace): string {
-  return PODIUM_ORDER_CLASS[place];
+export interface PodiumLayout {
+  position: PodiumPosition;
+  /** The 1st place card is drawn taller than the other two. */
+  tallest: boolean;
+  /** The badge under the trophy, e.g. "1ST PLACE". */
+  label: string;
 }
 
-/** The badge under each podium card, e.g. "1ST PLACE". */
-const PODIUM_PLACE_LABEL: Record<PodiumPlace, string> = {
+const PODIUM_POSITION: Record<PodiumPlace, PodiumPosition> = {
+  1: "centre",
+  2: "left",
+  3: "right",
+};
+
+const PODIUM_LABEL: Record<PodiumPlace, string> = {
   1: "1ST PLACE",
   2: "2ND PLACE",
   3: "3RD PLACE",
 };
 
-export function podiumPlaceLabel(place: PodiumPlace): string {
-  return PODIUM_PLACE_LABEL[place];
+/** How a podium place is laid out on the row. */
+export function podiumLayout(place: PodiumPlace): PodiumLayout {
+  return {
+    position: PODIUM_POSITION[place],
+    tallest: place === 1,
+    label: PODIUM_LABEL[place],
+  };
 }
 
 /** True when the row belongs to the signed-in learner. */

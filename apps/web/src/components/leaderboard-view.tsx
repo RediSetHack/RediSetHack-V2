@@ -21,31 +21,38 @@ import {
   findCurrentUserEntry,
   isCurrentUser,
   podiumEntries,
-  podiumOrderClass,
-  podiumPlaceLabel,
+  podiumLayout,
   type PodiumPlace,
+  type PodiumPosition,
 } from "@/lib/leaderboard";
+
+/** The visual column of each podium card, from its place in the row. */
+const PODIUM_POSITION_CLASS: Record<PodiumPosition, string> = {
+  left: "sm:order-1",
+  centre: "sm:order-2",
+  right: "sm:order-3",
+};
 
 function PodiumCard({
   entry,
   place,
 }: Readonly<{ entry: LeaderboardEntry; place: PodiumPlace }>) {
-  const isFirst = place === 1;
+  const layout = podiumLayout(place);
   return (
     <li
       className={cn(
         "flex flex-col items-center gap-2 border-2 border-border bg-window-body p-4 text-center shadow-[4px_4px_0_var(--border)]",
-        podiumOrderClass(place),
-        isFirst && "sm:px-6 sm:py-6",
+        PODIUM_POSITION_CLASS[layout.position],
+        layout.tallest && "sm:px-6 sm:py-6",
       )}
     >
       <span className="font-pixel text-[9px] leading-relaxed text-muted-foreground">
-        {podiumPlaceLabel(place)}
+        {layout.label}
       </span>
-      <PixelTrophy size={isFirst ? 48 : 32} />
+      <PixelTrophy size={layout.tallest ? 48 : 32} />
       <AvatarOrInitial
         name={displayName(entry)}
-        className={cn("size-12", isFirst && "size-16")}
+        className={cn("size-12", layout.tallest && "size-16")}
       />
       <p className="max-w-full break-words font-pixel text-[9px] leading-relaxed text-foreground">
         {displayName(entry)}

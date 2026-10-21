@@ -6,8 +6,7 @@ import {
   findCurrentUserEntry,
   isCurrentUser,
   podiumEntries,
-  podiumOrderClass,
-  podiumPlaceLabel,
+  podiumLayout,
 } from "./leaderboard";
 
 function makeEntry(overrides: Partial<LeaderboardEntry> = {}): LeaderboardEntry {
@@ -59,19 +58,23 @@ describe("podiumEntries", () => {
   });
 });
 
-describe("podiumOrderClass", () => {
-  it("centres the first place and flanks it with the other two", () => {
-    expect(podiumOrderClass(1)).toBe("sm:order-2");
-    expect(podiumOrderClass(2)).toBe("sm:order-1");
-    expect(podiumOrderClass(3)).toBe("sm:order-3");
+describe("podiumLayout", () => {
+  it("centres the first place and makes it the tallest card", () => {
+    expect(podiumLayout(1).position).toBe("centre");
+    expect(podiumLayout(1).tallest).toBe(true);
   });
-});
 
-describe("podiumPlaceLabel", () => {
+  it("flanks the first place with the other two", () => {
+    expect(podiumLayout(2).position).toBe("left");
+    expect(podiumLayout(3).position).toBe("right");
+    expect(podiumLayout(2).tallest).toBe(false);
+    expect(podiumLayout(3).tallest).toBe(false);
+  });
+
   it("labels every place", () => {
-    expect(podiumPlaceLabel(1)).toBe("1ST PLACE");
-    expect(podiumPlaceLabel(2)).toBe("2ND PLACE");
-    expect(podiumPlaceLabel(3)).toBe("3RD PLACE");
+    expect(podiumLayout(1).label).toBe("1ST PLACE");
+    expect(podiumLayout(2).label).toBe("2ND PLACE");
+    expect(podiumLayout(3).label).toBe("3RD PLACE");
   });
 });
 

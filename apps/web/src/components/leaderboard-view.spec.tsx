@@ -83,6 +83,13 @@ describe("Leaderboard podium", () => {
     expect(third).toContain("size-12");
   });
 
+  it("reads the places in rank order", () => {
+    const markup = render(makeLeaderboard());
+
+    expect(markup.indexOf("1ST PLACE")).toBeLessThan(markup.indexOf("2ND PLACE"));
+    expect(markup.indexOf("2ND PLACE")).toBeLessThan(markup.indexOf("3RD PLACE"));
+  });
+
   it("hides the podium after the first page", () => {
     const markup = render(
       makeLeaderboard({
@@ -173,6 +180,13 @@ describe("Leaderboard pager", () => {
     expect(markup).toContain('href="?page=2"');
     expect(markup).toContain('aria-disabled="true"');
   });
+
+  it("disables both ends when the leaderboard fits on a single page", () => {
+    const markup = render(makeLeaderboard({ total: 3 }));
+
+    expect(markup).toContain("Page 1 of 1");
+    expect(markup).not.toContain("?page=");
+  });
 });
 
 describe("Your rank card", () => {
@@ -186,6 +200,8 @@ describe("Your rank card", () => {
     const markup = render(makeLeaderboard(), "user-2");
 
     expect(markup).toContain("sticky bottom-4");
+    // The pin is its own element below the ranking table, not a row in it.
+    expect(markup.indexOf("YOUR RANK #2")).toBeGreaterThan(markup.indexOf("</table>"));
   });
 
   it("is hidden when the signed-in learner is not on this page", () => {
