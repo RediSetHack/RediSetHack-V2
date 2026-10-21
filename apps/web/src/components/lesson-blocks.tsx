@@ -2,7 +2,11 @@ import { codeToHtml } from "shiki";
 import Link from "next/link";
 import type { RenderableBlock } from "@/lib/lesson-blocks";
 import { Window, Y2kButton } from "@/components/y2k";
-import { Y2kAlert } from "@/components/y2k-dialog";
+import {
+  CopyButton,
+  ImageWithFallback,
+  UnsupportedBlockDialog,
+} from "@/components/lesson-block-islands";
 
 async function highlight(code: string, language: string): Promise<string> {
   try {
@@ -17,57 +21,40 @@ async function highlight(code: string, language: string): Promise<string> {
   }
 }
 
-async function CodeBlockView({
-  language,
-  content,
-}: Readonly<{ language: string; content: string }>) {
+/**
+ * Highlighting is async, so the code/exercise Branch functions are plain async
+ * functions returning JSX rather than async Components. React's static renderer
+ * cannot resolve an async Component passed as an element type, so the renderer
+ * `await`s these directly.
+ */
+async function codeBlock(
+  language: string,
+  content: string,
+  title?: string,
+) {
   const html = await highlight(content, language);
   return (
-    <Window title={language || "code"} actions={null} controls={false}>
-      <div className="flex flex-col gap-2">
-        <button
-          type="button"
-          className="self-start border-2 border-border bg-title-bar px-2 py-1 font-pixel text-[8px] leading-relaxed shadow-[2px_2px_0_var(--border)]"
-          onClick={async () => {
-            try {
-              await navigator.clipboard.writeText(content);
-            } catch {
-              // ignore
-            }
-          }}
-        >
-          COPY
-        </button>
-        <figure className="overflow-x-auto border-2 border-border bg-white [&_pre]:m-0 [&_pre]:overflow-x-auto [&_pre]:p-3 [&_pre]:text-sm">
-          <figcaption className="sr-only">Code block, {language}</figcaption>
-          {/* Shiki's own output is the highlighted markup; there is no learner
-            input in this path — content comes from the admin-authored Lesson. */}
-          <div dangerouslySetInnerHTML={{ __html: html }} />
-        </figure>
-      </div>
+    <Window
+      title={title ?? (language || "code")}
+      actions={title === undefined ? <CopyButton content={content} /> : null}
+      controls={false}
+    >
+      <figure className="overflow-x-auto border-2 border-border bg-white [&_pre]:m-0 [&_pre]:overflow-x-auto [&_pre]:p-3 [&_pre]:text-sm">
+        <figcaption className="sr-only">Code block, {language}</figcaption>
+        {/* Shiki's own output is the highlighted markup; there is no learner
+          input in this path — content comes from the admin-authored Lesson. */}
+        <div dangerouslySetInnerHTML={{ __html: html }} />
+      </figure>
     </Window>
   );
 }
 
-function TextBlockView({ content }: Readonly<{ content: string }>) {
-  return (
-    <Window title="TEXT">
-      <p className="whitespace-pre-wrap font-body text-sm font-bold leading-relaxed text-foreground">{content}</p>
-    </Window>
-  );
-}
-
-function ExerciseBlockView({
-  prompt,
-  language,
-  starterCode,
-  activityId,
-}: Readonly<{
-  prompt: string;
-  language: string;
-  starterCode: string;
-  activityId?: number;
-}>) {
+async function exerciseBlock(
+  prompt: string,
+  language: string,
+  starterCode: string,
+  activityId?: number,
+) {
   const codelabHref =
     activityId === undefined
       ? `/codelab?language=${encodeURIComponent(language)}&code=${encodeURIComponent(starterCode)}`
@@ -77,29 +64,28 @@ function ExerciseBlockView({
     <Window title="EXERCISE">
       <div className="flex flex-col gap-3">
         <p className="font-body text-sm font-bold text-foreground">{prompt}</p>
-        <div>
-          <CodeBlockView language={language} content={starterCode} />
-        </div>
-        <div>
-          <Link href={codelabHref}>
-            <Y2kButton>OPEN IN CODELAB</Y2kButton>
-          </Link>
-        </div>
+        {await codeBlock(language, starterCode, "STARTER CODE")}
+        <Link href={codelabHref}>
+          <Y2kButton>OPEN IN CODELAB</Y2kButton>
+        </Link>
       </div>
     </Window>
   );
 }
 
-function ImageBlockView({
-  url,
-  alt,
-  caption,
-}: Readonly<{ url: string; alt: string; caption?: string }>) {
+function textBlock(content: string) {
+  return (
+    <Window title="TEXT">
+      <p className="whitespace-pre-wrap font-body text-sm font-bold leading-relaxed text-foreground">{content}</p>
+    </Window>
+  );
+}
+
+function imageBlock(url: string, alt: string, caption?: string) {
   return (
     <Window title="IMAGE">
       <figure className="space-y-2">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={url} alt={alt} className="h-auto max-w-full border-2 border-border" />
+        <ImageWithFallback url={url} alt={alt} />
         {caption ? (
           <figcaption className="font-body text-sm font-bold text-muted-foreground">
             {caption}
@@ -110,52 +96,27 @@ function ImageBlockView({
   );
 }
 
-function UnsupportedBlockView() {
-  return (
-    <Y2kAlert
-      open={true}
-      onOpenChange={() => {}}
-      title="UNSUPPORTED"
-      icon="info"
-    >
-      This content type isn&apos;t supported yet.
-    </Y2kAlert>
-  );
-}
-
 /**
  * The one generic Lesson renderer: it switches over the block union and
- * dispatches to a component per block type. No per-Stage components are
+ * dispatches to a placeholder per block type. No per-Stage components are
  * ever written — a new Stage's content is just new block data.
  */
-export function LessonBlockView({
-  block,
-}: Readonly<{ block: RenderableBlock }>) {
+export async function renderLessonBlock(block: RenderableBlock) {
   switch (block.kind) {
     case "text":
-      return <TextBlockView content={block.content} />;
+      return textBlock(block.content);
     case "code":
-      return (
-        <CodeBlockView language={block.language} content={block.content} />
-      );
+      return await codeBlock(block.language, block.content);
     case "exercise":
-      return (
-        <ExerciseBlockView
-          prompt={block.prompt}
-          language={block.language}
-          starterCode={block.starterCode}
-          activityId={block.activityId}
-        />
+      return await exerciseBlock(
+        block.prompt,
+        block.language,
+        block.starterCode,
+        block.activityId,
       );
     case "image":
-      return (
-        <ImageBlockView
-          url={block.url}
-          alt={block.alt}
-          caption={block.caption}
-        />
-      );
+      return imageBlock(block.url, block.alt, block.caption);
     default:
-      return <UnsupportedBlockView />;
+      return <UnsupportedBlockDialog />;
   }
 }
