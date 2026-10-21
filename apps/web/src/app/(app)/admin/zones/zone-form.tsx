@@ -9,9 +9,10 @@ import { ApiError, deleteAdminZone, getAdminZone } from "@/lib/api-client";
 import { makeZoneFields, zoneInitial, zoneInput, type ZoneValues } from "./zone-fields";
 
 export function ZoneForm({ mode, id }: Readonly<{ mode: "create" | "edit"; id?: string }>) {
-  const token = useToken();
+  const auth = useToken();
+  const { token } = auth;
   const { report } = useAdminAccess();
-  const catalog = useCatalog(token, { stages: false });
+  const catalog = useCatalog(auth, { stages: false });
   const [initial, setInitial] = useState<ZoneValues | null>(mode === "create" ? zoneInitial() : null);
   const [status, setStatus] = useState<"loading" | "not-found" | "error" | "ready">(mode === "create" ? "ready" : "loading");
 

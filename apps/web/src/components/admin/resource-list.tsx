@@ -93,7 +93,7 @@ export function ResourceList<T extends { id: number }>({
   cascadeWarning?: string;
 }>) {
   const toast = useToast();
-  const token = useToken();
+  const { token } = useToken();
   const { report } = useAdminAccess();
   const [query, setQuery] = useState("");
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});

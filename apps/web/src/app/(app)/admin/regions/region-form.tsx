@@ -9,7 +9,7 @@ import { ApiError, deleteAdminRegion, getAdminRegion } from "@/lib/api-client";
 import { regionFields, regionInitial, regionInput, type RegionValues } from "./region-fields";
 
 export function RegionForm({ mode, id }: Readonly<{ mode: "create" | "edit"; id?: string }>) {
-  const token = useToken();
+  const { token } = useToken();
   const { report } = useAdminAccess();
   const [initial, setInitial] = useState<RegionValues | null>(mode === "create" ? regionInitial() : null);
   const [status, setStatus] = useState<"loading" | "not-found" | "error" | "ready">(mode === "create" ? "ready" : "loading");

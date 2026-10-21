@@ -201,12 +201,20 @@ export function AdminDashboardView({
     );
   }
 
-  const tiles = dashboardTiles(counts, !loading);
+  // A failed load has no counts to show: the tiles must not pass off a
+  // missing number as a real one.
+  const tiles = dashboardTiles(counts, !loading && !catalog.error);
 
   return (
     <div className="flex flex-col gap-4">
       <Window title="ADMIN_DASHBOARD.EXE">
         <div className="flex flex-col gap-4">
+          {catalog.error && (
+            <p role="alert" className="font-body text-sm font-bold text-btn-danger">
+              The catalog could not be loaded, so the counts are unavailable.
+            </p>
+          )}
+
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             {tiles.map((tile) => (
               <StatTile key={tile.href} tile={tile} />
@@ -250,8 +258,8 @@ export function AdminDashboard({
   event: DailyEvent | null;
   eventError: boolean;
 }>) {
-  const token = useToken();
-  const catalog = useCatalog(token, { stages: true, quests: true, badges: true, characters: true });
+  const auth = useToken();
+  const catalog = useCatalog(auth, { stages: true, quests: true, badges: true, characters: true });
 
   return (
     <AdminDashboardView

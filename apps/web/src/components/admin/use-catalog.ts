@@ -21,26 +21,41 @@ import { useAdminAccess } from "@/components/admin/admin-access";
 /** Inlined by Next for client components; same default the server layouts use. */
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
-/** The Clerk session token as plain state, so effects can depend on it. */
-export function useToken(): string | null {
+/** The Clerk session token and whether `getToken()` has settled. */
+export type TokenState = Readonly<{
+  token: string | null;
+  /** `true` once `getToken()` has resolved — with a token, or without one. */
+  settled: boolean;
+}>;
+
+/** The state of a caller that needs no session at all. */
+export const NO_TOKEN: TokenState = { token: null, settled: true };
+
+/**
+ * The Clerk session token as plain state, so effects can depend on it.
+ *
+ * `settled` tells the caller whether `getToken()` has resolved. A token that
+ * has settled without one is a failure, not a load still in progress.
+ */
+export function useToken(): TokenState {
   const { getToken } = useAuth();
-  const [token, setToken] = useState<string | null>(null);
+  const [state, setState] = useState<TokenState>({ token: null, settled: false });
 
   useEffect(() => {
     let cancelled = false;
     void getToken()
       .then((value) => {
-        if (!cancelled) setToken(value);
+        if (!cancelled) setState({ token: value, settled: true });
       })
       .catch(() => {
-        if (!cancelled) setToken(null);
+        if (!cancelled) setState({ token: null, settled: true });
       });
     return () => {
       cancelled = true;
     };
   }, [getToken]);
 
-  return token;
+  return state;
 }
 
 /** The catalog rows the Control Panel works from. */
@@ -78,7 +93,7 @@ const EMPTY_ROWS: CatalogRows = {
 
 /**
  * Fetches the catalog rows. `getStages` and `getQuests` need a token, so pass
- * the value from `useToken()`. One request per node — accepted for admin
+ * the `useToken()` state. One request per node — accepted for admin
  * screens at thesis-scale data (a handful of Regions); swap for a dedicated
  * tree endpoint if it ever gets slow.
  *
@@ -119,11 +134,30 @@ export async function fetchCatalog(
 }
 
 /**
- * Loads the catalog rows the Control Panel works from. The load waits for the
- * Clerk token when it needs the authenticated listings, and a `403` from the
- * API flips the shell into the ACCESS DENIED window.
+ * What the catalog load should do.
+ *
+ * `wait` — the token is still being fetched; keep the loading state.
+ * `error` — the token settled without one, so the authenticated listings can
+ * never be made; the caller has no session to load them with.
+ * `load` — go ahead.
  */
-export function useCatalog(token: string | null, options: CatalogOptions = {}): Catalog {
+export function catalogDecision(
+  needsToken: boolean,
+  token: string | null,
+  settled: boolean,
+): "wait" | "error" | "load" {
+  if (!needsToken || token) return "load";
+  return settled ? "error" : "wait";
+}
+
+/**
+ * Loads the catalog rows the Control Panel works from. The load waits for the
+ * Clerk token when it needs the authenticated listings, fails when the token
+ * settled without one, and a `403` from the API flips the shell into the
+ * ACCESS DENIED window.
+ */
+export function useCatalog(auth: TokenState, options: CatalogOptions = {}): Catalog {
+  const { token, settled } = auth;
   const { report } = useAdminAccess();
   const [version, setVersion] = useState(0);
   const [state, setState] = useState<Catalog>({ ...EMPTY_ROWS, loading: true, error: false, reload: () => {} });
@@ -134,11 +168,10 @@ export function useCatalog(token: string | null, options: CatalogOptions = {}): 
   const needQuests = options.quests === true;
   const needBadges = options.badges === true;
   const needCharacters = options.characters === true;
+  const decision = catalogDecision(needStages || needQuests, token, settled);
 
   useEffect(() => {
-    // The authenticated listings need the Clerk token; wait for it rather
-    // than resolving with an empty catalog.
-    if ((needStages || needQuests) && !token) return;
+    if (decision !== "load") return;
 
     let cancelled = false;
 
@@ -167,7 +200,13 @@ export function useCatalog(token: string | null, options: CatalogOptions = {}): 
     return () => {
       cancelled = true;
     };
-  }, [token, needStages, needQuests, needBadges, needCharacters, version, reload, report]);
+  }, [decision, token, needStages, needQuests, needBadges, needCharacters, version, reload, report]);
+
+  // The session settled without a token: the authenticated listings can never
+  // be made, so fail instead of loading for ever.
+  if (decision === "error") {
+    return { ...EMPTY_ROWS, loading: false, error: true, reload };
+  }
 
   return state;
 }

@@ -10,9 +10,10 @@ import { ApiError, deleteAdminStage, getAdminStage } from "@/lib/api-client";
 import { makeStageFields, stageInitial, stageInput, type StageValues } from "./stage-fields";
 
 export function StageForm({ mode, id }: Readonly<{ mode: "create" | "edit"; id?: string }>) {
-  const token = useToken();
+  const auth = useToken();
+  const { token } = auth;
   const { report } = useAdminAccess();
-  const catalog = useCatalog(token, { stages: false });
+  const catalog = useCatalog(auth, { stages: false });
   const [initial, setInitial] = useState<StageValues | null>(() => (mode === "create" ? stageInitial(undefined, undefined, toDraftBlocks) : null));
   const [status, setStatus] = useState<"loading" | "not-found" | "error" | "ready">(mode === "create" ? "ready" : "loading");
 

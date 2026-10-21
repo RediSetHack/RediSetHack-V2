@@ -15,7 +15,7 @@ function formatDate(value: string | null): string {
 }
 
 export function ReviewQueueList() {
-  const token = useToken();
+  const { token } = useToken();
   const { report } = useAdminAccess();
   const [rows, setRows] = useState<ReviewQueueItem[]>([]);
   const [loading, setLoading] = useState(true);

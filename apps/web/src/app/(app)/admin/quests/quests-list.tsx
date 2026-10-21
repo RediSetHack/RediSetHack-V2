@@ -7,8 +7,9 @@ import { deleteAdminQuest, getQuests, type Quest } from "@/lib/api-client";
 import { formatMmSs, formatXp } from "@/lib/format";
 
 export function QuestsList() {
-  const token = useToken();
-  const catalog = useCatalog(token, { stages: true });
+  const auth = useToken();
+  const { token } = auth;
+  const catalog = useCatalog(auth, { stages: true });
   const [rows, setRows] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);

@@ -40,9 +40,10 @@ function questInitial(
 }
 
 export function QuestForm({ mode, id }: Readonly<{ mode: "create" | "edit"; id?: string }>) {
-  const token = useToken();
+  const auth = useToken();
+  const { token } = auth;
   const { report } = useAdminAccess();
-  const catalog = useCatalog(token, { stages: true });
+  const catalog = useCatalog(auth, { stages: true });
   const [initial, setInitial] = useState<QuestValues | null>(mode === "create" ? questInitial() : null);
   const [status, setStatus] = useState<"loading" | "not-found" | "error" | "ready">(mode === "create" ? "ready" : "loading");
 

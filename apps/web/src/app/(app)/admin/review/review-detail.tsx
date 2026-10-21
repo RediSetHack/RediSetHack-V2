@@ -52,7 +52,7 @@ function BlockView({ block }: Readonly<{ block: Block }>) {
 }
 
 export function ReviewDetail({ id }: Readonly<{ id: string }>) {
-  const token = useToken();
+  const { token } = useToken();
   const toast = useToast();
   const router = useRouter();
   const { report } = useAdminAccess();

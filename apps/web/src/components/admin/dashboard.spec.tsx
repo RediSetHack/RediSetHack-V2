@@ -38,6 +38,13 @@ const tree = buildContentTree(catalog);
 /** The four levels the content tree must show, in order. */
 const TREE_LABELS = ["Linux Basics", "Shell", "Intro", "Intro Quiz"];
 
+/** The number each stat tile shows, in tile order. */
+function tileValues(html: string): string[] {
+  return [...html.matchAll(/class="font-pixel text-\[18px\] leading-relaxed text-foreground">([^<]*)</g)].map(
+    (match) => match[1]!,
+  );
+}
+
 function expectTreeLabels(html: string) {
   for (const label of TREE_LABELS) {
     expect(html).toContain(label);
@@ -140,6 +147,17 @@ describe("AdminDashboardView", () => {
     const html = renderDashboard({ ...catalog, error: true });
     expect(html).toContain('role="alert"');
     expect(html).toContain("The content tree could not be loaded.");
+  });
+
+  it("does not pass off missing counts as real numbers", () => {
+    const html = renderDashboard({ ...catalog, error: true });
+    expect(html).toContain("The catalog could not be loaded, so the counts are unavailable.");
+    // Every tile shows its placeholder instead of a number it could not load.
+    expect(tileValues(html)).toEqual(["—", "—", "—", "—", "—", "—"]);
+  });
+
+  it("shows the counts once the catalog loaded", () => {
+    expect(tileValues(renderDashboard(catalog))).toEqual(["2", "1", "1", "1", "2", "3"]);
   });
 
   it("shows today's Event, read-only", () => {

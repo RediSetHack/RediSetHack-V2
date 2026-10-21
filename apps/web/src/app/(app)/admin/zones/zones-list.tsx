@@ -6,8 +6,8 @@ import { useCatalog, useToken } from "@/components/admin/use-catalog";
 import { deleteAdminZone, type Zone } from "@/lib/api-client";
 
 export function ZonesList() {
-  const token = useToken();
-  const catalog = useCatalog(token, { stages: true });
+  const auth = useToken();
+  const catalog = useCatalog(auth, { stages: true });
 
   const regionName = useMemo(() => new Map(catalog.regions.map((region) => [region.id, region.name])), [catalog.regions]);
   const stageCount = useMemo(() => {

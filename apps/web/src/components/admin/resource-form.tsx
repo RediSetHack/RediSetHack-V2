@@ -54,7 +54,7 @@ export function ResourceForm({
 }>) {
   const router = useRouter();
   const toast = useToast();
-  const token = useToken();
+  const { token } = useToken();
   const { report } = useAdminAccess();
   const name = itemName ?? resource;
   const [values, setValues] = useState(initialValues);

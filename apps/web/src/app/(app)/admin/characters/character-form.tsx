@@ -22,7 +22,7 @@ function characterInitial(character?: { id: number; name: string; slug: string; 
 }
 
 export function CharacterForm({ mode, id }: Readonly<{ mode: "create" | "edit"; id?: string }>) {
-  const token = useToken();
+  const { token } = useToken();
   const { report } = useAdminAccess();
   const [initial, setInitial] = useState<CharacterValues | null>(mode === "create" ? characterInitial() : null);
   const [status, setStatus] = useState<"loading" | "not-found" | "error" | "ready">(mode === "create" ? "ready" : "loading");

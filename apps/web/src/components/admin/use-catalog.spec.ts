@@ -29,7 +29,7 @@ vi.mock("@/lib/api-client", async (importOriginal) => {
   };
 });
 
-const { fetchCatalog } = await import("./use-catalog");
+const { fetchCatalog, catalogDecision } = await import("./use-catalog");
 
 const linuxBasics = region(1, "Linux Basics");
 const shell = zone(10, 1, "Shell");
@@ -42,6 +42,25 @@ beforeEach(() => {
   mocks.getQuests.mockResolvedValue([]);
   mocks.getBadgeDefinitions.mockResolvedValue([]);
   mocks.getCharacters.mockResolvedValue([]);
+});
+
+describe("catalogDecision", () => {
+  it("loads the public listings without a token", () => {
+    expect(catalogDecision(false, null, false)).toBe("load");
+    expect(catalogDecision(false, null, true)).toBe("load");
+  });
+
+  it("waits while the token is still being fetched", () => {
+    expect(catalogDecision(true, null, false)).toBe("wait");
+  });
+
+  it("fails once the token settled without one", () => {
+    expect(catalogDecision(true, null, true)).toBe("error");
+  });
+
+  it("loads once the token is there", () => {
+    expect(catalogDecision(true, "token", true)).toBe("load");
+  });
 });
 
 describe("fetchCatalog", () => {

@@ -26,9 +26,10 @@ function badgeInitial(badge?: { id: number; name: string; slug: string; descript
 }
 
 export function BadgeForm({ mode, id }: Readonly<{ mode: "create" | "edit"; id?: string }>) {
-  const token = useToken();
+  const auth = useToken();
+  const { token } = auth;
   const { report } = useAdminAccess();
-  const catalog = useCatalog(token, { stages: false });
+  const catalog = useCatalog(auth, { stages: false });
   const [initial, setInitial] = useState<BadgeValues | null>(mode === "create" ? badgeInitial() : null);
   const [status, setStatus] = useState<"loading" | "not-found" | "error" | "ready">(mode === "create" ? "ready" : "loading");
 

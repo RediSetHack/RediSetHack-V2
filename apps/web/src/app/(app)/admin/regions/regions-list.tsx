@@ -2,11 +2,11 @@
 
 import { useMemo } from "react";
 import { ResourceList, type ListColumn } from "@/components/admin/resource-list";
-import { useCatalog } from "@/components/admin/use-catalog";
+import { NO_TOKEN, useCatalog } from "@/components/admin/use-catalog";
 import { deleteAdminRegion, type Region } from "@/lib/api-client";
 
 export function RegionsList() {
-  const catalog = useCatalog(null, { stages: false });
+  const catalog = useCatalog(NO_TOKEN, { stages: false });
 
   const zoneCount = useMemo(() => {
     const counts = new Map<number, number>();
