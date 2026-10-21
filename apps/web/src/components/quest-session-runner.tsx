@@ -6,14 +6,20 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { formatXp } from "@/lib/format";
-import { submitQuest, type QuestSession, type QuestSubmitResult } from "@/lib/api-client";
+import {
+  submitQuest,
+  type QuestSession,
+  type QuestSubmitResult,
+} from "@/lib/api-client";
 import {
   accumulateAnswer,
   clockSkewMs,
   formatCountdown,
+  isCountdownDanger,
   isExpired,
   secondsRemaining,
   toSubmission,
+  unansweredSubmitMessage,
   type AnswerMap,
 } from "@/lib/quest-session";
 import {
@@ -27,7 +33,9 @@ import { ConfirmDialog, ErrorAlert, Y2kAlert } from "@/components/y2k-dialog";
 
 const OPTION_LABELS = ["A", "B", "C", "D", "E", "F"];
 
-function CountdownAnnouncement({ seconds }: Readonly<{ seconds: number | null }>) {
+function CountdownAnnouncement({
+  seconds,
+}: Readonly<{ seconds: number | null }>) {
   // Visually hidden and updated only at coarse checkpoints (see the tick
   // handler below) so the countdown doesn't spam a screen reader every
   // second — "announced non-intrusively" per the acceptance criteria.
@@ -38,7 +46,7 @@ function CountdownAnnouncement({ seconds }: Readonly<{ seconds: number | null }>
   );
 }
 
-function SubmissionResult({
+export function SubmissionResult({
   result,
   questId,
   title,
@@ -70,17 +78,20 @@ function SubmissionResult({
               </span>
             </>
           ) : (
-            <span className="font-pixel-lg text-xl text-foreground">No XP awarded</span>
+            <span className="font-pixel-lg text-xl text-foreground">
+              No XP awarded
+            </span>
           )}
         </div>
         <p className="mt-2 font-body text-xs font-bold text-muted-foreground">
-          XP is only awarded the first time you pass a Quest — retaking a Quest you&apos;ve already
-          passed is free to do, but won&apos;t earn XP again.
+          XP is only awarded the first time you pass a Quest — retaking a Quest
+          you&apos;ve already passed is free to do, but won&apos;t earn XP
+          again.
         </p>
       </Window>
 
-      {result.badgesEarned.length > 0 && (
-        <Window title="BADGES EARNED">
+      <Window title="BADGES EARNED">
+        {result.badgesEarned.length > 0 ? (
           <ul className="space-y-2">
             {result.badgesEarned.map((badge) => (
               <li
@@ -92,18 +103,28 @@ function SubmissionResult({
               </li>
             ))}
           </ul>
-        </Window>
-      )}
+        ) : (
+          <p className="font-body text-sm font-bold text-muted-foreground">
+            No badges earned.
+          </p>
+        )}
+      </Window>
 
       <div className="flex flex-wrap gap-2">
-        <Link href={`/quests/results/${result.resultId}`} className={buttonClasses("primary")}>
-          Review your answers
+        <Link
+          href={`/quests/results/${result.resultId}`}
+          className={buttonClasses("primary")}
+        >
+          REVIEW YOUR ANSWERS
         </Link>
-        <Link href={`/quests/${questId}/session`} className={buttonClasses("secondary")}>
-          Retake Quest
+        <Link
+          href={`/quests/${questId}/session`}
+          className={buttonClasses("secondary")}
+        >
+          RETAKE QUEST
         </Link>
         <Link href="/quests" className={buttonClasses("ghost")}>
-          Back to Quests
+          BACK TO QUESTS
         </Link>
       </div>
     </div>
@@ -189,7 +210,10 @@ export function QuestSessionRunner({
       if (secs === 60 || secs === 30 || (secs <= 10 && secs > 0)) {
         setAnnouncedSeconds(secs);
       }
-      if (isExpired(session.expiresAt, Date.now(), skewMs) && !autoSubmitTriggeredRef.current) {
+      if (
+        isExpired(session.expiresAt, Date.now(), skewMs) &&
+        !autoSubmitTriggeredRef.current
+      ) {
         autoSubmitTriggeredRef.current = true;
         setTimesUpOpen(true);
         void doSubmit();
@@ -210,14 +234,20 @@ export function QuestSessionRunner({
   }, [answers, session.questions]);
 
   if (result) {
-    return <SubmissionResult result={result} questId={questId} title={session.title} />;
+    return (
+      <SubmissionResult
+        result={result}
+        questId={questId}
+        title={session.title}
+      />
+    );
   }
 
   const question = session.questions[index];
   const total = session.questions.length;
   const answeredCount = Object.keys(answers).length;
   const unansweredCount = total - answeredCount;
-  const danger = remaining <= 10;
+  const danger = isCountdownDanger(remaining);
 
   return (
     <div className="space-y-4">
@@ -226,12 +256,14 @@ export function QuestSessionRunner({
       <Window title={session.title}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="font-body text-sm font-bold text-foreground">
-            Question {index + 1} of {total} • {answeredCount} answered
+            Question {index + 1} of {total} · {answeredCount} answered
           </p>
           <p
             className={cn(
               "inline-flex items-center gap-2 border-2 border-border px-2 py-1 font-pixel text-[9px] leading-relaxed tabular-nums",
-              danger ? "bg-btn-danger text-white y2k-danger-pulse" : "bg-window-body text-foreground",
+              danger
+                ? "bg-btn-danger text-white y2k-danger-pulse"
+                : "bg-window-body text-foreground",
             )}
           >
             Time remaining: {formatCountdown(remaining)}
@@ -253,9 +285,12 @@ export function QuestSessionRunner({
             <legend className="font-body text-base font-bold text-foreground">
               {question.prompt}
             </legend>
-            {(Boolean(question.difficulty) || (question.competencies?.length ?? 0) > 0) && (
+            {(Boolean(question.difficulty) ||
+              (question.competencies?.length ?? 0) > 0) && (
               <div className="mt-2 font-body text-xs font-bold text-muted-foreground">
-                {question.difficulty && <p>Difficulty: {question.difficulty}</p>}
+                {question.difficulty && (
+                  <p>Difficulty: {question.difficulty}</p>
+                )}
                 {question.competencies?.map((competency) => (
                   <p key={competency.id}>{competency.objective}</p>
                 ))}
@@ -280,7 +315,9 @@ export function QuestSessionRunner({
                       value={option.id}
                       checked={selected}
                       onChange={() =>
-                        setAnswers((prev) => accumulateAnswer(prev, question.id, option.id))
+                        setAnswers((prev) =>
+                          accumulateAnswer(prev, question.id, option.id),
+                        )
                       }
                       className="sr-only"
                     />
@@ -299,7 +336,11 @@ export function QuestSessionRunner({
       )}
 
       {submitError && (
-        <ErrorAlert message="Failed to submit. Your answers are still here — try again." onRetry={doSubmit} />
+        <ErrorAlert
+          message="Failed to submit. Your answers are still here — try again."
+          onRetry={doSubmit}
+          retryLabel="RETRY"
+        />
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -309,21 +350,23 @@ export function QuestSessionRunner({
             onClick={() => setIndex((i) => Math.max(0, i - 1))}
             disabled={index === 0}
           >
-            Previous
+            PREVIOUS
           </Y2kButton>
           <Y2kButton
             variant="secondary"
             onClick={() => setIndex((i) => Math.min(total - 1, i + 1))}
             disabled={index === total - 1}
           >
-            Next
+            NEXT
           </Y2kButton>
         </div>
         <Y2kButton
-          onClick={() => (unansweredCount > 0 ? setConfirmSubmitOpen(true) : void doSubmit())}
+          onClick={() =>
+            unansweredCount > 0 ? setConfirmSubmitOpen(true) : void doSubmit()
+          }
           disabled={isSubmitting}
         >
-          {isSubmitting ? "Submitting…" : "Submit Quest"}
+          {isSubmitting ? "SUBMITTING…" : "SUBMIT QUEST"}
         </Y2kButton>
       </div>
 
@@ -331,9 +374,9 @@ export function QuestSessionRunner({
         open={confirmSubmitOpen}
         onOpenChange={setConfirmSubmitOpen}
         title="Submit Quest?"
-        message={`You have ${unansweredCount} unanswered. Submit anyway?`}
-        confirmLabel="Submit"
-        cancelLabel="Cancel"
+        message={unansweredSubmitMessage(unansweredCount)}
+        confirmLabel="SUBMIT"
+        cancelLabel="CANCEL"
         onConfirm={() => void doSubmit()}
       />
 

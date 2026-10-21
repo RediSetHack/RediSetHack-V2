@@ -43,8 +43,15 @@ export function isExpired(expiresAt: string, now: number, skewMs = 0): boolean {
 }
 
 /** Whole seconds remaining until the deadline, floored at 0 (never negative). */
-export function secondsRemaining(expiresAt: string, now: number, skewMs = 0): number {
-  return Math.max(0, Math.ceil((new Date(expiresAt).getTime() - (now + skewMs)) / 1000));
+export function secondsRemaining(
+  expiresAt: string,
+  now: number,
+  skewMs = 0,
+): number {
+  return Math.max(
+    0,
+    Math.ceil((new Date(expiresAt).getTime() - (now + skewMs)) / 1000),
+  );
 }
 
 /** Formats whole seconds as `M:SS` for the visible countdown. */
@@ -52,4 +59,16 @@ export function formatCountdown(totalSeconds: number): string {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+/** The countdown enters its accessible visual danger state at ten seconds. */
+export function isCountdownDanger(totalSeconds: number): boolean {
+  return totalSeconds <= 10;
+}
+
+/** Copy for the confirmation shown when a learner submits an incomplete Quest. */
+export function unansweredSubmitMessage(unansweredCount: number): string {
+  return `You have ${unansweredCount} unanswered ${
+    unansweredCount === 1 ? "question" : "questions"
+  }. Submit anyway?`;
 }

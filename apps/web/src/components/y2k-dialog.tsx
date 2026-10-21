@@ -1,11 +1,23 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 import { Dialog } from "@base-ui/react/dialog";
 import { AlertTriangle, Check, Info } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { SkeletonWindow, Toast, Window, Y2kButton, type Y2kButtonVariant } from "@/components/y2k";
+import {
+  SkeletonWindow,
+  Toast,
+  Window,
+  Y2kButton,
+  type Y2kButtonVariant,
+} from "@/components/y2k";
 
 /* ── Dialog / Alert ─────────────────────────────────────────── */
 
@@ -34,7 +46,10 @@ function DialogShell({
             {title}
           </Dialog.Title>
           <Dialog.Close aria-label="Close" className="relative z-10">
-            <span aria-hidden="true" className="block size-3 border border-border bg-[#FF5B5B]" />
+            <span
+              aria-hidden="true"
+              className="block size-3 border border-border bg-[#FF5B5B]"
+            />
           </Dialog.Close>
         </header>
         {children}
@@ -167,7 +182,8 @@ export function ConfirmDialog({
 export function ErrorAlert({
   message,
   onRetry,
-}: Readonly<{ message: string; onRetry?: () => void }>) {
+  retryLabel = "Try again",
+}: Readonly<{ message: string; onRetry?: () => void; retryLabel?: string }>) {
   const router = useRouter();
   return (
     <div
@@ -175,11 +191,17 @@ export function ErrorAlert({
       className="flex flex-col items-start gap-3 border-2 border-border bg-window-body p-4 shadow-[4px_4px_0_var(--border)]"
     >
       <p className="flex items-center gap-2 font-pixel-lg text-lg leading-snug text-foreground">
-        <AlertTriangle aria-hidden="true" className="size-5 shrink-0 text-btn-danger" />
+        <AlertTriangle
+          aria-hidden="true"
+          className="size-5 shrink-0 text-btn-danger"
+        />
         {message}
       </p>
-      <Y2kButton variant="primary" onClick={() => (onRetry ?? (() => router.refresh()))()}>
-        Try again
+      <Y2kButton
+        variant="primary"
+        onClick={() => (onRetry ?? (() => router.refresh()))()}
+      >
+        {retryLabel}
       </Y2kButton>
     </div>
   );
@@ -213,7 +235,9 @@ export function FeedbackState({
   children: React.ReactNode;
 }>) {
   if (loading) {
-    return <SkeletonWindow title={loadingTitle ?? "Loading…"} label={loadingLabel} />;
+    return (
+      <SkeletonWindow title={loadingTitle ?? "Loading…"} label={loadingLabel} />
+    );
   }
   if (error) {
     return <ErrorAlert message={errorMessage} onRetry={onRetry} />;
@@ -222,7 +246,9 @@ export function FeedbackState({
     return (
       <Window title={emptyTitle}>
         <div className="flex flex-col items-center gap-3 py-6 text-center">
-          <p className="font-body text-sm font-bold text-muted-foreground">{emptyMessage}</p>
+          <p className="font-body text-sm font-bold text-muted-foreground">
+            {emptyMessage}
+          </p>
           {emptyAction}
         </div>
       </Window>
@@ -235,7 +261,9 @@ export function FeedbackState({
 
 type Toast = { id: number; message: string; variant: "success" | "error" };
 
-const ToastContext = createContext<{ push: (message: string, variant?: Toast["variant"]) => void }>({
+const ToastContext = createContext<{
+  push: (message: string, variant?: Toast["variant"]) => void;
+}>({
   push: () => {},
 });
 
@@ -243,16 +271,21 @@ export function useToast() {
   return useContext(ToastContext);
 }
 
-export function ToastProvider({ children }: Readonly<{ children: React.ReactNode }>) {
+export function ToastProvider({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const push = useCallback((message: string, variant: Toast["variant"] = "success") => {
-    const id = nextToastId();
-    setToasts((prev) => [...prev, { id, message, variant }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 3500);
-  }, []);
+  const push = useCallback(
+    (message: string, variant: Toast["variant"] = "success") => {
+      const id = nextToastId();
+      setToasts((prev) => [...prev, { id, message, variant }]);
+      setTimeout(() => {
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+      }, 3500);
+    },
+    [],
+  );
 
   const value = useMemo(() => ({ push }), [push]);
 
@@ -268,7 +301,9 @@ export function ToastProvider({ children }: Readonly<{ children: React.ReactNode
             key={toast.id}
             message={toast.message}
             variant={toast.variant}
-            onClose={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}
+            onClose={() =>
+              setToasts((prev) => prev.filter((t) => t.id !== toast.id))
+            }
           />
         ))}
       </div>
