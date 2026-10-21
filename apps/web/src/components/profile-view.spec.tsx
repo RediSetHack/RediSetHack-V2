@@ -37,16 +37,12 @@ const profile: Profile = {
 
 const streak: LearningStreak = {
   timeZone: "Asia/Manila",
-  today: "2026-10-19",
-  from: "2026-10-17",
-  to: "2026-10-19",
-  currentStreak: 2,
-  longestStreak: 5,
-  days: [
-    { date: "2026-10-17", reading: 1, assessed: 1 },
-    { date: "2026-10-18", reading: 0, assessed: 1 },
-    { date: "2026-10-19", reading: 0, assessed: 0 },
-  ],
+  today: "2026-10-20",
+  from: "2026-10-20",
+  to: "2026-10-20",
+  currentStreak: 1,
+  longestStreak: 3,
+  days: [{ date: "2026-10-20", reading: 1, assessed: 0 }],
 };
 
 const characters = [
@@ -115,8 +111,8 @@ const cases: ReadonlyArray<{
     label: "the Learning Streak counts",
     overrides: {},
     expected: [
-      "Current streak: <strong>2 days</strong>",
-      "Longest streak: <strong>5 days</strong>",
+      "Current streak: <strong>1 day</strong>",
+      "Longest streak: <strong>3 days</strong>",
     ],
   },
   {
