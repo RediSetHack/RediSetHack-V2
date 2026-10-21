@@ -70,59 +70,53 @@ function renderView(overrides: Partial<Parameters<typeof ProfileView>[0]> = {}) 
   );
 }
 
+const renderedExpectations = [
+  [
+    "the Profile windows",
+    [
+      "CHARACTER.EXE",
+      "STATS.EXE",
+      "LEARNING_STREAK.EXE",
+      "BADGES.EXE",
+      "CHANGE_CHARACTER.EXE",
+      "ACCOUNT.EXE",
+      "SHARED_PROFILE.EXE",
+    ],
+  ],
+  [
+    "the Character summary",
+    [
+      "Kalayaan",
+      "Adventurer Rank 4",
+      "1,240 XP",
+      'aria-label="XP to Adventurer Rank 5"',
+    ],
+  ],
+  ["the stat tiles", ["Stages completed", "Quests passed", "Badges", "Rank"]],
+  [
+    "the Badge tiles",
+    ["Pull Shark", "Earned ×3", "Earned for pulling three quests"],
+  ],
+  [
+    "the Learning Streak counts",
+    [
+      "Current streak: <strong>2 days</strong>",
+      "Longest streak: <strong>5 days</strong>",
+    ],
+  ],
+  [
+    "the Character radio-card grid",
+    ['role="radiogroup"', 'role="radio"', "SAVE CHARACTER"],
+  ],
+  ["the account details", ["jai@example.com", "MANAGE ACCOUNT", "SIGN OUT"]],
+] as const;
+
 describe("ProfileView (PAGES.md §14)", () => {
-  it("renders the Profile windows", () => {
+  it.each(renderedExpectations)("shows %s", (_label, expected) => {
     const view = renderView();
-    expect(view).toContain("CHARACTER.EXE");
-    expect(view).toContain("STATS.EXE");
-    expect(view).toContain("LEARNING_STREAK.EXE");
-    expect(view).toContain("BADGES.EXE");
-    expect(view).toContain("CHANGE_CHARACTER.EXE");
-    expect(view).toContain("ACCOUNT.EXE");
-    expect(view).toContain("SHARED_PROFILE.EXE");
-  });
-
-  it("summarises the Character with Adventurer Rank, XP and the XP-to-next bar", () => {
-    const view = renderView();
-    expect(view).toContain("Kalayaan");
-    expect(view).toContain("Adventurer Rank 4");
-    expect(view).toContain("1,240 XP");
-    expect(view).toContain('aria-label="XP to Adventurer Rank 5"');
-  });
-
-  it("shows the stat tiles", () => {
-    const view = renderView();
-    expect(view).toContain("Stages completed");
-    expect(view).toContain("Quests passed");
-    expect(view).toContain("Badges");
-    expect(view).toContain("Rank");
-  });
-
-  it("shows Badge tiles with multiplicity and the catalog description", () => {
-    const view = renderView();
-    expect(view).toContain("Pull Shark");
-    expect(view).toContain("Earned ×3");
-    expect(view).toContain("Earned for pulling three quests");
-  });
-
-  it("keeps the Learning Streak counts in text", () => {
-    const view = renderView();
-    expect(view).toContain("Current streak: <strong>2 days</strong>");
-    expect(view).toContain("Longest streak: <strong>5 days</strong>");
-  });
-
-  it("offers the Character radio-card grid with a save button", () => {
-    const view = renderView();
-    expect(view).toContain('role="radiogroup"');
-    expect(view).toContain('role="radio"');
-    expect(view).toContain("SAVE CHARACTER");
-  });
-
-  it("shows read-only account details with the account actions", () => {
-    const view = renderView();
-    expect(view).toContain("jai@example.com");
-    expect(view).toContain("MANAGE ACCOUNT");
-    expect(view).toContain("SIGN OUT");
+    for (const text of expected) {
+      expect(view).toContain(text);
+    }
   });
 
   it("shows the Badge empty state when nothing is earned", () => {
@@ -141,6 +135,8 @@ describe("ProfileView (PAGES.md §14)", () => {
   it("explains that the character catalog could not be loaded", () => {
     const failed = renderView({ characters: [], charactersError: true });
     expect(failed).toContain('role="alert"');
-    expect(failed).toContain("The character catalog could not be loaded. Please try again later.");
+    expect(failed).toContain(
+      "The character catalog could not be loaded. Please try again later.",
+    );
   });
 });
