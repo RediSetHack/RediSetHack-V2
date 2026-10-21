@@ -78,7 +78,7 @@ export function BadgeForm({ mode, id }: Readonly<{ mode: "create" | "edit"; id?:
           value={fieldText(values.name, "")}
           onChange={(event) => {
             set("name", event.target.value);
-            set("slug", nextSlug(values.slug, values.name, event.target.value));
+            set("slug", nextSlug(values, "name", event.target.value));
           }}
         />
       </FormField>

@@ -200,11 +200,15 @@ describe("fieldText", () => {
 
 describe("nextSlug", () => {
   it("follows the name while the slug is still the auto-filled one", () => {
-    expect(nextSlug("", "", "Core")).toBe("core");
-    expect(nextSlug("core", "Core", "Core Skills")).toBe("core-skills");
+    expect(nextSlug({ id: 0, slug: "", name: "" }, "name", "Core")).toBe("core");
+    expect(nextSlug({ id: 0, slug: "core", name: "Core" }, "name", "Core Skills")).toBe("core-skills");
   });
 
   it("keeps a hand-edited slug", () => {
-    expect(nextSlug("custom", "Core", "Core Skills")).toBe("custom");
+    expect(nextSlug({ id: 0, slug: "custom", name: "Core" }, "name", "Core Skills")).toBe("custom");
+  });
+
+  it("never rewrites the slug of a saved record", () => {
+    expect(nextSlug({ id: 7, slug: "core", name: "Core" }, "name", "Core Skills")).toBe("core");
   });
 });

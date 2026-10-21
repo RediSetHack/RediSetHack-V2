@@ -41,7 +41,7 @@ export function makeZoneFields(regionOptions: readonly { value: number; label: s
             value={fieldText(values.name, "")}
             onChange={(event) => {
               set("name", event.target.value);
-              set("slug", nextSlug(values.slug, values.name, event.target.value));
+              set("slug", nextSlug(values, "name", event.target.value));
             }}
           />
         </FormField>

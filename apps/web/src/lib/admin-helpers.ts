@@ -40,10 +40,14 @@ export function defaultSlug(name: string): string {
   return slugify(name);
 }
 
-/** The slug after a rename: follows the name until the admin has edited the slug by hand. */
-export function nextSlug(slug: unknown, oldName: unknown, newName: string): string {
-  const current = fieldText(slug);
-  return current === defaultSlug(fieldText(oldName)) ? defaultSlug(newName) : current;
+/**
+ * The slug after a rename: on create it follows the name until the admin has
+ * edited the slug by hand. A saved record (`id` set) keeps its slug, which is public.
+ */
+export function nextSlug(values: Record<string, unknown>, nameKey: string, newName: string): string {
+  const current = fieldText(values.slug);
+  if (Number(values.id) !== 0) return current;
+  return current === defaultSlug(fieldText(values[nameKey])) ? defaultSlug(newName) : current;
 }
 
 /** `null` when the slug is acceptable, otherwise the inline field message. */

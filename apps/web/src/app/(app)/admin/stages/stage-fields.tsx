@@ -59,7 +59,7 @@ export function makeStageFields(
             value={fieldText(values.title, "")}
             onChange={(event) => {
               set("title", event.target.value);
-              set("slug", nextSlug(values.slug, values.title, event.target.value));
+              set("slug", nextSlug(values, "title", event.target.value));
             }}
           />
         </FormField>
