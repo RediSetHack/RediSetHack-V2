@@ -197,21 +197,23 @@ export function FeedbackState({
   errorMessage = "Something went wrong. Please try again.",
   onRetry,
   loadingTitle,
+  loadingLabel,
   children,
 }: Readonly<{
   loading?: boolean;
   error?: boolean;
   empty?: boolean;
-  emptyTitle?: string;
+  emptyTitle?: React.ReactNode;
   emptyMessage?: string;
   emptyAction?: React.ReactNode;
   errorMessage?: string;
   onRetry?: () => void;
   loadingTitle?: string;
+  loadingLabel?: string;
   children: React.ReactNode;
 }>) {
   if (loading) {
-    return <SkeletonWindow title={loadingTitle ?? "Loading…"} />;
+    return <SkeletonWindow title={loadingTitle ?? "Loading…"} label={loadingLabel} />;
   }
   if (error) {
     return <ErrorAlert message={errorMessage} onRetry={onRetry} />;

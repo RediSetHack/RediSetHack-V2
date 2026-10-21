@@ -2,8 +2,9 @@ import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getRegions, getStages, getZones, type Stage } from "@/lib/api-client";
-import { Breadcrumb, EmptyState, Sparkle, StageNode, Window, Y2kButton } from "@/components/y2k";
-import { ErrorAlert } from "@/components/y2k-dialog";
+import { isZoneCleared } from "@/lib/map-progress";
+import { Breadcrumb, Sparkle, StageNode, Window, Y2kButton } from "@/components/y2k";
+import { FeedbackState } from "@/components/y2k-dialog";
 
 export default async function ZoneStagesPage({
   params,
@@ -40,11 +41,19 @@ export default async function ZoneStagesPage({
     loadError = true;
   }
 
+  const breadcrumbItems = [
+    { label: "MAP", href: "/map" },
+    { label: regionName || "Region", href: `/map/${regionIdNumber}` },
+    { label: zoneName || "Zone" },
+  ];
+
   if (loadError)
     return (
       <div className="mx-auto w-full max-w-4xl p-6">
-        <Window title={<Breadcrumb items={[{ label: "MAP", href: "/map" }, { label: "Region" }, { label: "Zone" }]} />}>
-          <ErrorAlert message="Stages could not be loaded. Please try again." />
+        <Window title={<Breadcrumb items={breadcrumbItems} />}>
+          <FeedbackState error errorMessage="Stages could not be loaded. Please try again.">
+            {null}
+          </FeedbackState>
         </Window>
       </div>
     );
@@ -52,23 +61,27 @@ export default async function ZoneStagesPage({
   if (stages.length === 0) {
     return (
       <div className="mx-auto w-full max-w-4xl p-6">
-        <Window title={<Breadcrumb items={[{ label: "MAP", href: "/map" }, { label: regionName }, { label: zoneName }]} />}>
-          <EmptyState title="This Zone has no Stages yet." />
-          <div className="mt-4">
+        <FeedbackState
+          empty
+          emptyTitle={<Breadcrumb items={breadcrumbItems} />}
+          emptyMessage="This Zone has no Stages yet."
+          emptyAction={
             <Link href={`/map/${regionIdNumber}`}>
-              <Y2kButton variant="ghost">BACK TO MAP</Y2kButton>
+              <Y2kButton variant="ghost">BACK TO ZONE LIST</Y2kButton>
             </Link>
-          </div>
-        </Window>
+          }
+        >
+          {null}
+        </FeedbackState>
       </div>
     );
   }
 
-  const allCompleted = stages.every((s) => s.status === "completed");
+  const zoneCleared = isZoneCleared(stages);
 
   return (
     <div className="mx-auto w-full max-w-4xl p-6">
-      <Window title={<Breadcrumb items={[{ label: "MAP", href: "/map" }, { label: regionName }, { label: zoneName }]} />}>
+      <Window title={<Breadcrumb items={breadcrumbItems} />}>
         {storyIntro && (
           <div className="mb-4 font-body text-sm font-bold text-foreground">
             {storyIntro}
@@ -94,7 +107,7 @@ export default async function ZoneStagesPage({
         <div className="mt-4 font-body text-sm font-bold text-muted-foreground">
           Finish a Stage to unlock the next one.
         </div>
-        {allCompleted && (
+        {zoneCleared && (
           <div className="mt-6">
             <Window title="ZONE CLEARED">
               <div className="flex items-center gap-2">
