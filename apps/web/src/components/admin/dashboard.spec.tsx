@@ -22,20 +22,32 @@ function renderDashboard(
   );
 }
 
-const tree = buildContentTree({
-  regions: [region(1, "Linux Basics")],
+const catalog: DashboardCatalog = {
+  regions: [region(1, "Linux Basics"), region(2, "Networks")],
   zones: [zone(10, 1, "Shell")],
   stages: [stage(100, 10, "Intro")],
   quests: [quest(1000, 100, "Intro Quiz")],
-});
+  badges: [badge(1), badge(2)],
+  characters: [character(1), character(2), character(3)],
+  loading: false,
+  error: false,
+};
+
+const tree = buildContentTree(catalog);
+
+/** The four levels the content tree must show, in order. */
+const TREE_LABELS = ["Linux Basics", "Shell", "Intro", "Intro Quiz"];
+
+function expectTreeLabels(html: string) {
+  for (const label of TREE_LABELS) {
+    expect(html).toContain(label);
+  }
+}
 
 describe("ContentTreeView", () => {
   it("expands Region › Zone › Stage › Quest", () => {
     const html = renderToStaticMarkup(<ContentTreeView tree={tree} />);
-    expect(html).toContain("Linux Basics");
-    expect(html).toContain("Shell");
-    expect(html).toContain("Intro");
-    expect(html).toContain("Intro Quiz");
+    expectTreeLabels(html);
   });
 
   it("gives every level its Edit link", () => {
@@ -64,17 +76,6 @@ describe("ContentTreeView", () => {
 });
 
 describe("AdminDashboardView", () => {
-  const catalog: DashboardCatalog = {
-    regions: [region(1, "Linux Basics"), region(2, "Networks")],
-    zones: [zone(10, 1, "Shell")],
-    stages: [stage(100, 10, "Intro")],
-    quests: [quest(1000, 100, "Intro Quiz")],
-    badges: [badge(1), badge(2)],
-    characters: [character(1), character(2), character(3)],
-    loading: false,
-    error: false,
-  };
-
   const bonusEvent: DailyEvent = {
     id: 1,
     eventDate: "2026-10-21",
@@ -121,10 +122,7 @@ describe("AdminDashboardView", () => {
   it("renders the content tree from the same catalog it counts", () => {
     const html = renderDashboard(catalog);
     expect(html).toContain("CONTENT TREE");
-    expect(html).toContain("Linux Basics");
-    expect(html).toContain("Shell");
-    expect(html).toContain("Intro");
-    expect(html).toContain("Intro Quiz");
+    expectTreeLabels(html);
   });
 
   it("shows a placeholder while the catalog loads", () => {
