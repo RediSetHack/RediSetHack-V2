@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Y2kButton, Y2kTextarea, Window } from "@/components/y2k";
 import { Y2kDialog, useToast } from "@/components/y2k-dialog";
@@ -28,6 +28,18 @@ export function isPublished(history: readonly ReviewDecisionRecord[]): boolean {
   return latest?.decision === "approved" && latest.publishedStageId !== null;
 }
 
+/** The route id as a draft id, or `null` when it isn't a positive integer. */
+export function parseDraftId(id: string): number | null {
+  const value = Number(id);
+  return Number.isInteger(value) && value > 0 ? value : null;
+}
+
+/** A decision with its trimmed note, or `null` while the required note is blank. */
+export function buildDecision(decision: ReviewDecisionInput["decision"], note: string): ReviewDecisionInput | null {
+  const reason = note.trim();
+  return reason.length === 0 ? null : { decision, reason };
+}
+
 type DecisionFormProps = Readonly<{
   busy: boolean;
   onDecide: (input: ReviewDecisionInput) => void;
@@ -38,8 +50,9 @@ type DecisionFormProps = Readonly<{
 export function ReviewDecisionForm({ busy, onDecide, onNoteMissing }: DecisionFormProps) {
   const [reason, setReason] = useState("");
   const decide = (decision: ReviewDecisionInput["decision"]) => {
-    if (reason.trim().length === 0) return onNoteMissing();
-    onDecide({ decision, reason: reason.trim() });
+    const input = buildDecision(decision, reason);
+    if (input) onDecide(input);
+    else onNoteMissing();
   };
   return (
     <div className="flex flex-col gap-3">
@@ -86,6 +99,8 @@ export function ReviewDetail({ id }: Readonly<{ id: string }>) {
   const [history, setHistory] = useState<ReviewDecisionRecord[]>([]);
   const [status, setStatus] = useState<"loading" | "not-found" | "error" | "ready">("loading");
   const [busy, setBusy] = useState(false);
+  // State lags a render behind, so two clicks in one tick would both pass `busy`.
+  const inFlight = useRef(false);
   const [unpublishOpen, setUnpublishOpen] = useState(false);
   const [unpublishReason, setUnpublishReason] = useState("");
 
@@ -94,7 +109,11 @@ export function ReviewDetail({ id }: Readonly<{ id: string }>) {
     let cancelled = false;
     void (async () => {
       try {
-        const draftId = Number(id);
+        const draftId = parseDraftId(id);
+        if (draftId === null) {
+          setStatus("not-found");
+          return;
+        }
         const [queue, records] = await Promise.all([
           getReviewQueue(API_URL, token),
           getReviewHistory(API_URL, token, draftId).catch((cause: unknown) => {
@@ -133,7 +152,8 @@ export function ReviewDetail({ id }: Readonly<{ id: string }>) {
   }, [token, id, report]);
 
   const decide = async (input: ReviewDecisionInput) => {
-    if (!token || !subject) return;
+    if (!token || !subject || inFlight.current) return;
+    inFlight.current = true;
     setBusy(true);
     try {
       await reviewRevision(API_URL, token, subject.id, input);
@@ -143,16 +163,18 @@ export function ReviewDetail({ id }: Readonly<{ id: string }>) {
       if (report(cause)) return;
       toast.push(cause instanceof ApiError ? cause.message : "Could not record the decision.", "error");
     } finally {
+      inFlight.current = false;
       setBusy(false);
     }
   };
 
   const unpublish = async () => {
-    if (!token || !subject) return;
+    if (!token || !subject || inFlight.current) return;
     if (unpublishReason.trim().length === 0) {
       toast.push("A reason is required to unpublish.", "error");
       return;
     }
+    inFlight.current = true;
     setBusy(true);
     try {
       await unpublishRevision(API_URL, token, subject.id, unpublishReason.trim());
@@ -162,6 +184,7 @@ export function ReviewDetail({ id }: Readonly<{ id: string }>) {
       if (report(cause)) return;
       toast.push(cause instanceof ApiError ? cause.message : "Could not unpublish.", "error");
     } finally {
+      inFlight.current = false;
       setBusy(false);
       setUnpublishOpen(false);
     }

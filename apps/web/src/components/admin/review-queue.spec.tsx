@@ -8,7 +8,8 @@ vi.mock("@clerk/nextjs", () => ({
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 import { ReviewQueueView } from "@/app/(app)/admin/review/review-queue-list";
-import { ReviewDecisionForm, ReviewHistory, isPublished } from "@/app/(app)/admin/review/review-detail";
+import { ReviewDecisionForm, ReviewHistory, buildDecision, isPublished, parseDraftId } from "@/app/(app)/admin/review/review-detail";
+import { renderLessonBlock } from "@/components/lesson-blocks";
 import { zone } from "@/lib/admin-fixtures";
 import type { ReviewDecisionRecord, ReviewQueueItem } from "@/lib/api-client";
 
@@ -67,5 +68,26 @@ describe("review history", () => {
     expect(isPublished([record({})])).toBe(true);
     expect(isPublished([record({}), record({ id: 2, decision: "unpublished", publishedStageId: null })])).toBe(false);
     expect(isPublished([])).toBe(false);
+  });
+});
+
+describe("decision rules", () => {
+  it("requires a non-blank note and trims it", () => {
+    expect(buildDecision("approved", "   ")).toBeNull();
+    expect(buildDecision("rejected", "  needs work ")).toEqual({ decision: "rejected", reason: "needs work" });
+  });
+
+  it("accepts only positive integer draft ids", () => {
+    expect(parseDraftId("12")).toBe(12);
+    for (const bad of ["abc", "0", "-3", "1.5", ""]) expect(parseDraftId(bad)).toBeNull();
+  });
+});
+
+describe("contributor lesson rendering", () => {
+  it("keeps markup in a code block inert", async () => {
+    const view = await renderLessonBlock({ kind: "code", language: "html", content: "<script>alert(1)</script><img src=x onerror=alert(1)>" });
+    const html = renderToStaticMarkup(<>{view}</>);
+    expect(html).not.toContain("<script>");
+    expect(html).not.toContain("<img");
   });
 });
