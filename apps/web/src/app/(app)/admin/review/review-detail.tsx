@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Y2kButton, Y2kTextarea, Window } from "@/components/y2k";
 import { Y2kDialog, useToast } from "@/components/y2k-dialog";
@@ -9,46 +9,85 @@ import { API_URL, useToken } from "@/components/admin/use-catalog";
 import { useAdminAccess } from "@/components/admin/admin-access";
 import {
   ApiError,
-  getReviewRevision,
+  getReviewHistory,
+  getReviewQueue,
   reviewRevision,
   unpublishRevision,
   type ReviewDecisionInput,
+  type ReviewDecisionRecord,
   type ReviewQueueItem,
 } from "@/lib/api-client";
+import { ReviewLesson } from "./review-lesson";
 
-type Block = { type?: string; content?: string; language?: string; url?: string; alt?: string; caption?: string; prompt?: string; starterCode?: string };
+/** What the page shows: a queued revision, or the latest one from history once it has left the queue. */
+type Subject = Pick<ReviewQueueItem, "id" | "title" | "lessonContent"> & { ownerId: string | null; revision: number; status: string };
 
-/** Stable key from a block's own fields — index keys break on reorder. */
-function blockKey(block: Block): string {
-  return [block.type, block.url, block.prompt, block.content].filter(Boolean).join("|");
+/** A Lesson is live when its latest history entry is an approval that created a Stage. */
+export function isPublished(history: readonly ReviewDecisionRecord[]): boolean {
+  const latest = history.at(-1);
+  return latest?.decision === "approved" && latest.publishedStageId !== null;
 }
 
-function BlockView({ block }: Readonly<{ block: Block }>) {
-  if (block.type === "code") {
-    return (
-      <pre className="overflow-x-auto border-2 border-border bg-white p-3 font-mono text-xs">
-        {`// ${block.language ?? "code"}\n${block.content ?? ""}`}
-      </pre>
-    );
-  }
-  if (block.type === "image") {
-    return (
-      <figure className="flex flex-col gap-1">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={block.url ?? ""} alt={block.alt ?? ""} className="max-w-full border-2 border-border" />
-        {block.caption ? <figcaption className="font-body text-xs text-muted-foreground">{block.caption}</figcaption> : null}
-      </figure>
-    );
-  }
-  if (block.type === "exercise") {
-    return (
-      <div className="border-2 border-border bg-window-body p-3">
-        <p className="font-body text-sm font-bold">{block.prompt}</p>
-        <pre className="mt-2 overflow-x-auto border-2 border-border bg-white p-2 font-mono text-xs">{block.starterCode ?? ""}</pre>
+/** The route id as a draft id, or `null` when it isn't a positive integer. */
+export function parseDraftId(id: string): number | null {
+  const value = Number(id);
+  return Number.isInteger(value) && value > 0 ? value : null;
+}
+
+/** A decision with its trimmed note, or `null` while the required note is blank. */
+export function buildDecision(decision: ReviewDecisionInput["decision"], note: string): ReviewDecisionInput | null {
+  const reason = note.trim();
+  return reason.length === 0 ? null : { decision, reason };
+}
+
+type DecisionFormProps = Readonly<{
+  busy: boolean;
+  onDecide: (input: ReviewDecisionInput) => void;
+  onNoteMissing: () => void;
+}>;
+
+/** Approve / request revision / reject, each needing a reviewer note. */
+export function ReviewDecisionForm({ busy, onDecide, onNoteMissing }: DecisionFormProps) {
+  const [reason, setReason] = useState("");
+  const decide = (decision: ReviewDecisionInput["decision"]) => {
+    const input = buildDecision(decision, reason);
+    if (input) onDecide(input);
+    else onNoteMissing();
+  };
+  return (
+    <div className="flex flex-col gap-3">
+      <label className="flex flex-col gap-1">
+        <span className="font-body text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">Reviewer note (required)</span>
+        <Y2kTextarea value={reason} onChange={(event) => setReason(event.target.value)} rows={3} />
+      </label>
+      <div className="flex flex-wrap gap-2">
+        <Y2kButton variant="primary" disabled={busy} onClick={() => decide("approved")}>
+          APPROVE &amp; PUBLISH
+        </Y2kButton>
+        <Y2kButton variant="secondary" disabled={busy} onClick={() => decide("revision-needed")}>
+          REQUEST REVISION
+        </Y2kButton>
+        <Y2kButton variant="danger" disabled={busy} onClick={() => decide("rejected")}>
+          REJECT
+        </Y2kButton>
       </div>
-    );
-  }
-  return <p className="font-body text-sm whitespace-pre-wrap text-foreground">{block.content ?? ""}</p>;
+    </div>
+  );
+}
+
+/** Past decisions on the draft, oldest first. */
+export function ReviewHistory({ history }: Readonly<{ history: readonly ReviewDecisionRecord[] }>) {
+  if (history.length === 0) return <p className="font-body text-sm text-muted-foreground">No decisions yet.</p>;
+  return (
+    <ol className="flex flex-col gap-2">
+      {history.map((entry) => (
+        <li key={entry.id} className="border-2 border-border bg-window-body p-2 font-body text-sm">
+          <span className="font-bold uppercase">{entry.decision}</span> · revision {entry.revision} · {new Date(entry.reviewedAt).toLocaleString()}
+          <p className="whitespace-pre-wrap">{entry.reason}</p>
+        </li>
+      ))}
+    </ol>
+  );
 }
 
 export function ReviewDetail({ id }: Readonly<{ id: string }>) {
@@ -56,27 +95,48 @@ export function ReviewDetail({ id }: Readonly<{ id: string }>) {
   const toast = useToast();
   const router = useRouter();
   const { report } = useAdminAccess();
-  const [item, setItem] = useState<ReviewQueueItem | null>(null);
+  const [subject, setSubject] = useState<Subject | null>(null);
+  const [history, setHistory] = useState<ReviewDecisionRecord[]>([]);
   const [status, setStatus] = useState<"loading" | "not-found" | "error" | "ready">("loading");
-  const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
+  // State lags a render behind, so two clicks in one tick would both pass `busy`.
+  const inFlight = useRef(false);
   const [unpublishOpen, setUnpublishOpen] = useState(false);
   const [unpublishReason, setUnpublishReason] = useState("");
 
   useEffect(() => {
     if (!token) return;
     let cancelled = false;
-    void getReviewRevision(API_URL, token, Number(id))
-      .then((revision) => {
-        if (cancelled) return;
-        if (!revision) {
+    void (async () => {
+      try {
+        const draftId = parseDraftId(id);
+        if (draftId === null) {
           setStatus("not-found");
-        } else {
-          setItem(revision);
-          setStatus("ready");
+          return;
         }
-      })
-      .catch((cause: unknown) => {
+        const [queue, records] = await Promise.all([
+          getReviewQueue(API_URL, token),
+          getReviewHistory(API_URL, token, draftId).catch((cause: unknown) => {
+            // No history means the draft does not exist: "not found", not a failure.
+            if (cause instanceof ApiError && cause.status === 404) return null;
+            throw cause;
+          }),
+        ]);
+        if (cancelled) return;
+        const sorted = [...(records ?? [])].sort((a, b) => a.id - b.id);
+        const queued = queue.find((item) => item.id === draftId);
+        const latest = sorted.at(-1);
+        if (queued) {
+          setSubject({ ...queued, revision: queued.submittedRevision ?? queued.revision });
+        } else if (latest) {
+          setSubject({ id: draftId, title: latest.title, lessonContent: latest.lessonContent, ownerId: null, revision: latest.revision, status: latest.decision });
+        } else {
+          setStatus("not-found");
+          return;
+        }
+        setHistory(sorted);
+        setStatus("ready");
+      } catch (cause) {
         // A canceled request must not report: the page that replaced this one
         // owns the shell state now.
         if (cancelled) return;
@@ -84,46 +144,47 @@ export function ReviewDetail({ id }: Readonly<{ id: string }>) {
         // itself for the ACCESS DENIED window.
         if (report(cause)) return;
         setStatus("error");
-      });
+      }
+    })();
     return () => {
       cancelled = true;
     };
   }, [token, id, report]);
 
-  const decide = async (decision: ReviewDecisionInput["decision"]) => {
-    if (!token || !item) return;
-    if (reason.trim().length === 0) {
-      toast.push("A note is required for every decision.", "error");
-      return;
-    }
+  const decide = async (input: ReviewDecisionInput) => {
+    if (!token || !subject || inFlight.current) return;
+    inFlight.current = true;
     setBusy(true);
     try {
-      await reviewRevision(API_URL, token, item.id, { decision, reason: reason.trim() });
-      toast.push(`Decision recorded: ${decision}.`);
+      await reviewRevision(API_URL, token, subject.id, input);
+      toast.push(`Decision recorded: ${input.decision}.`);
       router.push("/admin/review");
     } catch (cause) {
       if (report(cause)) return;
       toast.push(cause instanceof ApiError ? cause.message : "Could not record the decision.", "error");
     } finally {
+      inFlight.current = false;
       setBusy(false);
     }
   };
 
   const unpublish = async () => {
-    if (!token || !item) return;
+    if (!token || !subject || inFlight.current) return;
     if (unpublishReason.trim().length === 0) {
       toast.push("A reason is required to unpublish.", "error");
       return;
     }
+    inFlight.current = true;
     setBusy(true);
     try {
-      await unpublishRevision(API_URL, token, item.id, unpublishReason.trim());
+      await unpublishRevision(API_URL, token, subject.id, unpublishReason.trim());
       toast.push("Lesson unpublished.");
       router.push("/admin/review");
     } catch (cause) {
       if (report(cause)) return;
       toast.push(cause instanceof ApiError ? cause.message : "Could not unpublish.", "error");
     } finally {
+      inFlight.current = false;
       setBusy(false);
       setUnpublishOpen(false);
     }
@@ -132,65 +193,54 @@ export function ReviewDetail({ id }: Readonly<{ id: string }>) {
   if (status === "loading") return <EditLoadState loading resource="Submission" />;
   if (status === "not-found") return <EditLoadState notFound resource="Submission" />;
   if (status === "error") return <EditLoadState error resource="Submission" />;
-  if (!item) return null;
+  if (!subject) return null;
 
-  const blocks = Array.isArray(item.lessonContent) ? (item.lessonContent as Block[]) : [];
+  const published = isPublished(history);
+  const awaitingReview = subject.status === "submitted";
 
   return (
     <div className="flex flex-col gap-4">
-      <Window title={`REVIEW.EXE › ${item.title}`}>
+      <Window title={`REVIEW.EXE › ${subject.title}`}>
         <div className="flex flex-col gap-3">
-          <dl className="grid grid-cols-2 gap-2 font-body text-sm sm:grid-cols-4">
-            <div>
-              <dt className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">Owner</dt>
-              <dd className="font-bold">{item.ownerId}</dd>
-            </div>
-            <div>
-              <dt className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">Revision</dt>
-              <dd className="font-bold">{item.submittedRevision ?? item.revision}</dd>
-            </div>
-            <div>
-              <dt className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">Status</dt>
-              <dd className="font-bold">{item.status}</dd>
-            </div>
-            <div>
-              <dt className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">Submitted</dt>
-              <dd className="font-bold">{item.submittedAt ? new Date(item.submittedAt).toLocaleString() : "—"}</dd>
-            </div>
+          <dl className="grid grid-cols-2 gap-2 font-body text-sm sm:grid-cols-3">
+            {[
+              ["Contributor", subject.ownerId ?? "—"],
+              ["Revision", subject.revision],
+              ["Status", subject.status],
+            ].map(([label, value]) => (
+              <div key={label}>
+                <dt className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">{label}</dt>
+                <dd className="font-bold">{value}</dd>
+              </div>
+            ))}
           </dl>
-
-          <div className="flex flex-col gap-3 border-t-2 border-border pt-3">
-            {blocks.length === 0 ? (
-              <p className="font-body text-sm text-muted-foreground">This revision has no Lesson blocks.</p>
-            ) : (
-              blocks.map((block) => <BlockView key={blockKey(block)} block={block} />)
-            )}
+          <div className="border-t-2 border-border pt-3">
+            <ReviewLesson blocks={subject.lessonContent} />
           </div>
         </div>
       </Window>
 
-      <Window title="DECISION.EXE">
-        <div className="flex flex-col gap-3">
-          <label className="flex flex-col gap-1">
-            <span className="font-body text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">Reviewer note (required)</span>
-            <Y2kTextarea value={reason} onChange={(event) => setReason(event.target.value)} rows={3} />
-          </label>
-          <div className="flex flex-wrap gap-2">
-            <Y2kButton variant="primary" disabled={busy} onClick={() => void decide("approved")}>
-              APPROVE &amp; PUBLISH
-            </Y2kButton>
-            <Y2kButton variant="secondary" disabled={busy} onClick={() => void decide("revision-needed")}>
-              REQUEST REVISION
-            </Y2kButton>
-            <Y2kButton variant="danger" disabled={busy} onClick={() => void decide("rejected")}>
-              REJECT
-            </Y2kButton>
-            <Y2kButton variant="ghost" disabled={busy} onClick={() => setUnpublishOpen(true)}>
-              UNPUBLISH
-            </Y2kButton>
-          </div>
-        </div>
+      <Window title="HISTORY.LOG">
+        <ReviewHistory history={history} />
       </Window>
+
+      {awaitingReview ? (
+        <Window title="DECISION.EXE">
+          <ReviewDecisionForm
+            busy={busy}
+            onDecide={(input) => void decide(input)}
+            onNoteMissing={() => toast.push("A note is required for every decision.", "error")}
+          />
+        </Window>
+      ) : null}
+
+      {published ? (
+        <Window title="PUBLISHED.EXE">
+          <Y2kButton variant="danger" disabled={busy} onClick={() => setUnpublishOpen(true)}>
+            UNPUBLISH
+          </Y2kButton>
+        </Window>
+      ) : null}
 
       <Y2kDialog
         open={unpublishOpen}
