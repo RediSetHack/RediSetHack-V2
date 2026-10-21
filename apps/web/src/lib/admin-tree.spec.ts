@@ -1,42 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildContentTree, countCatalog } from "./admin-tree";
-import type { Quest, Region, Stage, Zone } from "@/lib/api-client";
-
-function region(id: number, name: string, sortOrder = 0): Region {
-  return { id, name, slug: name.toLowerCase(), description: null, sortOrder, storyIntro: null };
-}
-
-function zone(id: number, regionId: number, name: string, sortOrder = 0): Zone {
-  return { id, regionId, name, slug: name.toLowerCase(), description: null, sortOrder };
-}
-
-function stage(id: number, zoneId: number, title: string, sortOrder = 0, xpReward = 10): Stage {
-  return {
-    id,
-    zoneId,
-    title,
-    slug: title.toLowerCase(),
-    xpReward,
-    sortOrder,
-    status: "available",
-    lockReason: null,
-  };
-}
-
-function quest(id: number, stageId: number, title: string): Quest {
-  return {
-    id,
-    stageId,
-    title,
-    description: null,
-    timeLimitSeconds: 60,
-    passingScore: 70,
-    xpReward: 5,
-    initialAssessment: false,
-    completed: false,
-    lockReason: null,
-  };
-}
+import { quest, region, stage, zone } from "./admin-fixtures";
 
 describe("buildContentTree", () => {
   const tree = buildContentTree({

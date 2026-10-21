@@ -2,69 +2,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { AdminDashboardView, ContentTreeView, dashboardTiles } from "./dashboard";
 import { buildContentTree } from "@/lib/admin-tree";
-import type { BadgeDefinition, Character, Quest, Region, Stage, Zone } from "@/lib/api-client";
+import { badge, character, quest, region, stage, zone } from "@/lib/admin-fixtures";
 
 vi.mock("@clerk/nextjs", () => ({
   useAuth: () => ({ getToken: () => Promise.resolve("token") }),
   useClerk: () => ({ signOut: vi.fn() }),
 }));
-
-function region(id: number, name: string): Region {
-  return { id, name, slug: name.toLowerCase(), description: null, sortOrder: 0, storyIntro: null };
-}
-
-function zone(id: number, regionId: number, name: string): Zone {
-  return { id, regionId, name, slug: name.toLowerCase(), description: null, sortOrder: 0 };
-}
-
-function stage(id: number, zoneId: number, title: string, xpReward = 25): Stage {
-  return {
-    id,
-    zoneId,
-    title,
-    slug: title.toLowerCase(),
-    xpReward,
-    sortOrder: 0,
-    status: "available",
-    lockReason: null,
-  };
-}
-
-function quest(id: number, stageId: number, title: string): Quest {
-  return {
-    id,
-    stageId,
-    title,
-    description: null,
-    timeLimitSeconds: 60,
-    passingScore: 70,
-    xpReward: 5,
-    initialAssessment: false,
-    completed: false,
-    lockReason: null,
-  };
-}
-
-function badge(id: number): BadgeDefinition {
-  return {
-    id,
-    name: `Badge ${id}`,
-    slug: `badge-${id}`,
-    description: null,
-    criteria: { trigger: "cumulative", target: "stage_completions", threshold: id },
-    imageUrl: null,
-  };
-}
-
-function character(id: number): Character {
-  return {
-    id,
-    name: `Character ${id}`,
-    slug: `character-${id}`,
-    description: null,
-    imageUrl: null,
-  };
-}
 
 const tree = buildContentTree({
   regions: [region(1, "Linux Basics")],
@@ -92,7 +35,7 @@ describe("ContentTreeView", () => {
 
   it("shows a Stage's XP reward", () => {
     const html = renderToStaticMarkup(<ContentTreeView tree={tree} />);
-    expect(html).toContain("25 XP");
+    expect(html).toContain("10 XP");
   });
 
   it("nests each level inside the one above it", () => {
