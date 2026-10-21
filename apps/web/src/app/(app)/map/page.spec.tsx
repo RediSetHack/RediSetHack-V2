@@ -1,53 +1,13 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
-const { mockAuth, mockGetRegions, mockGetZones, mockGetStages } = vi.hoisted(() => ({
-  mockAuth: vi.fn(),
-  mockGetRegions: vi.fn(),
-  mockGetZones: vi.fn(),
-  mockGetStages: vi.fn(),
-}));
-
-vi.mock("@clerk/nextjs/server", () => ({ auth: mockAuth }));
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({ refresh: vi.fn() }),
-  notFound: () => {
-    throw new Error("not-found");
-  },
-}));
-vi.mock("@/lib/api-client", () => ({
-  getRegions: mockGetRegions,
-  getZones: mockGetZones,
-  getStages: mockGetStages,
-}));
+import { makeStage, mockGetRegions, mockGetStages, setupMapCatalog } from "./map-test-fixtures";
 
 import MapPage from "./page";
 
-const region = {
-  id: 1,
-  name: "Cyber Basics",
-  slug: "cyber-basics",
-  description: "Start here.",
-  sortOrder: 1,
-  storyIntro: null,
-};
-
-const zone = {
-  id: 1,
-  regionId: 1,
-  name: "Networking 101",
-  slug: "networking-101",
-  description: "Packets and protocols.",
-  sortOrder: 1,
-};
-
 describe("map regions page", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockAuth.mockResolvedValue({ getToken: vi.fn().mockResolvedValue("token") });
-    mockGetRegions.mockResolvedValue([region]);
-    mockGetZones.mockResolvedValue([zone]);
-    mockGetStages.mockResolvedValue([]);
+    setupMapCatalog();
   });
 
   it("renders the error-with-retry state when Regions fail to load", async () => {
@@ -65,12 +25,13 @@ describe("map regions page", () => {
 
   it("renders Region cards with zone counts and progress", async () => {
     mockGetStages.mockResolvedValue([
-      { id: 1, zoneId: 1, status: "completed" },
-      { id: 2, zoneId: 1, status: "available" },
+      makeStage(1, "completed", 1),
+      makeStage(2, "available", 1),
     ]);
     const markup = renderToStaticMarkup(await MapPage());
     expect(markup).toContain("Cyber Basics");
     expect(markup).toContain("1 Zone");
+    expect(markup).toContain("50% complete");
     expect(markup).toContain('href="/map/1"');
   });
 

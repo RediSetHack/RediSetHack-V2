@@ -1,36 +1,17 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
-const { mockAuth, mockGetRegions, mockGetZones, mockGetStages } = vi.hoisted(() => ({
-  mockAuth: vi.fn(),
-  mockGetRegions: vi.fn(),
-  mockGetZones: vi.fn(),
-  mockGetStages: vi.fn(),
-}));
-
-vi.mock("@clerk/nextjs/server", () => ({ auth: mockAuth }));
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({ refresh: vi.fn() }),
-  notFound: () => {
-    throw new Error("not-found");
-  },
-}));
-vi.mock("@/lib/api-client", () => ({
-  getRegions: mockGetRegions,
-  getZones: mockGetZones,
-  getStages: mockGetStages,
-}));
+import {
+  makeStage,
+  mockGetRegions,
+  mockGetStages,
+  mockGetZones,
+  region,
+  setupMapCatalog,
+  zone,
+} from "../map-test-fixtures";
 
 import RegionZonesPage from "./page";
-
-const region = {
-  id: 1,
-  name: "Cyber Basics",
-  slug: "cyber-basics",
-  description: "Start here.",
-  sortOrder: 1,
-  storyIntro: null,
-};
 
 const novelRegion = {
   ...region,
@@ -38,15 +19,6 @@ const novelRegion = {
   name: "Shadow Protocol",
   slug: "shadow-protocol",
   storyIntro: "The network hums with secrets.",
-};
-
-const zone = {
-  id: 1,
-  regionId: 1,
-  name: "Networking 101",
-  slug: "networking-101",
-  description: "Packets and protocols.",
-  sortOrder: 1,
 };
 
 const chapter = {
@@ -58,29 +30,12 @@ const chapter = {
   sortOrder: 1,
 };
 
-function makeStage(id: number, status: "locked" | "available" | "completed") {
-  return {
-    id,
-    zoneId: 2,
-    title: `Stage ${id}`,
-    slug: `stage-${id}`,
-    xpReward: 50,
-    sortOrder: id,
-    status,
-    lockReason: status === "locked" ? "Complete the previous Stage first." : null,
-  };
-}
-
 const params = { params: Promise.resolve({ regionId: "1" }) };
 const novelParams = { params: Promise.resolve({ regionId: "2" }) };
 
 describe("region zones page", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockAuth.mockResolvedValue({ getToken: vi.fn().mockResolvedValue("token") });
-    mockGetRegions.mockResolvedValue([region, novelRegion]);
-    mockGetZones.mockResolvedValue([zone]);
-    mockGetStages.mockResolvedValue([]);
+    setupMapCatalog({ regions: [region, novelRegion] });
   });
 
   it("renders the error-with-retry state when the catalog fails to load", async () => {
@@ -106,21 +61,24 @@ describe("region zones page", () => {
   it("shows STORY.EXE and a 0 / 0 summary for an empty Novel chapter", async () => {
     mockGetZones.mockResolvedValue([chapter]);
     const markup = renderToStaticMarkup(await RegionZonesPage(novelParams));
+    expect(markup).toContain("STORY.EXE");
     expect(markup).toContain("The network hums with secrets.");
     expect(markup).toContain("Chapter 1: First Contact");
     expect(markup).toContain("0 / 0");
     expect(markup).toContain('max="1"');
   });
 
-  it("shows chapter progress and counts for a Novel chapter with Stages", async () => {
+  it("shows chapter progress, counts and a resume link for a Novel chapter with Stages", async () => {
     mockGetZones.mockResolvedValue([chapter]);
     mockGetStages.mockResolvedValue([
-      makeStage(1, "completed"),
-      makeStage(2, "available"),
+      makeStage(1, "completed", 2),
+      makeStage(2, "available", 2),
     ]);
     const markup = renderToStaticMarkup(await RegionZonesPage(novelParams));
     expect(markup).toContain("1 / 2");
     expect(markup).toContain('max="2"');
+    expect(markup).toContain('href="/map/2/2/2"');
+    expect(markup).toContain("RESUME: First Contact — Stage 2");
   });
 
   it("renders the empty state inside the Novel Chapters section when there are no chapters", async () => {
