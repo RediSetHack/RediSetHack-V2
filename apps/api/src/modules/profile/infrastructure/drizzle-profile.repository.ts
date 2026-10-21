@@ -175,10 +175,11 @@ export class DrizzleProfileRepository implements ProfileRepository {
       this.database
         .select({ userId: users.id, name: users.name, totalXp: users.totalXp })
         .from(users)
+        .where(gt(users.totalXp, 0))
         .orderBy(desc(users.totalXp), asc(users.id))
         .limit(limit)
         .offset(offset),
-      this.database.select({ count: sql<number>`count(*)::int` }).from(users),
+      this.database.select({ count: sql<number>`count(*)::int` }).from(users).where(gt(users.totalXp, 0)),
     ]);
     return { rows, total: countRows[0]?.count ?? 0 };
   }
