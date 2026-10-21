@@ -180,11 +180,13 @@ export function ConfirmDialog({
 /* ── Error alert with retry (pattern for data pages) ────────── */
 
 export function ErrorAlert({
+  title,
   message,
   detail,
   onRetry,
   retryLabel = "Try again",
 }: Readonly<{
+  title?: string;
   message: string;
   detail?: string | null;
   onRetry?: () => void;
@@ -196,18 +198,25 @@ export function ErrorAlert({
       role="alert"
       className="flex flex-col items-start gap-3 border-2 border-border bg-window-body p-4 shadow-[4px_4px_0_var(--border)]"
     >
-      <p className="flex items-center gap-2 font-pixel-lg text-lg leading-snug text-foreground">
-        <AlertTriangle
-          aria-hidden="true"
-          className="size-5 shrink-0 text-btn-danger"
-        />
-        {message}
-      </p>
-      {detail && (
-        <p className="font-body text-xs font-bold text-muted-foreground">
-          {detail}
+      <div className="flex flex-col gap-1">
+        {title && (
+          <p className="font-pixel text-[9px] leading-relaxed text-foreground">
+            {title}
+          </p>
+        )}
+        <p className="flex items-center gap-2 font-pixel-lg text-lg leading-snug text-foreground">
+          <AlertTriangle
+            aria-hidden="true"
+            className="size-5 shrink-0 text-btn-danger"
+          />
+          {message}
         </p>
-      )}
+        {detail && (
+          <p className="font-body text-xs font-bold text-muted-foreground">
+            {detail}
+          </p>
+        )}
+      </div>
       <Y2kButton
         variant="primary"
         onClick={() => (onRetry ?? (() => router.refresh()))()}
