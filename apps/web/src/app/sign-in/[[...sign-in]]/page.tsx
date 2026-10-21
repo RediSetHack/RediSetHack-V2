@@ -1,7 +1,8 @@
 import { SignIn } from "@clerk/nextjs";
 import Link from "next/link";
 import { MinimalHeader } from "@/components/app-shell";
-import { Decorations } from "@/components/y2k";
+import { Decorations, Window } from "@/components/y2k";
+import { clerkY2kAppearance } from "@/lib/clerk-appearance";
 
 interface SignInPageProps {
   readonly searchParams?: Promise<{ error?: string }>;
@@ -16,23 +17,23 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
       <Decorations />
       <MinimalHeader />
       <main className="relative z-10 flex flex-1 items-center justify-center p-4">
-        <div className="w-full max-w-md space-y-4">
+        <Window title="SIGN_IN.EXE" className="w-full max-w-md">
           {isNoAccount && (
             <div
               role="alert"
-              className="border-2 border-btn-danger bg-window-body p-4 text-btn-danger shadow-[3px_3px_0_var(--border)] font-body text-sm font-bold flex flex-col gap-2"
+              className="mb-4 flex flex-col gap-2 border-2 border-btn-danger bg-window-body p-3 font-body text-sm font-bold text-btn-danger shadow-[2px_2px_0_var(--border)]"
             >
               <p>No account associated with this email, please sign up.</p>
               <Link
                 href="/sign-up"
-                className="underline font-bold hover:text-foreground text-xs"
+                className="text-xs font-bold underline hover:text-foreground"
               >
                 Go to Sign Up →
               </Link>
             </div>
           )}
-          <SignIn />
-        </div>
+          <SignIn appearance={clerkY2kAppearance} />
+        </Window>
       </main>
     </div>
   );
