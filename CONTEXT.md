@@ -69,6 +69,10 @@ _Avoid_: Score when referring to progression rewards.
 The per-user, per-Quest marker that XP has already been granted for passing, which makes retakes reward-free.
 _Avoid_: Reward, score.
 
+**Leaderboard rank**:
+A learner's position on the XP leaderboard: 1 plus the learners ahead by XP, ties broken by user id. Learners with no XP are unranked. Not the same as **Level** / **Adventurer Rank**; see ADR 0011.
+_Avoid_: Adventurer Rank when referring to leaderboard position.
+
 **Level**:
 A user's progression rank determined by accumulated XP.
 _Avoid_: Stage when referring to a user's rank.

@@ -77,15 +77,3 @@ export function isCurrentUser(
 ): boolean {
   return currentUserId !== null && entry.userId === currentUserId;
 }
-
-/**
- * The signed-in learner's own row on the loaded page, or null when they are
- * not on it (they sit on another page of the leaderboard).
- */
-export function findCurrentUserEntry(
-  entries: readonly LeaderboardEntry[],
-  currentUserId: string | null,
-): LeaderboardEntry | null {
-  if (currentUserId === null) return null;
-  return entries.find((entry) => entry.userId === currentUserId) ?? null;
-}

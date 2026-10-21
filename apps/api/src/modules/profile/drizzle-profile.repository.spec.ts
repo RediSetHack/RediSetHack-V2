@@ -12,8 +12,8 @@ describe("DrizzleProfileRepository", () => {
     const offsetMock = vi.fn().mockResolvedValue(rows);
     const limitMock = vi.fn().mockReturnValue({ offset: offsetMock });
     const orderByMock = vi.fn().mockReturnValue({ limit: limitMock });
-    const rowsFromMock = vi.fn().mockReturnValue({ orderBy: orderByMock });
-    const countFromMock = vi.fn().mockResolvedValue([{ count: 5 }]);
+    const rowsFromMock = vi.fn().mockReturnValue({ where: vi.fn().mockReturnValue({ orderBy: orderByMock }) });
+    const countFromMock = vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([{ count: 5 }]) });
     const selectMock = vi
       .fn()
       .mockReturnValueOnce({ from: rowsFromMock })
@@ -27,6 +27,31 @@ describe("DrizzleProfileRepository", () => {
     expect(limitMock).toHaveBeenCalledWith(10);
     expect(offsetMock).toHaveBeenCalledWith(10); // page 2, limit 10 -> skip first 10
     expect(result).toEqual({ rows, total: 5 });
+  });
+
+  it("ranks a learner by XP, breaking ties by id", async () => {
+    const whereMock = vi
+      .fn()
+      .mockResolvedValueOnce([{ totalXp: 400 }])
+      .mockResolvedValueOnce([{ count: 41 }]);
+    const mockDb = {
+      select: vi.fn().mockReturnValue({ from: vi.fn().mockReturnValue({ where: whereMock }) }),
+    } as unknown as Database;
+
+    const standing = await new DrizzleProfileRepository(mockDb).findLeaderboardStanding("user_2");
+
+    expect(standing).toEqual({ rank: 42, totalXp: 400 });
+  });
+
+  it("leaves zero-XP and unknown learners unranked", async () => {
+    const whereMock = vi.fn().mockResolvedValueOnce([{ totalXp: 0 }]).mockResolvedValueOnce([]);
+    const mockDb = {
+      select: vi.fn().mockReturnValue({ from: vi.fn().mockReturnValue({ where: whereMock }) }),
+    } as unknown as Database;
+    const repo = new DrizzleProfileRepository(mockDb);
+
+    expect(await repo.findLeaderboardStanding("user_0")).toBeNull();
+    expect(await repo.findLeaderboardStanding("ghost")).toBeNull();
   });
 
   it("aggregates repeated badge awards into a count and latest award date", async () => {

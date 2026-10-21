@@ -1,0 +1,1 @@
+CREATE INDEX "users_total_xp_id_index" ON "users" USING btree ("total_xp" DESC NULLS FIRST,"id");

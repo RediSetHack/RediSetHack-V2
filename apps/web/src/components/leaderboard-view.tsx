@@ -18,7 +18,6 @@ import { FeedbackState } from "@/components/y2k-dialog";
 import { formatXp } from "@/lib/format";
 import {
   displayName,
-  findCurrentUserEntry,
   isCurrentUser,
   podiumEntries,
   podiumLayout,
@@ -119,9 +118,8 @@ export function LeaderboardView({
     );
   }
 
-  const { entries, page, limit, total } = leaderboard;
+  const { entries, page, limit, total, me } = leaderboard;
   const podium = podiumEntries(entries, page);
-  const currentEntry = findCurrentUserEntry(entries, currentUserId);
   const totalPages = getPageInfo(page, limit, total).totalPages;
   const hrefFor = (target: number) => `?page=${target}`;
 
@@ -168,11 +166,11 @@ export function LeaderboardView({
         </div>
       </Window>
 
-      {currentEntry && (
+      {me && (
         <div className="sticky bottom-4 z-20 ml-auto w-full sm:max-w-xs">
           <Window title="YOUR RANK" bodyClassName="px-3 py-2">
             <p className="font-pixel-lg text-lg leading-none text-foreground">
-              YOUR RANK #{currentEntry.rank} · {formatXp(currentEntry.totalXp)}
+              YOUR RANK #{me.rank} · {formatXp(me.totalXp)}
             </p>
           </Window>
         </div>

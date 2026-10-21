@@ -4,6 +4,8 @@ import { LeaderboardResponseSchema } from "@repo/contracts";
 
 import { GetLeaderboardUseCase } from "../../application/get-leaderboard.use-case.js";
 import { ClerkAuthGuard } from "../../../auth/presentation/guards/clerk-auth.guard.js";
+import { CurrentUser } from "../../../auth/presentation/decorators/current-user.decorator.js";
+import type { ClerkAuthenticatedUser } from "../../../auth/domain/ports/clerk-auth.port.js";
 import { LeaderboardQueryDto } from "../dto/leaderboard-query.dto.js";
 import { LeaderboardPresenter } from "../presenters/leaderboard.presenter.js";
 import { ApiZodResponse } from "../../../../swagger/api-zod-response.decorator.js";
@@ -18,8 +20,8 @@ export class GetLeaderboardController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get a page of the XP Leaderboard.' })
   @ApiZodResponse(LeaderboardResponseSchema)
-  async handle(@Query() query: LeaderboardQueryDto) {
-    const page = await this.getLeaderboard.execute(query.page, query.limit);
+  async handle(@CurrentUser() user: ClerkAuthenticatedUser, @Query() query: LeaderboardQueryDto) {
+    const page = await this.getLeaderboard.execute(user.id, query.page, query.limit);
     return LeaderboardPresenter.toResponse(page);
   }
 }
