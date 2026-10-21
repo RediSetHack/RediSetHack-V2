@@ -1,9 +1,11 @@
-import { SkeletonWindow } from "@/components/y2k";
+import { FeedbackState } from "@/components/y2k-dialog";
 
 export default function Loading() {
   return (
     <div className="mx-auto w-full max-w-4xl p-6">
-      <SkeletonWindow title="MAP.EXE" label="Loading Stages" />
+      <FeedbackState loading loadingTitle="MAP.EXE" loadingLabel="Loading Stages">
+        {null}
+      </FeedbackState>
     </div>
   );
 }

@@ -4,8 +4,8 @@ import { notFound } from "next/navigation";
 import { findNovelResume } from "@/lib/novel-resume";
 import { countCompleted } from "@/lib/map-progress";
 import { getRegions, getStages, getZones, type Stage } from "@/lib/api-client";
-import { Breadcrumb, EmptyState, Progress, StatusChip, Window, Y2kButton } from "@/components/y2k";
-import { ErrorAlert } from "@/components/y2k-dialog";
+import { Breadcrumb, Progress, StatusChip, Window, Y2kButton } from "@/components/y2k";
+import { FeedbackState } from "@/components/y2k-dialog";
 
 async function loadChapterStages(
   zones: Awaited<ReturnType<typeof getZones>>,
@@ -47,7 +47,9 @@ export default async function RegionZonesPage({
     return (
       <div className="mx-auto w-full max-w-4xl p-6">
         <Window title={<Breadcrumb items={[{ label: "MAP", href: "/map" }, { label: "Region" }]} />}>
-          <ErrorAlert message="Catalog could not be loaded. Please try again." />
+          <FeedbackState error errorMessage="Catalog could not be loaded. Please try again.">
+            {null}
+          </FeedbackState>
         </Window>
       </div>
     );
@@ -60,17 +62,14 @@ export default async function RegionZonesPage({
   );
 
   if (!region.storyIntro) {
-    if (chapterStages.length === 0)
-      return (
-        <div className="mx-auto w-full max-w-4xl p-6">
-          <Window title={breadcrumb}>
-            <EmptyState title="No Zones in this Region." />
-          </Window>
-        </div>
-      );
     return (
       <div className="mx-auto w-full max-w-4xl p-6">
-        <Window title={breadcrumb}>
+        <FeedbackState
+          empty={chapterStages.length === 0}
+          emptyTitle={breadcrumb}
+          emptyMessage="No Zones in this Region."
+        >
+          <Window title={breadcrumb}>
           <header className="mb-4">
             <h1 className="font-pixel text-[18px] leading-relaxed text-foreground">
               {region.name}
@@ -104,7 +103,7 @@ export default async function RegionZonesPage({
                       </p>
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex-1">
-                          <Progress value={done} max={total} label="Zone progress" />
+                          <Progress value={done} max={Math.max(total, 1)} label="Zone progress" />
                         </div>
                         <Link href={`/map/${regionIdNumber}/${zone.id}`}>
                           <Y2kButton>ENTER</Y2kButton>
@@ -121,7 +120,8 @@ export default async function RegionZonesPage({
               <Y2kButton variant="ghost">BACK TO MAP</Y2kButton>
             </Link>
           </div>
-        </Window>
+          </Window>
+        </FeedbackState>
       </div>
     );
   }
@@ -151,7 +151,9 @@ export default async function RegionZonesPage({
             Chapters
           </h2>
           {chapterStages.length === 0 ? (
-            <EmptyState title="No Zones in this Region." />
+            <FeedbackState empty emptyTitle="Chapters" emptyMessage="No Zones in this Region.">
+              {null}
+            </FeedbackState>
           ) : (
             <ol className="flex flex-col gap-3">
               {chapterStages.map(({ zone, stages }) => {
@@ -180,14 +182,12 @@ export default async function RegionZonesPage({
                             {zone.description}
                           </p>
                         )}
-                        {total > 0 && (
-                          <div className="flex items-center gap-2">
-                            <Progress value={completed} max={total} label="Chapter progress" className="flex-1" />
-                            <span className="font-pixel text-[8px] leading-relaxed">
-                              {completed} / {total}
-                            </span>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2">
+                          <Progress value={completed} max={Math.max(total, 1)} label="Chapter progress" className="flex-1" />
+                          <span className="font-pixel text-[8px] leading-relaxed">
+                            {completed} / {total}
+                          </span>
+                        </div>
                         <Link href={`/map/${regionIdNumber}/${zone.id}`}>
                           <Y2kButton>OPEN CHAPTER</Y2kButton>
                         </Link>

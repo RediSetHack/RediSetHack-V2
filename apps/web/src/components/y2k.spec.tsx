@@ -281,7 +281,7 @@ describe("StageNode", () => {
     expect(markup).not.toContain("<a ");
     expect(markup).not.toContain("<button");
     expect(markup).not.toContain("href=");
-    expect(markup).toContain("Locked — finish the previous Stage first.");
+    expect(markup).toMatch(/<span[^>]*>Locked — finish the previous Stage first\.<\/span>/);
   });
 
   it("renders unlocked state as a link with Unlocked chip", () => {

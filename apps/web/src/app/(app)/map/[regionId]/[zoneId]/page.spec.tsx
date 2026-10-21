@@ -114,7 +114,7 @@ describe("zone stages page", () => {
     expect(markup).toContain('href="/map/1/1/1"');
     expect(markup).toContain('href="/map/1/1/2"');
     expect(markup).not.toContain('href="/map/1/1/3"');
-    expect(markup).toContain("Locked — finish the previous Stage first.");
+    expect(markup).toMatch(/<span[^>]*>Locked — finish the previous Stage first\.<\/span>/);
   });
 
   it("renders clickable MAP and Region breadcrumb segments", async () => {
@@ -130,5 +130,19 @@ describe("zone stages page", () => {
     const markup = renderToStaticMarkup(await ZoneStagesPage(params));
     expect(markup).toContain("Stages could not be loaded. Please try again.");
     expect(markup).toContain("Try again");
+  });
+
+  it("keeps the Region breadcrumb link when Stages fail to load", async () => {
+    mockGetStages.mockRejectedValue(new Error("boom"));
+    const markup = renderToStaticMarkup(await ZoneStagesPage(params));
+    expect(markup).toContain('href="/map"');
+    expect(markup).toContain('href="/map/1"');
+  });
+
+  it("keeps the Region breadcrumb link when the Zone has no Stages", async () => {
+    mockGetStages.mockResolvedValue([]);
+    const markup = renderToStaticMarkup(await ZoneStagesPage(params));
+    expect(markup).toContain('href="/map/1"');
+    expect(markup).toContain("This Zone has no Stages yet.");
   });
 });

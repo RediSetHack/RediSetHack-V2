@@ -2,8 +2,8 @@ import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { getRegions, getStages, getZones, type Region } from "@/lib/api-client";
 import { completionSummary } from "@/lib/map-progress";
-import { AvatarOrInitial, EmptyState, Progress, Window, Y2kButton } from "@/components/y2k";
-import { ErrorAlert } from "@/components/y2k-dialog";
+import { AvatarOrInitial, Progress, Window, Y2kButton } from "@/components/y2k";
+import { FeedbackState } from "@/components/y2k-dialog";
 
 type RegionCard = {
   region: Region;
@@ -42,18 +42,18 @@ export default async function MapPage() {
   if (loadError)
     return (
       <div className="mx-auto w-full max-w-4xl p-6">
-        <Window title="MAP.EXE">
-          <ErrorAlert message="Regions could not be loaded. Please try again." />
-        </Window>
+        <FeedbackState error errorMessage="Regions could not be loaded. Please try again.">
+          {null}
+        </FeedbackState>
       </div>
     );
 
   if (cards.length === 0)
     return (
       <div className="mx-auto w-full max-w-4xl p-6">
-        <Window title="MAP.EXE">
-          <EmptyState title="No Regions yet." />
-        </Window>
+        <FeedbackState empty emptyTitle="MAP.EXE" emptyMessage="No Regions yet.">
+          {null}
+        </FeedbackState>
       </div>
     );
 
@@ -89,7 +89,7 @@ export default async function MapPage() {
                       </p>
                     </div>
                   </div>
-                  <Progress value={completed} max={total} label={`${region.name} progress`} className="mt-auto" />
+                  <Progress value={completed} max={Math.max(total, 1)} label={`${region.name} progress`} className="mt-auto" />
                   <div>
                     <Link href={`/map/${region.id}`} className="w-full">
                       <Y2kButton className="w-full">ENTER</Y2kButton>

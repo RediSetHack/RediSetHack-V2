@@ -3,8 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getRegions, getStages, getZones, type Stage } from "@/lib/api-client";
 import { isZoneCleared } from "@/lib/map-progress";
-import { Breadcrumb, EmptyState, Sparkle, StageNode, Window, Y2kButton } from "@/components/y2k";
-import { ErrorAlert } from "@/components/y2k-dialog";
+import { Breadcrumb, Sparkle, StageNode, Window, Y2kButton } from "@/components/y2k";
+import { FeedbackState } from "@/components/y2k-dialog";
 
 export default async function ZoneStagesPage({
   params,
@@ -41,32 +41,38 @@ export default async function ZoneStagesPage({
     loadError = true;
   }
 
-  if (loadError)
-    return (
-      <div className="mx-auto w-full max-w-4xl p-6">
-        <Window title={<Breadcrumb items={[{ label: "MAP", href: "/map" }, { label: regionName || "Region" }, { label: zoneName || "Zone" }]} />}>
-          <ErrorAlert message="Stages could not be loaded. Please try again." />
-        </Window>
-      </div>
-    );
-
   const breadcrumbItems = [
     { label: "MAP", href: "/map" },
     { label: regionName || "Region", href: `/map/${regionIdNumber}` },
     { label: zoneName || "Zone" },
   ];
 
-  if (stages.length === 0) {
+  if (loadError)
     return (
       <div className="mx-auto w-full max-w-4xl p-6">
         <Window title={<Breadcrumb items={breadcrumbItems} />}>
-          <EmptyState title="This Zone has no Stages yet." />
-          <div className="mt-4">
+          <FeedbackState error errorMessage="Stages could not be loaded. Please try again.">
+            {null}
+          </FeedbackState>
+        </Window>
+      </div>
+    );
+
+  if (stages.length === 0) {
+    return (
+      <div className="mx-auto w-full max-w-4xl p-6">
+        <FeedbackState
+          empty
+          emptyTitle={<Breadcrumb items={breadcrumbItems} />}
+          emptyMessage="This Zone has no Stages yet."
+          emptyAction={
             <Link href={`/map/${regionIdNumber}`}>
               <Y2kButton variant="ghost">BACK TO ZONE LIST</Y2kButton>
             </Link>
-          </div>
-        </Window>
+          }
+        >
+          {null}
+        </FeedbackState>
       </div>
     );
   }
