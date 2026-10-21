@@ -14,10 +14,15 @@ import {
 import {
   accumulateAnswer,
   clockSkewMs,
+  countdownAnnouncement,
   formatCountdown,
   isCountdownDanger,
   isExpired,
+  questResultSummary,
   secondsRemaining,
+  shouldAutoSubmit,
+  submitErrorDetail,
+  SUBMIT_ERROR_MESSAGE,
   toSubmission,
   unansweredSubmitMessage,
   type AnswerMap,
@@ -34,15 +39,29 @@ import { ConfirmDialog, ErrorAlert, Y2kAlert } from "@/components/y2k-dialog";
 const OPTION_LABELS = ["A", "B", "C", "D", "E", "F"];
 
 function CountdownAnnouncement({
-  seconds,
-}: Readonly<{ seconds: number | null }>) {
+  announcement,
+}: Readonly<{ announcement: string | null }>) {
   // Visually hidden and updated only at coarse checkpoints (see the tick
   // handler below) so the countdown doesn't spam a screen reader every
   // second — "announced non-intrusively" per the acceptance criteria.
   return (
     <div aria-live="polite" className="sr-only">
-      {seconds !== null ? `${seconds} seconds remaining` : null}
+      {announcement}
     </div>
+  );
+}
+
+export function SubmissionError({
+  detail,
+  onRetry,
+}: Readonly<{ detail?: string | null; onRetry: () => void }>) {
+  return (
+    <ErrorAlert
+      message={SUBMIT_ERROR_MESSAGE}
+      detail={submitErrorDetail(detail)}
+      onRetry={onRetry}
+      retryLabel="RETRY"
+    />
   );
 }
 
@@ -51,21 +70,21 @@ export function SubmissionResult({
   questId,
   title,
 }: Readonly<{ result: QuestSubmitResult; questId: number; title: string }>) {
+  const summary = questResultSummary(result);
   return (
     <div className="space-y-4" aria-live="polite">
       <Window title={`${title} — RESULT`}>
         <h1 className="font-pixel text-lg leading-relaxed text-foreground">
-          {result.outcome === "expired"
-            ? "TIME EXPIRED"
-            : result.passed
-              ? "QUEST PASSED!"
-              : "QUEST NOT PASSED"}
+          {summary.headline}
         </h1>
         <p className="mt-3 font-pixel-lg text-xl text-foreground">
-          {result.outcome === "expired"
-            ? "The deadline passed before your answers were submitted, so no credit was given."
-            : `Score: ${result.score}%`}
+          {summary.score}
         </p>
+        {summary.note && (
+          <p className="mt-2 font-body text-xs font-bold text-muted-foreground">
+            {summary.note}
+          </p>
+        )}
       </Window>
 
       <Window title="XP">
@@ -146,7 +165,7 @@ export function QuestSessionRunner({
   const [remaining, setRemaining] = useState(() =>
     secondsRemaining(session.expiresAt, Date.now(), skewMs),
   );
-  const [announcedSeconds, setAnnouncedSeconds] = useState<number | null>(null);
+  const [announcement, setAnnouncement] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [result, setResult] = useState<QuestSubmitResult | null>(null);
@@ -191,10 +210,11 @@ export function QuestSessionRunner({
     } catch (err) {
       // Allow a retry without losing anything already answered.
       submittedRef.current = false;
+      // The "submitting…" dialog must not sit on top of the retry path once
+      // the automatic submission has failed.
+      setTimesUpOpen(false);
       setSubmitError(
-        err instanceof Error
-          ? err.message
-          : "Failed to submit. Your answers are still here — try again.",
+        err instanceof Error ? err.message : SUBMIT_ERROR_MESSAGE,
       );
     } finally {
       setIsSubmitting(false);
@@ -207,12 +227,15 @@ export function QuestSessionRunner({
     const tick = () => {
       const secs = secondsRemaining(session.expiresAt, Date.now(), skewMs);
       setRemaining(secs);
-      if (secs === 60 || secs === 30 || (secs <= 10 && secs > 0)) {
-        setAnnouncedSeconds(secs);
+      const announcementText = countdownAnnouncement(secs);
+      if (announcementText) {
+        setAnnouncement(announcementText);
       }
       if (
-        isExpired(session.expiresAt, Date.now(), skewMs) &&
-        !autoSubmitTriggeredRef.current
+        shouldAutoSubmit(
+          isExpired(session.expiresAt, Date.now(), skewMs),
+          autoSubmitTriggeredRef.current,
+        )
       ) {
         autoSubmitTriggeredRef.current = true;
         setTimesUpOpen(true);
@@ -251,7 +274,7 @@ export function QuestSessionRunner({
 
   return (
     <div className="space-y-4">
-      <CountdownAnnouncement seconds={announcedSeconds} />
+      <CountdownAnnouncement announcement={announcement} />
 
       <Window title={session.title}>
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -269,7 +292,10 @@ export function QuestSessionRunner({
             Time remaining: {formatCountdown(remaining)}
           </p>
         </div>
-        <div className="mt-3">
+        <p className="mt-3 font-body text-[11px] font-bold tracking-wide text-muted-foreground uppercase">
+          Quest progress — pick a number to jump
+        </p>
+        <div className="mt-1">
           <SegmentedTracker
             total={total}
             current={index}
@@ -336,11 +362,7 @@ export function QuestSessionRunner({
       )}
 
       {submitError && (
-        <ErrorAlert
-          message="Failed to submit. Your answers are still here — try again."
-          onRetry={doSubmit}
-          retryLabel="RETRY"
-        />
+        <SubmissionError detail={submitError} onRetry={doSubmit} />
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">

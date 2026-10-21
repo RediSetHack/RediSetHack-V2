@@ -2,10 +2,15 @@ import { describe, expect, it } from "vitest";
 import {
   accumulateAnswer,
   clockSkewMs,
+  countdownAnnouncement,
   formatCountdown,
   isCountdownDanger,
   isExpired,
+  questResultSummary,
   secondsRemaining,
+  shouldAutoSubmit,
+  submitErrorDetail,
+  SUBMIT_ERROR_MESSAGE,
   toSubmission,
   unansweredSubmitMessage,
 } from "./quest-session.js";
@@ -90,26 +95,117 @@ describe("secondsRemaining", () => {
   });
 });
 
+describe("quest session submission copy", () => {
+  it("uses the danger state at ten seconds and below", () => {
+    expect(isCountdownDanger(11)).toBe(false);
+    expect(isCountdownDanger(10)).toBe(true);
+    expect(isCountdownDanger(0)).toBe(true);
+  });
+
+  it("includes the unanswered count with correct singular grammar", () => {
+    expect(unansweredSubmitMessage(1)).toBe(
+      "You have 1 unanswered question. Submit anyway?",
+    );
+    expect(unansweredSubmitMessage(3)).toBe(
+      "You have 3 unanswered questions. Submit anyway?",
+    );
+  });
+});
+
+describe("countdownAnnouncement", () => {
+  it("stays quiet between checkpoints so a screen reader is not read every second", () => {
+    expect(countdownAnnouncement(59)).toBeNull();
+    expect(countdownAnnouncement(45)).toBeNull();
+    expect(countdownAnnouncement(31)).toBeNull();
+  });
+
+  it("announces the minute and half-minute checkpoints", () => {
+    expect(countdownAnnouncement(60)).toBe("60 seconds remaining");
+    expect(countdownAnnouncement(30)).toBe("30 seconds remaining");
+  });
+
+  it("announces the danger window one second at a time", () => {
+    expect(countdownAnnouncement(10)).toBe(
+      "10 seconds remaining. Time is running out",
+    );
+    expect(countdownAnnouncement(1)).toBe(
+      "1 second remaining. Time is running out",
+    );
+  });
+
+  it("stops announcing once the deadline has passed", () => {
+    expect(countdownAnnouncement(0)).toBeNull();
+  });
+});
+
+describe("shouldAutoSubmit", () => {
+  it("fires once when the deadline has passed", () => {
+    expect(shouldAutoSubmit(true, false)).toBe(true);
+  });
+
+  it("does not fire again after the automatic submission was triggered", () => {
+    expect(shouldAutoSubmit(true, true)).toBe(false);
+  });
+
+  it("does not fire before the deadline", () => {
+    expect(shouldAutoSubmit(false, false)).toBe(false);
+  });
+});
+
+describe("submitErrorDetail", () => {
+  it("keeps the server detail when it adds something", () => {
+    expect(submitErrorDetail("Quest session not found")).toBe(
+      "Quest session not found",
+    );
+  });
+
+  it("drops a blank detail", () => {
+    expect(submitErrorDetail("   ")).toBeNull();
+    expect(submitErrorDetail(undefined)).toBeNull();
+    expect(submitErrorDetail(null)).toBeNull();
+  });
+
+  it("drops a detail that repeats the fixed copy", () => {
+    expect(submitErrorDetail(SUBMIT_ERROR_MESSAGE)).toBeNull();
+  });
+});
+
+describe("questResultSummary", () => {
+  it("announces a passed Quest with its score", () => {
+    expect(
+      questResultSummary({ passed: true, score: 80, outcome: "submitted" }),
+    ).toEqual({
+      headline: "QUEST PASSED!",
+      score: "Score: 80%",
+      note: null,
+    });
+  });
+
+  it("announces a failed Quest with its score", () => {
+    expect(
+      questResultSummary({ passed: false, score: 40, outcome: "submitted" }),
+    ).toEqual({
+      headline: "QUEST NOT PASSED",
+      score: "Score: 40%",
+      note: null,
+    });
+  });
+
+  it("keeps the expired Quest a failure and explains why", () => {
+    const summary = questResultSummary({
+      passed: false,
+      score: 0,
+      outcome: "expired",
+    });
+    expect(summary.headline).toBe("QUEST NOT PASSED");
+    expect(summary.score).toBe("Score: 0%");
+    expect(summary.note).toContain("TIME EXPIRED");
+  });
+});
+
 describe("formatCountdown", () => {
   it("formats minutes and seconds with a zero-padded seconds field", () => {
     expect(formatCountdown(65)).toBe("1:05");
-  });
-
-  describe("quest session submission copy", () => {
-    it("uses the danger state at ten seconds and below", () => {
-      expect(isCountdownDanger(11)).toBe(false);
-      expect(isCountdownDanger(10)).toBe(true);
-      expect(isCountdownDanger(0)).toBe(true);
-    });
-
-    it("includes the unanswered count with correct singular grammar", () => {
-      expect(unansweredSubmitMessage(1)).toBe(
-        "You have 1 unanswered question. Submit anyway?",
-      );
-      expect(unansweredSubmitMessage(3)).toBe(
-        "You have 3 unanswered questions. Submit anyway?",
-      );
-    });
   });
 
   it("formats zero as 0:00", () => {

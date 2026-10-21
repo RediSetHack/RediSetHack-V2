@@ -14,7 +14,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { QuestSessionRunner } from "./quest-session-runner";
-import { SubmissionResult } from "./quest-session-runner";
+import { SubmissionError, SubmissionResult } from "./quest-session-runner";
 
 describe("QuestSessionRunner", () => {
   it("does not render a stray zero for an untagged question", () => {
@@ -130,10 +130,92 @@ describe("QuestSessionRunner", () => {
     );
 
     expect(passed).toContain("QUEST PASSED!");
+    expect(passed).toContain("Score: 80%");
     expect(passed).toContain("Quest Master ×2");
     expect(passed).toContain("REVIEW YOUR ANSWERS");
+    expect(passed).toContain("RETAKE QUEST");
+    expect(passed).toContain("BACK TO QUESTS");
     expect(failed).toContain("QUEST NOT PASSED");
+    expect(failed).toContain("Score: 40%");
     expect(failed).toContain("No XP awarded");
     expect(failed).toContain("BADGES EARNED");
+    expect(failed).toContain("No badges earned.");
+  });
+
+  it("renders an expired result as a failure that still shows the score", () => {
+    const markup = renderToStaticMarkup(
+      <SubmissionResult
+        questId={1}
+        title="Loop quiz"
+        result={{
+          resultId: 9,
+          score: 0,
+          passed: false,
+          outcome: "expired",
+          xpAwarded: 0,
+          badgesEarned: [],
+        }}
+      />,
+    );
+
+    expect(markup).toContain("QUEST NOT PASSED");
+    expect(markup).toContain("Score: 0%");
+    expect(markup).toContain("TIME EXPIRED");
+    expect(markup).toContain("REVIEW YOUR ANSWERS");
+  });
+
+  it("keeps the answers and offers a retry when a submission fails", () => {
+    const markup = renderToStaticMarkup(
+      <SubmissionError detail="Network request failed" onRetry={() => {}} />,
+    );
+
+    expect(markup).toContain(
+      "Failed to submit. Your answers are still here — try again.",
+    );
+    expect(markup).toContain("RETRY");
+    expect(markup).toContain("Network request failed");
+    expect(markup).toContain('role="alert"');
+  });
+
+  it("renders the header bar with the question counter and a jump target per question", () => {
+    const now = Date.now();
+    const markup = renderToStaticMarkup(
+      <QuestSessionRunner
+        questId={1}
+        apiUrl="http://localhost:3001"
+        session={{
+          id: 2,
+          questId: 1,
+          title: "Loop quiz",
+          description: null,
+          timeLimitSeconds: 60,
+          serverTime: new Date(now).toISOString(),
+          expiresAt: new Date(now + 60_000).toISOString(),
+          questions: [
+            {
+              id: 3,
+              prompt: "What repeats code?",
+              competencies: [],
+              difficulty: null,
+              options: [{ id: 4, text: "A loop" }],
+            },
+            {
+              id: 5,
+              prompt: "What ends a loop?",
+              competencies: [],
+              difficulty: null,
+              options: [{ id: 6, text: "A condition" }],
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(markup).toContain("Question 1 of 2 · 0 answered");
+    expect(markup).toContain("Time remaining:");
+    expect(markup).toContain('aria-label="Question tracker"');
+    expect(markup).toContain('aria-label="Question 1: current"');
+    expect(markup).toContain('aria-label="Question 2: unanswered"');
+    expect(markup).toContain('aria-current="step"');
   });
 });

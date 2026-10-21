@@ -66,9 +66,83 @@ export function isCountdownDanger(totalSeconds: number): boolean {
   return totalSeconds <= 10;
 }
 
+/**
+ * The polite screen-reader announcement for a countdown tick, or `null` when
+ * the tick is not worth announcing. Announcements stay rare so a screen
+ * reader is not read a bare number every second; the last ten seconds are
+ * announced one by one and say that time is running out, because that is the
+ * window the countdown turns red in.
+ */
+export function countdownAnnouncement(totalSeconds: number): string | null {
+  if (totalSeconds <= 0) return null;
+  const remaining =
+    totalSeconds === 1 ? "1 second remaining" : `${totalSeconds} seconds remaining`;
+  if (totalSeconds === 60 || totalSeconds === 30) {
+    return remaining;
+  }
+  if (totalSeconds <= 10) {
+    return `${remaining}. Time is running out`;
+  }
+  return null;
+}
+
+/**
+ * True when the deadline has passed and the automatic submission has not been
+ * attempted yet. Expiry triggers exactly one automatic submission; a failed
+ * attempt is retried from the visible RETRY button rather than resubmitting on
+ * every tick.
+ */
+export function shouldAutoSubmit(
+  expired: boolean,
+  alreadyTriggered: boolean,
+): boolean {
+  return expired && !alreadyTriggered;
+}
+
+/** The alert copy for a failed submission — the learner's answers are kept. */
+export const SUBMIT_ERROR_MESSAGE =
+  "Failed to submit. Your answers are still here — try again.";
+
+/**
+ * Extra detail for a failed submission, or `null` when the server said nothing
+ * the fixed copy does not already say.
+ */
+export function submitErrorDetail(detail?: string | null): string | null {
+  const trimmed = detail?.trim();
+  if (!trimmed || trimmed === SUBMIT_ERROR_MESSAGE) return null;
+  return trimmed;
+}
+
 /** Copy for the confirmation shown when a learner submits an incomplete Quest. */
 export function unansweredSubmitMessage(unansweredCount: number): string {
   return `You have ${unansweredCount} unanswered ${
     unansweredCount === 1 ? "question" : "questions"
   }. Submit anyway?`;
+}
+
+/** The headline, score line and expiry note of a submitted Quest Result. */
+export interface QuestResultSummary {
+  headline: string;
+  score: string;
+  note: string | null;
+}
+
+/**
+ * The Result window copy for a submission. A Quest that expired is still a
+ * Quest that was not passed — the expiry is an extra note, not a third
+ * headline, so the result window always reads pass or not passed.
+ */
+export function questResultSummary(result: {
+  passed: boolean;
+  score: number;
+  outcome: "submitted" | "expired";
+}): QuestResultSummary {
+  return {
+    headline: result.passed ? "QUEST PASSED!" : "QUEST NOT PASSED",
+    score: `Score: ${result.score}%`,
+    note:
+      result.outcome === "expired"
+        ? "TIME EXPIRED — the deadline passed before your answers were submitted, so no credit was given."
+        : null,
+  };
 }

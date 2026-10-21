@@ -181,9 +181,15 @@ export function ConfirmDialog({
 
 export function ErrorAlert({
   message,
+  detail,
   onRetry,
   retryLabel = "Try again",
-}: Readonly<{ message: string; onRetry?: () => void; retryLabel?: string }>) {
+}: Readonly<{
+  message: string;
+  detail?: string | null;
+  onRetry?: () => void;
+  retryLabel?: string;
+}>) {
   const router = useRouter();
   return (
     <div
@@ -197,6 +203,11 @@ export function ErrorAlert({
         />
         {message}
       </p>
+      {detail && (
+        <p className="font-body text-xs font-bold text-muted-foreground">
+          {detail}
+        </p>
+      )}
       <Y2kButton
         variant="primary"
         onClick={() => (onRetry ?? (() => router.refresh()))()}
