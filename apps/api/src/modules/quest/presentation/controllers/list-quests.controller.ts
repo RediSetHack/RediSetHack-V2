@@ -18,7 +18,8 @@ export class ListQuestsController {
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'List Quests, with each marked completed or not for the User.',
+    summary:
+      'List Quests, with each marked completed or not for the User and carrying their best Result.',
   })
   @ApiZodResponse(QuestListResponseSchema)
   async handle(@CurrentUser() user: ClerkAuthenticatedUser) {

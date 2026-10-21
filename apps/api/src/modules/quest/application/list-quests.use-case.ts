@@ -5,6 +5,7 @@ import {
   StageNotFoundError,
 } from '../../progress/domain/errors.js';
 import { Injectable } from '@nestjs/common';
+import type { QuestBestResult } from '@repo/contracts';
 
 import { Quest } from '../domain/entities/quest.entity.js';
 import { QuestRepository } from '../domain/ports/quest.repository.js';
@@ -12,6 +13,8 @@ import { QuestRepository } from '../domain/ports/quest.repository.js';
 export type QuestWithStatus = {
   quest: Quest;
   completed: boolean;
+  /** The learner's best Result for this Quest, or null when never taken. */
+  bestResult: QuestBestResult | null;
   lockReason: string | null;
 };
 
@@ -23,9 +26,9 @@ export class ListQuestsUseCase {
   ) {}
 
   async execute(userId: string): Promise<QuestWithStatus[]> {
-    const [all, passedIds] = await Promise.all([
+    const [all, bestResults] = await Promise.all([
       this.quests.findAll(),
-      this.quests.findPassedQuestIds(userId),
+      this.quests.findBestResults(userId),
     ]);
     return Promise.all(
       all.map(async (quest) => {
@@ -40,7 +43,13 @@ export class ListQuestsUseCase {
             throw error;
           lockReason = error.message;
         }
-        return { quest, completed: passedIds.has(quest.id), lockReason };
+        const bestResult = bestResults.get(quest.id) ?? null;
+        return {
+          quest,
+          completed: bestResult?.passed ?? false,
+          bestResult,
+          lockReason,
+        };
       }),
     );
   }

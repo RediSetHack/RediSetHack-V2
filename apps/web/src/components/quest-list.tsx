@@ -7,6 +7,14 @@ import { cn } from "@/lib/utils";
 import { formatMmSs } from "@/lib/format";
 import type { Quest } from "@/lib/api-client";
 import {
+  bestResultLabel,
+  filterQuests,
+  QUEST_FILTERS,
+  questOutcome,
+  startQuestConfirmCopy,
+  type QuestFilter,
+} from "@/lib/quest-list";
+import {
   buttonClasses,
   EmptyState,
   StatusChip,
@@ -17,30 +25,55 @@ import {
 } from "@/components/y2k";
 import { ConfirmDialog, ErrorAlert } from "@/components/y2k-dialog";
 
-type Filter = "all" | "not-taken" | "passed";
+/** The filter tabs, controlled by the caller so the active tab is testable. */
+export function QuestFilterTabs({
+  filter,
+  onChange,
+}: Readonly<{ filter: QuestFilter; onChange: (filter: QuestFilter) => void }>) {
+  return (
+    <fieldset className="flex flex-wrap gap-1 border-0 p-0">
+      <legend className="sr-only">Filter quests</legend>
+      {QUEST_FILTERS.map((option) => (
+        <button
+          key={option.id}
+          type="button"
+          aria-pressed={filter === option.id}
+          onClick={() => onChange(option.id)}
+          className={cn(
+            buttonClasses("secondary"),
+            "px-3 py-1.5",
+            filter === option.id && "bg-primary",
+          )}
+        >
+          {option.label}
+        </button>
+      ))}
+    </fieldset>
+  );
+}
 
-const FILTERS: ReadonlyArray<{ id: Filter; label: string }> = [
-  { id: "all", label: "All" },
-  { id: "not-taken", label: "Not taken" },
-  { id: "passed", label: "Passed" },
-];
+/** The start-confirmation copy, split out so it can be asserted on its own. */
+export function StartQuestDialogBody({ quest }: Readonly<{ quest: Quest }>) {
+  return <span>{startQuestConfirmCopy(quest).message}</span>;
+}
 
 function StartQuestDialog({ quest }: Readonly<{ quest: Quest }>) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const copy = startQuestConfirmCopy(quest);
 
   return (
     <>
       <Y2kButton variant="primary" onClick={() => setOpen(true)}>
-        {quest.completed ? "Retake Quest" : "Start"}
+        START
       </Y2kButton>
       <ConfirmDialog
         open={open}
         onOpenChange={setOpen}
-        title={`Start ${quest.title}?`}
-        message={`You have ${formatMmSs(quest.timeLimitSeconds)}. The timer starts immediately and submits automatically at zero.`}
-        confirmLabel="Start Quest"
-        cancelLabel="Cancel"
+        title={copy.title}
+        message={<StartQuestDialogBody quest={quest} />}
+        confirmLabel="START QUEST"
+        cancelLabel="CANCEL"
         onConfirm={() => router.push(`/quests/${quest.id}/session`)}
       />
     </>
@@ -48,8 +81,7 @@ function StartQuestDialog({ quest }: Readonly<{ quest: Quest }>) {
 }
 
 function QuestCard({ quest }: Readonly<{ quest: Quest }>) {
-  const bestStatus = quest.completed ? "passed" : "not-taken";
-  const bestLabel = quest.completed ? "Best Result: Passed" : "Best Result: Not taken";
+  const outcome = questOutcome(quest);
 
   return (
     <li>
@@ -64,19 +96,38 @@ function QuestCard({ quest }: Readonly<{ quest: Quest }>) {
         }
       >
         {quest.description && (
-          <p className="font-body text-sm font-bold text-muted-foreground">{quest.description}</p>
+          <p className="font-body text-sm font-bold text-muted-foreground">
+            {quest.description}
+          </p>
         )}
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1 font-body text-[13px] font-bold text-foreground">
-            <Clock aria-hidden="true" className="size-4" />
-            {formatMmSs(quest.timeLimitSeconds)}
-          </span>
-          <span className="border-2 border-border bg-window-body px-2 py-0.5 font-body text-[11px] font-semibold tracking-wide text-foreground uppercase">
-            Pass {quest.passingScore}%
-          </span>
-          <XPChip xp={quest.xpReward} />
-          <StatusChip status={bestStatus} label={bestLabel} />
-        </div>
+        <dl className="mt-3 flex flex-wrap items-center gap-2">
+          <div className="inline-flex items-center gap-1 font-body text-[13px] font-bold text-foreground">
+            <dt className="sr-only">Time limit</dt>
+            <dd className="inline-flex items-center gap-1">
+              <Clock aria-hidden="true" className="size-4" />
+              {formatMmSs(quest.timeLimitSeconds)}
+            </dd>
+          </div>
+          <div className="border-2 border-border bg-window-body px-2 py-0.5 font-body text-[11px] font-semibold tracking-wide text-foreground uppercase">
+            <dt className="sr-only">Passing score</dt>
+            <dd>Pass {quest.passingScore}%</dd>
+          </div>
+          <div>
+            <dt className="sr-only">XP reward</dt>
+            <dd>
+              <XPChip xp={quest.xpReward} />
+            </dd>
+          </div>
+          <div>
+            <dt className="sr-only">Best Result</dt>
+            <dd>
+              <StatusChip
+                status={outcome}
+                label={bestResultLabel(quest)}
+              />
+            </dd>
+          </div>
+        </dl>
         <div className="mt-4 flex items-center justify-end">
           {quest.lockReason ? (
             <output className="block font-body text-sm font-bold text-muted-foreground">
@@ -98,19 +149,13 @@ export function QuestList({
   quests: Quest[] | null;
   error: boolean;
 }>) {
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useState<QuestFilter>("all");
   const [search, setSearch] = useState("");
 
-  const filtered = useMemo(() => {
-    const list = quests ?? [];
-    const query = search.trim().toLowerCase();
-    return list.filter((quest) => {
-      if (filter === "not-taken" && quest.completed) return false;
-      if (filter === "passed" && !quest.completed) return false;
-      if (query && !quest.title.toLowerCase().includes(query)) return false;
-      return true;
-    });
-  }, [quests, filter, search]);
+  const filtered = useMemo(
+    () => filterQuests(quests ?? [], filter, search),
+    [quests, filter, search],
+  );
 
   if (error || !quests) {
     return (
@@ -132,24 +177,7 @@ export function QuestList({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <fieldset className="flex flex-wrap gap-1 border-0 p-0">
-          <legend className="sr-only">Filter quests</legend>
-          {FILTERS.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              aria-pressed={filter === option.id}
-              onClick={() => setFilter(option.id)}
-              className={cn(
-                buttonClasses("secondary"),
-                "px-3 py-1.5",
-                filter === option.id && "bg-primary",
-              )}
-            >
-              {option.label}
-            </button>
-          ))}
-        </fieldset>
+        <QuestFilterTabs filter={filter} onChange={setFilter} />
         <Y2kInput
           type="search"
           value={search}

@@ -6,9 +6,20 @@ import { CompetencySchema, DifficultySchema } from "../content/competency.schema
 export type { BadgeAward } from "../badges/badge-award.schema.js";
 
 /**
+ * The learner's best Result for a Quest: their highest-scoring attempt and
+ * whether that attempt passed. `null` when the learner never took the Quest.
+ */
+export const QuestBestResultSchema = z.object({
+  score: z.number().int().nonnegative(),
+  passed: z.boolean(),
+});
+export type QuestBestResult = z.infer<typeof QuestBestResultSchema>;
+
+/**
  * A single Quest as listed by `QuestPresenter.toListItem` in `apps/api`.
  * `completed` is computed server-side from the learner's passed Quest
- * attempts; it is never recomputed client-side.
+ * attempts; it is never recomputed client-side. `bestResult` carries the
+ * score behind that status; it is absent in responses from older servers.
  */
 export const QuestSchema = z.object({
   id: z.number().int().positive(),
@@ -20,6 +31,7 @@ export const QuestSchema = z.object({
   xpReward: z.number().int().nonnegative(),
   initialAssessment: z.boolean(),
   completed: z.boolean(),
+  bestResult: QuestBestResultSchema.nullable().optional(),
   lockReason: z.string().nullable(),
 });
 export type Quest = z.infer<typeof QuestSchema>;
