@@ -5,7 +5,7 @@ import { z } from "zod";
  * (`GET /v1/api/leaderboard`). Rank and `totalXp` ordering are computed
  * server-side; the client never re-ranks entries. Order is `totalXp` desc then
  * user id asc, so ties get distinct, stable ranks (1, 2, 3, 4) and the table and
- * `me` always agree.
+ * `me` agree (see ADR 0011).
  */
 export const LeaderboardEntrySchema = z.object({
   rank: z.number().int().positive(),
