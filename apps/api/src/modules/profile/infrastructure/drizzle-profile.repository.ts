@@ -1,6 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, lt, or, sql } from "drizzle-orm";
 import { badgeAwards, badgeDefinitions, characters, users, learningInteractions, initialCompetencyBaselines, ctfSolves, sideQuestCompletions, regions, zones, stages, userProgress, type Database } from "@repo/db";
 import { COMPETENCIES, type LearningDay } from "@repo/contracts";
 
@@ -8,6 +8,7 @@ import { DB } from "../../../database/database.module.js";
 import {
   ProfileRepository,
   type LeaderboardRow,
+  type LeaderboardStanding,
   type ProfileData,
 } from "../domain/ports/profile.repository.js";
 import { UserNotFoundError } from "../../auth/domain/errors.js";
@@ -152,6 +153,19 @@ export class DrizzleProfileRepository implements ProfileRepository {
       .orderBy(date);
   }
 
+  async findLeaderboardStanding(userId: string): Promise<LeaderboardStanding | null> {
+    const [user] = await this.database
+      .select({ totalXp: users.totalXp })
+      .from(users)
+      .where(eq(users.id, userId));
+    if (!user || user.totalXp <= 0) return null;
+    const [ahead] = await this.database
+      .select({ count: sql<number>`count(*)::int` })
+      .from(users)
+      .where(or(gt(users.totalXp, user.totalXp), and(eq(users.totalXp, user.totalXp), lt(users.id, userId))));
+    return { rank: (ahead?.count ?? 0) + 1, totalXp: user.totalXp };
+  }
+
   async findLeaderboardPage(
     page: number,
     limit: number,
@@ -161,7 +175,7 @@ export class DrizzleProfileRepository implements ProfileRepository {
       this.database
         .select({ userId: users.id, name: users.name, totalXp: users.totalXp })
         .from(users)
-        .orderBy(desc(users.totalXp))
+        .orderBy(desc(users.totalXp), asc(users.id))
         .limit(limit)
         .offset(offset),
       this.database.select({ count: sql<number>`count(*)::int` }).from(users),

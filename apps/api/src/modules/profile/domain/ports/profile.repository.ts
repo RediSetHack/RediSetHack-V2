@@ -19,6 +19,11 @@ export interface LeaderboardRow {
   totalXp: number;
 }
 
+export interface LeaderboardStanding {
+  rank: number;
+  totalXp: number;
+}
+
 export abstract class ProfileRepository {
   abstract findProfileByUserId(userId: string): Promise<ProfileData | null>;
   /** Owner of the profile currently shared under `shareId`; null once revoked or if never issued. */
@@ -27,6 +32,11 @@ export abstract class ProfileRepository {
   abstract setSharing(userId: string, enabled: boolean): Promise<string | null>;
   /** Qualifying accomplishments per Asia/Manila day over the learner's whole history (active days only). */
   abstract findDailyLearningActivity(userId: string): Promise<LearningDay[]>;
+  /**
+   * Rank under the leaderboard order (`total_xp DESC, id ASC`, so ties are broken by id);
+   * null for an unknown user or one with no XP.
+   */
+  abstract findLeaderboardStanding(userId: string): Promise<LeaderboardStanding | null>;
   abstract findLeaderboardPage(
     page: number,
     limit: number,

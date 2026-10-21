@@ -29,6 +29,31 @@ describe("DrizzleProfileRepository", () => {
     expect(result).toEqual({ rows, total: 5 });
   });
 
+  it("ranks a learner by XP, breaking ties by id", async () => {
+    const whereMock = vi
+      .fn()
+      .mockResolvedValueOnce([{ totalXp: 400 }])
+      .mockResolvedValueOnce([{ count: 41 }]);
+    const mockDb = {
+      select: vi.fn().mockReturnValue({ from: vi.fn().mockReturnValue({ where: whereMock }) }),
+    } as unknown as Database;
+
+    const standing = await new DrizzleProfileRepository(mockDb).findLeaderboardStanding("user_2");
+
+    expect(standing).toEqual({ rank: 42, totalXp: 400 });
+  });
+
+  it("leaves zero-XP and unknown learners unranked", async () => {
+    const whereMock = vi.fn().mockResolvedValueOnce([{ totalXp: 0 }]).mockResolvedValueOnce([]);
+    const mockDb = {
+      select: vi.fn().mockReturnValue({ from: vi.fn().mockReturnValue({ where: whereMock }) }),
+    } as unknown as Database;
+    const repo = new DrizzleProfileRepository(mockDb);
+
+    expect(await repo.findLeaderboardStanding("user_0")).toBeNull();
+    expect(await repo.findLeaderboardStanding("ghost")).toBeNull();
+  });
+
   it("aggregates repeated badge awards into a count and latest award date", async () => {
     const latestAwardedAt = new Date("2026-02-01");
     const badgeRows = [
