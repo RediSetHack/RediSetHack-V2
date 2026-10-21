@@ -3,9 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ApiError, getQuestResult } from "@/lib/api-client";
+import { ApiError, getQuestResult, getQuests, type Quest } from "@/lib/api-client";
 import { StatusChip, Window, buttonClasses, EmptyState } from "@/components/y2k";
 import { ErrorAlert } from "@/components/y2k-dialog";
+import { QuestResultNotFound } from "@/components/quest-result-not-found";
 
 // The parent (app)/layout.tsx already redirects unauthenticated learners to
 // /sign-in before this page renders, so no auth guard is needed here.
@@ -30,7 +31,11 @@ export default async function QuestResultPage({
     review = await getQuestResult(apiUrl, token, resultIdNumber);
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) {
-      notFound();
+      return (
+        <div className="mx-auto flex w-full max-w-2xl flex-1 items-center justify-center p-6 sm:p-10">
+          <QuestResultNotFound />
+        </div>
+      );
     }
     return (
       <div className="mx-auto w-full max-w-2xl flex-1 p-6 sm:p-10">
@@ -42,14 +47,23 @@ export default async function QuestResultPage({
     );
   }
 
+  let quest: Quest | undefined;
+  try {
+    quest = (await getQuests(apiUrl, token ?? "")).find((item) => item.id === review.questId);
+  } catch {
+    // The review remains useful if the current Quest catalog is temporarily unavailable.
+  }
   const submittedAt = new Date(review.submittedAt).toLocaleString("en-US");
+  const xpAwarded = review.xpAwarded ?? 0;
 
   return (
     <div className="mx-auto w-full max-w-2xl flex-1 space-y-4 p-6 sm:p-10">
       <Window title={`RESULT ${review.resultId}`}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="font-pixel text-lg leading-relaxed text-foreground">Quest Review</h1>
+            <h1 className="font-pixel text-lg leading-relaxed text-foreground">
+              {quest?.title ?? "Quest Review"}
+            </h1>
             <p className="mt-2 font-pixel-lg text-xl text-foreground">Score: {review.score}%</p>
             <p className="mt-2 font-body text-sm font-bold text-muted-foreground">
               Submitted {submittedAt}
@@ -60,6 +74,22 @@ export default async function QuestResultPage({
             label={review.passed ? "Passed" : "Not passed"}
           />
         </div>
+        <dl className="mt-4 grid grid-cols-2 gap-2 border-t-2 border-border pt-3 font-body text-sm font-bold">
+          <div>
+            <dt className="text-muted-foreground">Passing score</dt>
+            <dd className="text-foreground">
+              {review.passingScore !== undefined
+                ? `${review.passingScore}%`
+                : quest
+                  ? `${quest.passingScore}%`
+                  : "—"}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">XP awarded</dt>
+            <dd className="text-foreground">{xpAwarded} XP</dd>
+          </div>
+        </dl>
       </Window>
 
       {review.breakdown.length === 0 ? (

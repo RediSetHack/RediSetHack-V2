@@ -66,6 +66,8 @@ function toResult(row: ResultRow): QuestResult {
     (row.responsesJson as QuestResponse[] | null) ?? [],
     row.submittedAt,
     (row.questionsJson as QuestQuestion[] | null) ?? null,
+    row.xpAwarded,
+    row.passingScore,
   );
 }
 
@@ -204,17 +206,6 @@ export class DrizzleQuestRepository implements QuestRepository {
         .returning();
       if (!claimed) return null;
 
-      const [row] = await tx
-        .insert(results)
-        .values({
-          userId: claimed.userId,
-          questId: claimed.questId,
-          score: input.score,
-          passed: input.passed,
-          responsesJson: input.responses,
-          questionsJson: claimed.questionsJson,
-        })
-        .returning();
       let xpAwarded = 0;
       if (
         input.passed &&
@@ -240,6 +231,19 @@ export class DrizzleQuestRepository implements QuestRepository {
             throw new Error('Quest XP recipient not found');
         }
       }
+      const [row] = await tx
+        .insert(results)
+        .values({
+          userId: claimed.userId,
+          questId: claimed.questId,
+          score: input.score,
+          passed: input.passed,
+          xpAwarded,
+          passingScore: claimed.passingScore,
+          responsesJson: input.responses,
+          questionsJson: claimed.questionsJson,
+        })
+        .returning();
       await tx
         .update(questSessions)
         .set({ resultId: row!.id, xpAwarded })

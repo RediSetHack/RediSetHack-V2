@@ -25,8 +25,10 @@ export class QuestResultPresenter {
       questId: result.questId,
       score: result.score,
       passed: result.passed,
+      xpAwarded: result.xpAwarded,
       submittedAt: result.submittedAt,
       breakdown,
+      ...(result.passingScore === null ? {} : { passingScore: result.passingScore }),
     };
   }
 }

@@ -49,7 +49,7 @@ function StartQuestDialog({ quest }: Readonly<{ quest: Quest }>) {
 
 function QuestCard({ quest }: Readonly<{ quest: Quest }>) {
   const bestStatus = quest.completed ? "passed" : "not-taken";
-  const bestLabel = quest.completed ? "Passed" : "Not taken";
+  const bestLabel = quest.completed ? "Best Result: Passed" : "Best Result: Not taken";
 
   return (
     <li>
