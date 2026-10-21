@@ -208,6 +208,15 @@ describe("nextSlug", () => {
     expect(nextSlug({ id: 0, slug: "custom", name: "Core" }, "name", "Core Skills")).toBe("custom");
   });
 
+  it("resumes following after the name is cleared and retyped", () => {
+    const cleared = nextSlug({ id: 0, slug: "core", name: "Core" }, "name", "");
+    expect(nextSlug({ id: 0, slug: cleared, name: "" }, "name", "Skills")).toBe("skills");
+  });
+
+  it("treats a missing id as a new record", () => {
+    expect(nextSlug({ slug: "", name: "" }, "name", "Core")).toBe("core");
+  });
+
   it("never rewrites the slug of a saved record", () => {
     expect(nextSlug({ id: 7, slug: "core", name: "Core" }, "name", "Core Skills")).toBe("core");
   });

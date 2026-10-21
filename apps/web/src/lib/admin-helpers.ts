@@ -46,8 +46,9 @@ export function defaultSlug(name: string): string {
  */
 export function nextSlug(values: Record<string, unknown>, nameKey: string, newName: string): string {
   const current = fieldText(values.slug);
-  if (Number(values.id) !== 0) return current;
-  return current === defaultSlug(fieldText(values[nameKey])) ? defaultSlug(newName) : current;
+  if (values.id) return current;
+  const following = current === "" || current === defaultSlug(fieldText(values[nameKey]));
+  return following ? defaultSlug(newName) : current;
 }
 
 /** `null` when the slug is acceptable, otherwise the inline field message. */
