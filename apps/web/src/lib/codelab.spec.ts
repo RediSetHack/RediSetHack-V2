@@ -7,7 +7,10 @@ import {
   isLanguage,
   isSessionExpired,
   isUntouchedCode,
+  languageLabel,
   starterCodeFor,
+  starterFor,
+  type SessionStarter,
 } from "./codelab";
 
 describe("CODELAB_LANGUAGES", () => {
@@ -31,6 +34,13 @@ describe("isLanguage", () => {
   });
 });
 
+describe("languageLabel", () => {
+  it("names each language the way the select does", () => {
+    expect(languageLabel("cpp")).toBe("C++");
+    expect(languageLabel("javascript")).toBe("JavaScript");
+  });
+});
+
 describe("isUntouchedCode", () => {
   it("treats the starter code and an empty field as untouched", () => {
     expect(isUntouchedCode(starterCodeFor("python"), "python")).toBe(true);
@@ -39,6 +49,36 @@ describe("isUntouchedCode", () => {
 
   it("treats edited code as touched", () => {
     expect(isUntouchedCode('print("mine")', "python")).toBe(false);
+  });
+
+  it("treats the session's own starter as untouched", () => {
+    const sessionStarter: SessionStarter = {
+      language: "python",
+      code: "def reverse(s):\n    pass",
+    };
+
+    expect(
+      isUntouchedCode("def reverse(s):\n    pass", "python", sessionStarter),
+    ).toBe(true);
+    expect(
+      isUntouchedCode("def reverse(s):\n    return s[::-1]", "python", sessionStarter),
+    ).toBe(false);
+  });
+
+  it("does not treat another language's session starter as untouched", () => {
+    const sessionStarter: SessionStarter = { language: "python", code: "print(1)" };
+
+    expect(isUntouchedCode("print(1)", "javascript", sessionStarter)).toBe(false);
+  });
+});
+
+describe("starterFor", () => {
+  it("prefers the session's starter for the language it belongs to", () => {
+    const sessionStarter: SessionStarter = { language: "python", code: "print(1)" };
+
+    expect(starterFor("python", sessionStarter)).toBe("print(1)");
+    expect(starterFor("java", sessionStarter)).toBe(starterCodeFor("java"));
+    expect(starterFor("python", null)).toBe(starterCodeFor("python"));
   });
 });
 
@@ -65,6 +105,27 @@ describe("codeAfterLanguageChange", () => {
     expect(
       codeAfterLanguageChange(starterCodeFor("javascript"), "python", "java"),
     ).toBe(starterCodeFor("javascript"));
+  });
+
+  it("swaps in the new starter when the session's own starter is untouched", () => {
+    const sessionStarter: SessionStarter = { language: "python", code: "print(1)" };
+
+    expect(
+      codeAfterLanguageChange("print(1)", "python", "javascript", sessionStarter),
+    ).toBe(starterCodeFor("javascript"));
+  });
+
+  it("keeps the session's starter when switching back to its language", () => {
+    const sessionStarter: SessionStarter = { language: "python", code: "print(1)" };
+
+    expect(
+      codeAfterLanguageChange(
+        starterCodeFor("javascript"),
+        "javascript",
+        "python",
+        sessionStarter,
+      ),
+    ).toBe("print(1)");
   });
 });
 

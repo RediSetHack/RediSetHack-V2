@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
+import { ChevronLeft } from "lucide-react";
 import { CtfChallengeView } from "@/components/ctf-challenge";
+import { CtfChallengeList } from "@/components/ctf-challenge-list";
 import { getCtfChallenges, type CtfSummary } from "@/lib/api-client";
-import { EmptyState, StatusChip, Window, XPChip } from "@/components/y2k";
+import { Breadcrumb, Sparkle, Window, buttonClasses } from "@/components/y2k";
 
 export default async function CtfPage({
   searchParams,
@@ -12,8 +14,10 @@ export default async function CtfPage({
   const id = Number(challenge) > 0 ? Number(challenge) : undefined;
   if (id) {
     return (
-      <div className="flex-1 mx-auto w-full max-w-4xl p-6 sm:p-10 space-y-6">
-        <Link href="/ctf" className="font-body text-sm font-bold underline">All challenges</Link>
+      <div className="mx-auto w-full max-w-4xl flex-1 space-y-4 p-6 sm:p-10">
+        <Link href="/ctf" className={buttonClasses("ghost")}>
+          <ChevronLeft aria-hidden="true" className="size-3" /> ALL CHALLENGES
+        </Link>
         <CtfChallengeView apiUrl={apiUrl} challengeId={id} />
       </div>
     );
@@ -28,27 +32,21 @@ export default async function CtfPage({
   }
 
   return (
-    <div className="flex-1 mx-auto w-full max-w-5xl p-6 sm:p-10 space-y-6">
-      <Window title="CTF.EXE">
-        {challenges === null ? (
-          <p role="alert" className="font-body text-sm font-bold text-btn-danger">Could not load challenges.</p>
-        ) : challenges.length === 0 ? (
-          <EmptyState title="No challenges available yet. Finish more stages to unlock them." />
-        ) : (
-          <ul className="space-y-2">
-            {challenges.map((c) => (
-              <li key={c.id} className="border-2 border-border bg-window-body p-3 shadow-[3px_3px_0_var(--border)]">
-                <Link href={`/ctf?challenge=${c.id}`} className="font-pixel text-[9px] leading-relaxed underline">{c.title}</Link>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <span className="font-body text-xs font-bold">{c.category} · {c.difficulty}</span>
-                  <XPChip xp={c.xpReward} />
-                  {c.solved && <StatusChip status="solved" />}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+    <div className="mx-auto w-full max-w-5xl flex-1 space-y-6 p-6 sm:p-10">
+      <Window title={<Breadcrumb items={[{ label: "CTF" }]} />}>
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <h1 className="font-pixel text-xl leading-relaxed text-foreground">
+              CTF
+            </h1>
+            <p className="mt-2 font-body text-sm font-bold text-muted-foreground">
+              Capture the flag. Solve a challenge to earn XP.
+            </p>
+          </div>
+          <Sparkle size={20} />
+        </div>
       </Window>
+      <CtfChallengeList challenges={challenges} error={challenges === null} />
     </div>
   );
 }
