@@ -2,7 +2,7 @@
 
 import { Y2kInput, Y2kSelect, Y2kTextarea } from "@/components/y2k";
 import { FormField } from "@/components/admin/form-controls";
-import { fieldText, defaultSlug } from "@/lib/admin-helpers";
+import { fieldText, nextSlug } from "@/lib/admin-helpers";
 
 export type ZoneValues = { id: number; regionId: number; name: string; slug: string; description: string; sortOrder: number };
 
@@ -41,7 +41,7 @@ export function makeZoneFields(regionOptions: readonly { value: number; label: s
             value={fieldText(values.name, "")}
             onChange={(event) => {
               set("name", event.target.value);
-              set("slug", defaultSlug(event.target.value));
+              set("slug", nextSlug(values, "name", event.target.value));
             }}
           />
         </FormField>

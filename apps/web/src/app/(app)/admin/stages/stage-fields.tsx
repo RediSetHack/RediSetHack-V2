@@ -2,7 +2,7 @@
 
 import { Y2kInput, Y2kSelect } from "@/components/y2k";
 import { FormField } from "@/components/admin/form-controls";
-import { fieldText, defaultSlug } from "@/lib/admin-helpers";
+import { fieldText, nextSlug } from "@/lib/admin-helpers";
 import type { LessonDraftBlock } from "@/components/admin/lesson-builder";
 
 export type StageValues = {
@@ -59,7 +59,7 @@ export function makeStageFields(
             value={fieldText(values.title, "")}
             onChange={(event) => {
               set("title", event.target.value);
-              set("slug", defaultSlug(event.target.value));
+              set("slug", nextSlug(values, "title", event.target.value));
             }}
           />
         </FormField>

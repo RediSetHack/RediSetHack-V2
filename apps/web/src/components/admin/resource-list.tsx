@@ -6,6 +6,7 @@ import { Plus, Search, Trash2, Pencil, ChevronUp, ChevronDown } from "lucide-rea
 import { cn } from "@/lib/utils";
 import { useToast, ConfirmDialog } from "@/components/y2k-dialog";
 import { EmptyState, Table, Td, Th, Window, buttonClasses } from "@/components/y2k";
+import { DeleteMessage } from "@/components/admin/form-controls";
 import { API_URL, useToken } from "@/components/admin/use-catalog";
 import { useAdminAccess } from "@/components/admin/admin-access";
 import { ApiError } from "@/lib/api-client";
@@ -53,9 +54,6 @@ export function searchRows<T>(rows: readonly T[], query: string, haystack: (row:
 }
 
 export const PAGE_SIZE = 10;
-
-const DELETE_COPY =
-  "If learners have progress, Results or XP on this content it will be archived and hidden from learners; otherwise it is deleted.";
 
 export function ResourceList<T extends { id: number }>({
   title,
@@ -321,11 +319,7 @@ export function ResourceList<T extends { id: number }>({
         onConfirm={() => void confirmDelete()}
         message={
           pending ? (
-            <>
-              <p>{`Delete ${deleteName(pending)}? This cannot be undone.`}</p>
-              {cascadeWarning && <p className="mt-2">{cascadeWarning}</p>}
-              <p className="mt-2 text-sm text-muted-foreground">{DELETE_COPY}</p>
-            </>
+            <DeleteMessage name={deleteName(pending)} cascadeWarning={cascadeWarning} />
           ) : (
             ""
           )

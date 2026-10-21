@@ -9,7 +9,7 @@ import { API_URL, useCatalog, useToken } from "@/components/admin/use-catalog";
 import { useAdminAccess } from "@/components/admin/admin-access";
 import { AvatarOrInitial, Y2kInput, Y2kTextarea } from "@/components/y2k";
 import { ApiError, deleteAdminBadge, getAdminBadge } from "@/lib/api-client";
-import { fieldText, defaultSlug } from "@/lib/admin-helpers";
+import { fieldText, nextSlug } from "@/lib/admin-helpers";
 
 type BadgeValues = { id: number; name: string; slug: string; description: string; imageUrl: string; criteria: CriteriaValue };
 
@@ -78,7 +78,7 @@ export function BadgeForm({ mode, id }: Readonly<{ mode: "create" | "edit"; id?:
           value={fieldText(values.name, "")}
           onChange={(event) => {
             set("name", event.target.value);
-            set("slug", defaultSlug(event.target.value));
+            set("slug", nextSlug(values, "name", event.target.value));
           }}
         />
       </FormField>

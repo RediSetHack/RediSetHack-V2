@@ -7,6 +7,7 @@ import {
   criteriaSummary,
   criteriaToSentence,
   defaultSlug,
+  nextSlug,
   newOption,
   newQuestion,
   parseFieldIssues,
@@ -194,5 +195,29 @@ describe("fieldText", () => {
       expect(fieldText(value)).toBe("");
       expect(fieldText(value, "python")).toBe("python");
     }
+  });
+});
+
+describe("nextSlug", () => {
+  it("follows the name while the slug is still the auto-filled one", () => {
+    expect(nextSlug({ id: 0, slug: "", name: "" }, "name", "Core")).toBe("core");
+    expect(nextSlug({ id: 0, slug: "core", name: "Core" }, "name", "Core Skills")).toBe("core-skills");
+  });
+
+  it("keeps a hand-edited slug", () => {
+    expect(nextSlug({ id: 0, slug: "custom", name: "Core" }, "name", "Core Skills")).toBe("custom");
+  });
+
+  it("resumes following after the name is cleared and retyped", () => {
+    const cleared = nextSlug({ id: 0, slug: "core", name: "Core" }, "name", "");
+    expect(nextSlug({ id: 0, slug: cleared, name: "" }, "name", "Skills")).toBe("skills");
+  });
+
+  it("treats a missing id as a new record", () => {
+    expect(nextSlug({ slug: "", name: "" }, "name", "Core")).toBe("core");
+  });
+
+  it("never rewrites the slug of a saved record", () => {
+    expect(nextSlug({ id: 7, slug: "core", name: "Core" }, "name", "Core Skills")).toBe("core");
   });
 });
