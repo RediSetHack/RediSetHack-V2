@@ -19,9 +19,12 @@ import {
   hasExecutionOutput,
   isLanguage,
   isSessionExpired,
-  starterCodeFor,
+  isUntouchedCode,
+  languageLabel,
+  starterFor,
+  type SessionStarter,
 } from "@/lib/codelab";
-import { ConfirmDialog, Y2kAlert } from "@/components/y2k-dialog";
+import { ConfirmDialog, ErrorAlert, Y2kAlert } from "@/components/y2k-dialog";
 import {
   FieldLabel,
   Progress,
@@ -55,6 +58,11 @@ const CATEGORY_MESSAGE: Record<CodingAttempt["errorCategory"], string> = {
  * The code field: a monospace textarea with a line-number gutter. The gutter
  * is decorative (`aria-hidden`) — the textarea carries the value — and it
  * scrolls with the code so the numbers stay beside their lines.
+ *
+ * The gutter is given the same definite height as the textarea: left to size
+ * itself it would inflate the row and stop scrolling, leaving the numbers
+ * stuck at 1..n while the code scrolled on. `wrap="off"` keeps one logical
+ * line on one visual row, which is what the gutter counts.
  */
 export function CodeEditor({
   id,
@@ -83,6 +91,7 @@ export function CodeEditor({
         ref={gutterRef}
         aria-hidden="true"
         data-testid="code-gutter"
+        style={{ height: `${height}px` }}
         className="w-12 shrink-0 overflow-hidden border-r-2 border-border bg-title-bar py-2 pr-2 text-right font-mono text-sm leading-6 text-muted-foreground select-none"
       >
         {Array.from({ length: lineCount }, (_, index) => (
@@ -102,8 +111,9 @@ export function CodeEditor({
           }
         }}
         spellCheck={false}
+        wrap="off"
         style={{ height: `${height}px` }}
-        className="min-h-64 w-full bg-white px-3 py-2 font-mono text-sm leading-6 text-foreground outline-none"
+        className="min-h-64 w-full resize-none bg-white px-3 py-2 font-mono text-sm leading-6 text-foreground outline-none"
       />
     </div>
   );
@@ -116,7 +126,7 @@ export function CodeEditor({
 export function OutputWindow({
   result,
   learnerElapsedTimeMs,
-}: Readonly<{ result: CodeExecutionResult; learnerElapsedTimeMs?: number }>) {
+}: Readonly<{ result: CodeExecutionResult; learnerElapsedTimeMs: number }>) {
   const empty = !hasExecutionOutput(result);
 
   return (
@@ -124,11 +134,9 @@ export function OutputWindow({
       title={executionStatusLabel(result)}
       bodyClassName="space-y-2 font-mono text-sm"
     >
-      {learnerElapsedTimeMs !== undefined && (
-        <div className="font-body text-xs font-bold text-muted-foreground">
-          Request: {result.requestDurationMs}ms · Total: {learnerElapsedTimeMs}ms
-        </div>
-      )}
+      <div className="font-body text-xs font-bold text-muted-foreground">
+        Request: {result.requestDurationMs}ms · Total: {learnerElapsedTimeMs}ms
+      </div>
       {empty && (
         <p className="font-body text-sm font-bold text-muted-foreground">
           Program produced no output.
@@ -186,17 +194,17 @@ export function RunControls({
           RESET
         </Y2kButton>
       </div>
-      {isRunning && (
-        <div className="space-y-1">
-          <Progress indeterminate label="Running your code" />
-          <p className="font-body text-xs font-bold text-muted-foreground">
-            Running your code…
-          </p>
-        </div>
-      )}
-      <span aria-live="polite" className="sr-only">
-        {isRunning ? "Running your code" : ""}
-      </span>
+      {/* The live region stays mounted so the change to "running" is announced. */}
+      <div aria-live="polite" className="space-y-1">
+        {isRunning && (
+          <>
+            <Progress indeterminate label="Running your code" />
+            <p className="font-body text-xs font-bold text-muted-foreground">
+              Running your code…
+            </p>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -207,11 +215,11 @@ export function AttemptPanel({
 }: Readonly<{ attempt: CodingAttempt }>) {
   return (
     <Window title="GRADED RESULT" bodyClassName="space-y-2 text-sm">
-      <output className="block font-body font-bold">
+      <p className="block font-body font-bold">
         {attempt.passed ? "Passed" : "Not yet"} — {attempt.checksPassed}/
         {attempt.checksTotal} checks ({attempt.score}%).{" "}
         {CATEGORY_MESSAGE[attempt.errorCategory]}
-      </output>
+      </p>
       {attempt.xpAwarded > 0 && (
         <div className="flex items-center gap-2">
           <XPChip xp={attempt.xpAwarded} />
@@ -296,13 +304,21 @@ export function CodelabEditor({
   const startingLanguage: Language = isLanguage(initialLanguage)
     ? initialLanguage
     : "python";
-  const [language, setLanguage] = useState<Language>(startingLanguage);
-  const [code, setCode] = useState(
-    () => initialCode ?? starterCodeFor(startingLanguage),
+  const initialStarter: SessionStarter | null =
+    initialCode !== undefined
+      ? { language: startingLanguage, code: initialCode }
+      : null;
+
+  // The language the code on screen is written in. It only follows the
+  // select while the code is untouched — edited code keeps the language it
+  // was written in, so RUN never executes it under the wrong one.
+  const [codeLanguage, setCodeLanguage] = useState<Language>(startingLanguage);
+  const [code, setCode] = useState(() =>
+    starterFor(startingLanguage, initialStarter),
   );
-  // The code this session opened with — a Lesson Exercise's prefilled starter.
-  // RESET restores it rather than the generic "Hello, world!" example.
-  const [sessionStarterCode] = useState(() => initialCode ?? null);
+  const [sessionStarter, setSessionStarter] =
+    useState<SessionStarter | null>(initialStarter);
+  const [languageNote, setLanguageNote] = useState<string | null>(null);
   const [stdin, setStdin] = useState("");
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<{
@@ -327,8 +343,9 @@ export function CodelabEditor({
         const loaded = await getCodingActivity(apiUrl, token, activityId);
         if (cancelled) return;
         setActivity(loaded);
-        setLanguage(loaded.language);
+        setCodeLanguage(loaded.language);
         setCode(loaded.starterCode);
+        setSessionStarter({ language: loaded.language, code: loaded.starterCode });
       } catch (err) {
         if (cancelled) return;
         if (isSessionExpired(err)) {
@@ -349,20 +366,31 @@ export function CodelabEditor({
     };
   }, [activityId, apiUrl, getToken]);
 
-  /** The code RESET restores: the activity's or session's starter. */
-  const starterCode = activity
-    ? activity.starterCode
-    : (sessionStarterCode ?? starterCodeFor(language));
-
   function handleLanguageChange(next: Language) {
-    setLanguage(next);
-    // A fresh or untouched editor follows to the new language's starter
-    // example; code the learner actually wrote is never overwritten.
-    setCode((current) => codeAfterLanguageChange(current, language, next));
+    const untouched = isUntouchedCode(code, codeLanguage, sessionStarter);
+    setCode(codeAfterLanguageChange(code, codeLanguage, next, sessionStarter));
+    if (untouched) {
+      // A fresh or untouched editor follows to the new language's starter.
+      setCodeLanguage(next);
+      setLanguageNote(null);
+    } else {
+      // The learner's code stays — and it stays in the language it was
+      // written in, so RUN never executes it under the wrong one.
+      const label = languageLabel(codeLanguage);
+      setLanguageNote(
+        `Your code is still ${label}, so the language stayed ${label}. RESET starts over with the ${label} starter.`,
+      );
+    }
+    // The output and the grade described the previous code.
+    setResult(null);
+    setAttempt(null);
   }
 
   function handleReset() {
-    setCode(starterCode);
+    setCode(starterFor(codeLanguage, sessionStarter));
+    setLanguageNote(null);
+    setResult(null);
+    setAttempt(null);
   }
 
   async function handleSubmit() {
@@ -407,7 +435,7 @@ export function CodelabEditor({
         return;
       }
       const execution = await executeCode(apiUrl, token, {
-        language,
+        language: codeLanguage,
         code,
         stdin,
       });
@@ -441,13 +469,14 @@ export function CodelabEditor({
           <div className="w-full max-w-xs sm:w-64">
             <Y2kSelect
               id="language-select"
-              value={language}
+              value={codeLanguage}
               // A graded activity fixes its own language — switching would
               // submit code in a language the checks were never written for.
               disabled={activity !== null}
-              onChange={(event) =>
-                handleLanguageChange(event.target.value as Language)
-              }
+              onChange={(event) => {
+                const next = event.target.value;
+                if (isLanguage(next)) handleLanguageChange(next);
+              }}
             >
               {CODELAB_LANGUAGES.map((languageOption) => (
                 <option key={languageOption.id} value={languageOption.id}>
@@ -457,6 +486,14 @@ export function CodelabEditor({
             </Y2kSelect>
           </div>
         </div>
+        {languageNote && (
+          <p
+            role="status"
+            className="mt-2 font-body text-xs font-bold text-muted-foreground"
+          >
+            {languageNote}
+          </p>
+        )}
       </Window>
 
       {activity && <ActivityPanel activity={activity} />}
@@ -477,7 +514,6 @@ export function CodelabEditor({
         </FieldLabel>
         <Y2kTextarea
           id="stdin-input"
-          aria-label="Standard input"
           value={stdin}
           onChange={(event) => setStdin(event.target.value)}
           spellCheck={false}
@@ -494,36 +530,25 @@ export function CodelabEditor({
       />
 
       {error && (
-        <Y2kAlert
-          open
-          onOpenChange={() => setError(null)}
+        <ErrorAlert
           title={error.title}
-          icon="alert"
-          actions={
-            <Y2kButton variant="primary" onClick={() => setError(null)}>
-              OK
-            </Y2kButton>
-          }
-        >
-          {error.message}
-          {error.detail && (
-            <span className="mt-2 block font-body text-xs font-bold text-muted-foreground">
-              {error.detail}
-            </span>
-          )}
-        </Y2kAlert>
+          message={error.message}
+          detail={error.detail}
+          onRetry={activityId !== undefined ? undefined : () => void handleRun()}
+          retryLabel="TRY AGAIN"
+        />
       )}
 
-      {attempt && <AttemptPanel attempt={attempt} />}
-
-      {result && (
-        <div aria-live="polite">
+      {/* The live region stays mounted so the result is announced when it lands. */}
+      <div aria-live="polite" className="space-y-6">
+        {attempt && <AttemptPanel attempt={attempt} />}
+        {result && (
           <OutputWindow
             result={result}
             learnerElapsedTimeMs={learnerElapsedTimeMs}
           />
-        </div>
-      )}
+        )}
+      </div>
 
       <ConfirmDialog
         open={resetOpen}
