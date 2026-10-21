@@ -176,6 +176,13 @@
       "when": 1792557222597,
       "tag": "0024_shocking_mesmero",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1792591237735,
+      "tag": "0025_illegal_moira_mactaggert",
+      "breakpoints": true
     }
   ]
 }
