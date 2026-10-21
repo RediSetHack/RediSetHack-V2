@@ -9,7 +9,10 @@ import type { ReviewQueueItem } from "@/lib/api-client";
 export function ReviewLesson({ blocks }: Readonly<{ blocks: ReviewQueueItem["lessonContent"] }>) {
   const [views, setViews] = useState<ReactNode[] | null>(null);
 
+  const valid = Array.isArray(blocks);
+
   useEffect(() => {
+    if (!valid) return;
     let cancelled = false;
     void Promise.all(normalizeLessonBlocks(blocks).map(renderLessonBlock))
       .then((rendered) => {
@@ -21,8 +24,9 @@ export function ReviewLesson({ blocks }: Readonly<{ blocks: ReviewQueueItem["les
     return () => {
       cancelled = true;
     };
-  }, [blocks]);
+  }, [blocks, valid]);
 
+  if (!valid) return <p role="alert" className="font-body text-sm font-bold text-btn-danger">Could not render this Lesson.</p>;
   if (blocks.length === 0) {
     return <p className="font-body text-sm text-muted-foreground">This revision has no Lesson blocks.</p>;
   }

@@ -37,8 +37,9 @@ async function codeBlock(
     >
       <figure className="overflow-x-auto border-2 border-border bg-white [&_pre]:m-0 [&_pre]:overflow-x-auto [&_pre]:p-3 [&_pre]:text-sm">
         <figcaption className="sr-only">Code block, {language}</figcaption>
-        {/* Shiki's own output is the highlighted markup; there is no learner
-          input in this path — content comes from the admin-authored Lesson. */}
+        {/* Shiki's own output is the highlighted markup, with token text escaped.
+          The content is still untrusted: learners see admin-authored Lessons,
+          but the admin review queue renders contributor drafts here too. */}
         <div dangerouslySetInnerHTML={{ __html: html }} />
       </figure>
     </Window>
