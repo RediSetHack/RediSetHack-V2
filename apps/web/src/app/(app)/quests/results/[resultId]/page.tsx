@@ -54,7 +54,7 @@ export default async function QuestResultPage({
     // The review remains useful if the current Quest catalog is temporarily unavailable.
   }
   const submittedAt = new Date(review.submittedAt).toLocaleString("en-US");
-  const xpAwarded = review.passed ? (quest?.xpReward ?? 0) : 0;
+  const xpAwarded = review.xpAwarded ?? 0;
 
   return (
     <div className="mx-auto w-full max-w-2xl flex-1 space-y-4 p-6 sm:p-10">
@@ -77,7 +77,13 @@ export default async function QuestResultPage({
         <dl className="mt-4 grid grid-cols-2 gap-2 border-t-2 border-border pt-3 font-body text-sm font-bold">
           <div>
             <dt className="text-muted-foreground">Passing score</dt>
-            <dd className="text-foreground">{quest ? `${quest.passingScore}%` : "—"}</dd>
+            <dd className="text-foreground">
+              {review.passingScore !== undefined
+                ? `${review.passingScore}%`
+                : quest
+                  ? `${quest.passingScore}%`
+                  : "—"}
+            </dd>
           </div>
           <div>
             <dt className="text-muted-foreground">XP awarded</dt>

@@ -103,6 +103,10 @@ export const QuestResultReviewResponseSchema = z.object({
   questId: z.number().int().positive(),
   score: z.number().int().nonnegative(),
   passed: z.boolean(),
+  /** XP credited by this submission; absent in responses from older servers. */
+  xpAwarded: z.number().int().nonnegative().optional(),
+  /** Passing threshold captured when the Quest Session was started. */
+  passingScore: z.number().int().min(0).max(100).optional(),
   submittedAt: z.string(),
   breakdown: z.array(QuestResultBreakdownItemSchema),
 });

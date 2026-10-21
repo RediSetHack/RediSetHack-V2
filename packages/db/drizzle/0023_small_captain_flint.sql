@@ -1,0 +1,1 @@
+ALTER TABLE "results" ADD COLUMN "xp_awarded" integer DEFAULT 0 NOT NULL;

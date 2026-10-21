@@ -136,6 +136,8 @@ export const results = pgTable(
       .references(() => quests.id, { onDelete: "cascade" }),
     score: integer("score").notNull().default(0),
     passed: boolean("passed").notNull().default(false),
+    xpAwarded: integer("xp_awarded").notNull().default(0),
+    passingScore: integer("passing_score"),
     responsesJson: jsonb("responses_json"),
     questionsJson: jsonb("questions_json"),
     submittedAt: timestamp("submitted_at", { withTimezone: true }).notNull().defaultNow(),

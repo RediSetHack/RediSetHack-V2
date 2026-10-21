@@ -15,5 +15,7 @@ export class QuestResult {
     public readonly responses: QuestResponse[],
     public readonly submittedAt: Date,
     public readonly questionSnapshot: QuestQuestion[] | null = null,
+    public readonly xpAwarded = 0,
+    public readonly passingScore: number | null = null,
   ) {}
 }
