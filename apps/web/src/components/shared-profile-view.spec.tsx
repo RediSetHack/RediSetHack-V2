@@ -23,6 +23,20 @@ describe("SharedProfileView", () => {
     expect(html).toContain("Earned ×3");
   });
 
+  it("shows the Character and the streak counts in text", () => {
+    const html = renderToStaticMarkup(<SharedProfileView profile={profile} error={false} />);
+    expect(html).toContain("Kalayaan");
+    expect(html).toContain("Adventurer Rank 3");
+    expect(html).toContain("Current: 2 • Longest: 5 days");
+  });
+
+  it("renders the Badge empty state", () => {
+    const html = renderToStaticMarkup(
+      <SharedProfileView profile={{ ...profile, badges: [] }} error={false} />,
+    );
+    expect(html).toContain("No Badges earned yet.");
+  });
+
   it("explains a revoked/unknown link and announces a load failure", () => {
     expect(renderToStaticMarkup(<SharedProfileView profile={null} error={false} />)).toContain("revoked");
     expect(renderToStaticMarkup(<SharedProfileView profile={null} error />)).toContain('role="alert"');

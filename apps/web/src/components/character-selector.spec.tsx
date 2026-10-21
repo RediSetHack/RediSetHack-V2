@@ -94,14 +94,32 @@ describe("CharacterPicker (PAGES.md §4 Choose Character)", () => {
   });
 });
 
-describe("CharacterSelector", () => {
-  it("renders character cards in the grid", () => {
+describe("CharacterSelector (PAGES.md §14 Change Character)", () => {
+  it("renders the radio-card grid with the current Character selected", () => {
     const html = renderToStaticMarkup(
       <CharacterSelector characters={mockCharacters} initialCharacterId={1} />,
     );
 
-    expect(html).toContain("Choose Your Character");
+    expect(html).toContain('role="radiogroup"');
+    expect(html).toContain('role="radio" aria-checked="true"');
     expect(html).toContain("Ada");
+    expect(html).toContain("The first programmer");
     expect(html).toContain("Turing");
+  });
+
+  it("offers a SAVE CHARACTER button", () => {
+    const html = renderToStaticMarkup(
+      <CharacterSelector characters={mockCharacters} initialCharacterId={1} />,
+    );
+
+    expect(html).toContain("SAVE CHARACTER");
+  });
+
+  it("disables SAVE CHARACTER until a Character is picked", () => {
+    const html = renderToStaticMarkup(
+      <CharacterSelector characters={mockCharacters} initialCharacterId={null} />,
+    );
+
+    expect(html).toMatch(/disabled=""[^>]*>SAVE CHARACTER/);
   });
 });
