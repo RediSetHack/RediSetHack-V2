@@ -11,9 +11,13 @@ export function ReviewLesson({ blocks }: Readonly<{ blocks: ReviewQueueItem["les
 
   useEffect(() => {
     let cancelled = false;
-    void Promise.all(normalizeLessonBlocks(blocks).map(renderLessonBlock)).then((rendered) => {
-      if (!cancelled) setViews(rendered);
-    });
+    void Promise.all(normalizeLessonBlocks(blocks).map(renderLessonBlock))
+      .then((rendered) => {
+        if (!cancelled) setViews(rendered);
+      })
+      .catch(() => {
+        if (!cancelled) setViews([<p key="error" role="alert" className="font-body text-sm font-bold text-btn-danger">Could not render this Lesson.</p>]);
+      });
     return () => {
       cancelled = true;
     };

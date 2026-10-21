@@ -691,12 +691,6 @@ export async function getReviewQueue(apiBaseUrl: string, token: string, fetchFn:
   return adminRequest("GET", reviewEndpoint(apiBaseUrl, "/queue"), token, undefined, fetchFn) as Promise<ReviewQueueItem[]>;
 }
 
-/** One submitted revision's detail: the queue carries every submitted draft's Lesson, so this is a queue lookup by id (no admin single-draft route exists). */
-export async function getReviewRevision(apiBaseUrl: string, token: string, id: number, fetchFn: typeof fetch = fetch): Promise<ReviewQueueItem | null> {
-  const queue = await getReviewQueue(apiBaseUrl, token, fetchFn);
-  return queue.find((item) => item.id === id) ?? null;
-}
-
 /** A draft's immutable moderation history, `GET /v1/api/admin/contributor-drafts/:draftId/reviews`. */
 export async function getReviewHistory(apiBaseUrl: string, token: string, id: number, fetchFn: typeof fetch = fetch): Promise<ReviewDecisionRecord[]> {
   return adminRequest("GET", reviewEndpoint(apiBaseUrl, `/${id}/reviews`), token, undefined, fetchFn) as Promise<ReviewDecisionRecord[]>;
