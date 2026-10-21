@@ -2,6 +2,7 @@
 
 import { useAuth } from "@clerk/nextjs";
 import { useState } from "react";
+import { Info } from "lucide-react";
 import {
   ApiError,
   createContributorDraft,
@@ -9,17 +10,42 @@ import {
   updateContributorDraft,
   type ContributorDraftItem,
 } from "@/lib/api-client";
+import { draftStatusChip } from "@/lib/draft-status";
 import { FieldLabel, StatusChip, Window, Y2kButton, Y2kInput, Y2kTextarea } from "@/components/y2k";
+import { FeedbackState } from "@/components/y2k-dialog";
 
 const BLANK = JSON.stringify([{ type: "text", content: "" }], null, 2);
 
-const STATUS_CHIP: Record<string, "completed" | "unlocked" | "not-passed" | "locked"> = {
-  approved: "completed",
-  submitted: "unlocked",
-  "revision-needed": "not-passed",
-};
-
-const chipStatus = (status: string) => STATUS_CHIP[status] ?? "locked";
+/**
+ * The denial shown to a learner who is not an approved contributor. It is an
+ * info dialog: the shared window chrome with the Lucide info icon, and the
+ * reason in text.
+ */
+export function ContributorAccessDenied() {
+  return (
+    <dialog
+      open
+      aria-labelledby="contribute-denied-title"
+      className="static m-0 w-full max-w-md border-0 bg-transparent p-0 text-foreground"
+    >
+      <Window title="CONTRIBUTORS_ONLY.EXE">
+        <div className="flex flex-col items-center gap-4 py-2 text-center">
+          <Info aria-hidden="true" className="size-8 text-accent" />
+          <p
+            id="contribute-denied-title"
+            className="font-pixel-lg text-lg leading-snug text-foreground"
+          >
+            Only approved contributors can write drafts.
+          </p>
+          <p className="font-body text-sm font-bold text-muted-foreground">
+            Ask a maintainer to approve your contributor account, then come back
+            to draft a Stage.
+          </p>
+        </div>
+      </Window>
+    </dialog>
+  );
+}
 
 export function ContributorDrafts({ apiUrl, initial }: Readonly<{ apiUrl: string; initial: ContributorDraftItem[] }>) {
   const { getToken } = useAuth();
@@ -74,25 +100,54 @@ export function ContributorDrafts({ apiUrl, initial }: Readonly<{ apiUrl: string
     selected && run((token) => submitContributorDraft(apiUrl, token, selected.id, selected.revision), "Revision {revision} submitted for review.");
 
   return (
-    <div className="grid gap-6 sm:grid-cols-[16rem_1fr]">
-      <Window title="Drafts">
-        <div className="space-y-2">
-          <Y2kButton variant="secondary" onClick={() => open(null)}>NEW DRAFT</Y2kButton>
-          {drafts.length === 0 && <p className="font-body text-sm font-bold text-muted-foreground">No drafts yet.</p>}
-          <ul className="space-y-2">
-            {drafts.map((d) => (
-              <li key={d.id} className="border-2 border-border bg-window-body p-2 shadow-[2px_2px_0_var(--border)]">
-                <button type="button" onClick={() => open(d)} className="font-pixel text-[9px] leading-relaxed underline">{d.title}</button>
-                <div className="mt-1 flex items-center gap-2">
-                  <span className="font-body text-xs font-bold">Rev {d.revision}</span>
-                  <StatusChip status={chipStatus(d.status)} label={d.status} />
-                </div>
-              </li>
-            ))}
+    <div className="space-y-4">
+      <FeedbackState
+        empty={drafts.length === 0}
+        emptyTitle="DRAFTS"
+        emptyMessage="No drafts yet. Start one to propose a new Stage."
+        emptyAction={
+          <Y2kButton onClick={() => open(null)}>NEW DRAFT</Y2kButton>
+        }
+      >
+        <Window
+          title="DRAFTS"
+          actions={
+            <Y2kButton variant="secondary" onClick={() => open(null)}>
+              NEW DRAFT
+            </Y2kButton>
+          }
+        >
+          <ul className="space-y-4">
+            {drafts.map((draft) => {
+              const status = draftStatusChip(draft.status);
+              return (
+                <li key={draft.id}>
+                  <Window
+                    title={draft.title}
+                    actions={
+                      <StatusChip status={status.chip} label={status.label} />
+                    }
+                  >
+                    <p className="font-body text-xs font-bold text-muted-foreground">
+                      Rev {draft.revision} · Zone {draft.zoneId}
+                    </p>
+                    <div className="mt-3 flex justify-end">
+                      <Y2kButton
+                        variant="secondary"
+                        onClick={() => open(draft)}
+                      >
+                        OPEN DRAFT
+                      </Y2kButton>
+                    </div>
+                  </Window>
+                </li>
+              );
+            })}
           </ul>
-        </div>
-      </Window>
-      <Window title={selected ? `Edit draft #${selected.id}` : "New draft"}>
+        </Window>
+      </FeedbackState>
+
+      <Window title={selected ? `EDIT DRAFT #${selected.id}` : "NEW DRAFT"}>
         <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); void save(); }}>
           {locked && <p className="font-body text-sm font-bold text-muted-foreground">This revision was submitted for review and can no longer be changed.</p>}
           {selected?.status === "revision-needed" && <p className="font-body text-sm font-bold text-muted-foreground">A reviewer requested changes. Save an updated revision and submit it for review again.</p>}
