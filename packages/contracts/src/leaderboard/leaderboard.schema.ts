@@ -18,7 +18,7 @@ export type LeaderboardEntry = z.infer<typeof LeaderboardEntrySchema>;
 
 /**
  * The signed-in learner's own standing, regardless of which page is returned.
- * `null` when they have no XP yet: zero-XP learners are not ranked.
+ * `null` when they have no XP yet: zero-XP learners are left off the leaderboard.
  */
 export const LeaderboardMeSchema = LeaderboardEntrySchema.omit({ userId: true, name: true });
 export type LeaderboardMe = z.infer<typeof LeaderboardMeSchema>;

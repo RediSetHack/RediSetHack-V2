@@ -12,8 +12,8 @@ describe("DrizzleProfileRepository", () => {
     const offsetMock = vi.fn().mockResolvedValue(rows);
     const limitMock = vi.fn().mockReturnValue({ offset: offsetMock });
     const orderByMock = vi.fn().mockReturnValue({ limit: limitMock });
-    const rowsFromMock = vi.fn().mockReturnValue({ orderBy: orderByMock });
-    const countFromMock = vi.fn().mockResolvedValue([{ count: 5 }]);
+    const rowsFromMock = vi.fn().mockReturnValue({ where: vi.fn().mockReturnValue({ orderBy: orderByMock }) });
+    const countFromMock = vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([{ count: 5 }]) });
     const selectMock = vi
       .fn()
       .mockReturnValueOnce({ from: rowsFromMock })
