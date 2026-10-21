@@ -30,7 +30,7 @@ export class FakeQuestRepository implements QuestRepository {
   async findQuestions(questId: number) {
     return questId === this.quest.id ? this.questions : [];
   }
-  async findBestResults(userId: string) {
+  findBestResults(userId: string) {
     const best = new Map<number, { score: number; passed: boolean }>();
     for (const result of this.results.values()) {
       if (result.userId !== userId) continue;
@@ -39,7 +39,7 @@ export class FakeQuestRepository implements QuestRepository {
         best.set(result.questId, { score: result.score, passed: result.passed });
       }
     }
-    return best;
+    return Promise.resolve(best);
   }
   async findActiveSession(userId: string, questId: number) {
     return (

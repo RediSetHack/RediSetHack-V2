@@ -17,6 +17,35 @@ export function formatSubmittedAt(submittedAt: string): string {
 }
 
 /**
+ * The icon beside an option in the review: a check for the correct answer, an
+ * x for the answer the learner chose, and nothing for the rest.
+ */
+function OptionMarker({
+  isCorrect,
+  wasChosen,
+}: Readonly<{ isCorrect: boolean; wasChosen: boolean }>) {
+  if (isCorrect) {
+    return (
+      <Check
+        aria-hidden="true"
+        data-testid="option-correct"
+        className="size-4 shrink-0"
+      />
+    );
+  }
+  if (wasChosen) {
+    return (
+      <X
+        aria-hidden="true"
+        data-testid="option-incorrect"
+        className="size-4 shrink-0"
+      />
+    );
+  }
+  return <span className="size-4 shrink-0" aria-hidden="true" />;
+}
+
+/**
  * The Result Review window: a summary of the submission plus every question
  * with the learner's answer and the correct answer marked with both an icon
  * and words, so the marking never relies on colour alone.
@@ -93,21 +122,6 @@ export function QuestResultReviewPanel({
                   {item.options.map((option) => {
                     const wasChosen = option.id === item.chosenOptionId;
                     const isCorrect = option.isCorrect;
-                    const marker = isCorrect ? (
-                      <Check
-                        aria-hidden="true"
-                        data-testid="option-correct"
-                        className="size-4 shrink-0"
-                      />
-                    ) : wasChosen ? (
-                      <X
-                        aria-hidden="true"
-                        data-testid="option-incorrect"
-                        className="size-4 shrink-0"
-                      />
-                    ) : (
-                      <span className="size-4 shrink-0" aria-hidden="true" />
-                    );
                     return (
                       <li
                         key={option.id}
@@ -118,7 +132,10 @@ export function QuestResultReviewPanel({
                           !isCorrect && !wasChosen && "bg-white text-muted-foreground",
                         )}
                       >
-                        {marker}
+                        <OptionMarker
+                          isCorrect={isCorrect}
+                          wasChosen={wasChosen}
+                        />
                         <span>{option.text}</span>
                         <span className="ml-auto flex flex-wrap gap-1 font-pixel text-[8px] leading-relaxed uppercase">
                           {isCorrect && <span>Correct answer</span>}
