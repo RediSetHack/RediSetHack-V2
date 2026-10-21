@@ -2,10 +2,10 @@
 
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { Dialog } from "@base-ui/react/dialog";
-import { AlertTriangle, Check, Info, X } from "lucide-react";
+import { AlertTriangle, Check, Info } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { SkeletonWindow, Window, Y2kButton, type Y2kButtonVariant } from "@/components/y2k";
+import { SkeletonWindow, Toast, Window, Y2kButton, type Y2kButtonVariant } from "@/components/y2k";
 
 /* ── Dialog / Alert ─────────────────────────────────────────── */
 
@@ -262,21 +262,12 @@ export function ToastProvider({ children }: Readonly<{ children: React.ReactNode
         className="fixed right-4 bottom-14 z-[60] flex flex-col gap-2"
       >
         {toasts.map((toast) => (
-          <output
+          <Toast
             key={toast.id}
-            className={cn(
-              "y2k-toast flex items-center gap-2 border-2 border-border px-3 py-2 font-body text-sm font-bold shadow-[4px_4px_0_var(--border)]",
-              toast.variant === "success" && "bg-[#59D98F] text-foreground",
-              toast.variant === "error" && "bg-btn-danger text-white",
-            )}
-          >
-            {toast.variant === "success" ? (
-              <Check aria-hidden="true" className="size-4" />
-            ) : (
-              <X aria-hidden="true" className="size-4" />
-            )}
-            {toast.message}
-          </output>
+            message={toast.message}
+            variant={toast.variant}
+            onClose={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}
+          />
         ))}
       </div>
     </ToastContext.Provider>
@@ -303,4 +294,4 @@ export function SaveButton({
   );
 }
 
-export { buttonClasses } from "@/components/y2k";
+export { buttonClasses, Toast, type ToastVariant } from "@/components/y2k";

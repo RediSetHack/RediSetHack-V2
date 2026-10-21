@@ -1,9 +1,11 @@
 import type { ClassValue } from "clsx";
 import {
   Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock,
+  Info,
   Lock,
   Minus,
   Star,
@@ -64,28 +66,44 @@ export function Window({
 
 /* ── Breadcrumb (title-bar segments) ────────────────────────── */
 
-export type Crumb = { label: string; href?: string };
+export type Crumb = { label: string; href?: string; onClick?: () => void };
 
 export function Breadcrumb({ items }: Readonly<{ items: Crumb[] }>) {
   return (
     <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1">
-      {items.map((item, i) => (
-        <span key={`${item.label}-${i}`} className="flex items-center gap-1">
-          {i > 0 && <span aria-hidden="true">›</span>}
-          {item.href ? (
-            <a
-              href={item.href}
-              className="font-pixel text-[9px] leading-relaxed text-foreground underline-offset-2 hover:underline"
-            >
-              {item.label}
-            </a>
-          ) : (
-            <span className="font-pixel text-[9px] leading-relaxed text-foreground">
-              {item.label}
-            </span>
-          )}
-        </span>
-      ))}
+      {items.map((item, i) => {
+        const isLast = i === items.length - 1;
+        return (
+          <span key={`${item.label}-${i}`} className="flex items-center gap-1">
+            {i > 0 && <span aria-hidden="true">›</span>}
+            {item.href ? (
+              <a
+                href={item.href}
+                aria-current={isLast ? "page" : undefined}
+                className="font-pixel text-[9px] leading-relaxed text-foreground underline-offset-2 hover:underline"
+              >
+                {item.label}
+              </a>
+            ) : item.onClick ? (
+              <button
+                type="button"
+                onClick={item.onClick}
+                aria-current={isLast ? "page" : undefined}
+                className="font-pixel text-[9px] leading-relaxed text-foreground underline-offset-2 hover:underline cursor-pointer"
+              >
+                {item.label}
+              </button>
+            ) : (
+              <span
+                aria-current={isLast ? "page" : undefined}
+                className="font-pixel text-[9px] leading-relaxed text-foreground"
+              >
+                {item.label}
+              </span>
+            )}
+          </span>
+        );
+      })}
     </nav>
   );
 }
@@ -112,6 +130,7 @@ export function buttonClasses(variant: Y2kButtonVariant = "primary") {
 
 export function Y2kButton({
   variant = "primary",
+  type = "button",
   className,
   children,
   ...props
@@ -121,11 +140,13 @@ export function Y2kButton({
   }
 >) {
   return (
-    <button type="button" className={cn(buttonClasses(variant), className)} {...props}>
+    <button type={type} className={cn(buttonClasses(variant), className)} {...props}>
       {children}
     </button>
   );
 }
+
+export const Button = Y2kButton;
 
 /* ── Form fields ────────────────────────────────────────────── */
 
@@ -167,36 +188,322 @@ export function FieldError({
 }
 
 export const inputClasses =
-  "w-full border-2 border-border bg-white px-2.5 py-1.5 font-body text-[13px] font-bold text-foreground shadow-[2px_2px_0_var(--border)] outline-none focus:shadow-[2px_2px_0_var(--sparkle)] rounded-none disabled:opacity-60";
+  "w-full border-2 border-border bg-white px-2.5 py-1.5 font-body text-[13px] font-bold text-foreground shadow-[2px_2px_0_var(--border)] outline-none focus:shadow-[2px_2px_0_var(--sparkle)] focus:border-border rounded-none disabled:opacity-60";
+
+export interface Y2kInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  invalid?: boolean;
+  error?: ReactNode;
+  errorId?: string;
+}
 
 export function Y2kInput({
   className,
+  invalid,
+  error,
+  errorId,
+  id,
   ...props
-}: Readonly<React.InputHTMLAttributes<HTMLInputElement>>) {
-  return <input className={cn(inputClasses, className)} {...props} />;
+}: Readonly<Y2kInputProps>) {
+  const isInvalid = Boolean(invalid || error || props["aria-invalid"]);
+  const resolvedErrorId = errorId ?? (id ? `${id}-error` : undefined);
+  const describedBy = isInvalid ? (resolvedErrorId ?? props["aria-describedby"]) : props["aria-describedby"];
+
+  const inputElement = (
+    <input
+      id={id}
+      aria-invalid={isInvalid ? true : undefined}
+      aria-describedby={describedBy}
+      className={cn(inputClasses, isInvalid && "border-btn-danger", className)}
+      {...props}
+    />
+  );
+
+  if (error && typeof error === "string") {
+    return (
+      <div className="flex w-full flex-col gap-1">
+        {inputElement}
+        <FieldError id={resolvedErrorId ?? "input-error"}>{error}</FieldError>
+      </div>
+    );
+  }
+
+  return inputElement;
+}
+
+export const Input = Y2kInput;
+
+export interface Y2kTextareaProps
+  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  monospace?: boolean;
+  invalid?: boolean;
+  error?: ReactNode;
+  errorId?: string;
 }
 
 export function Y2kTextarea({
   className,
+  monospace = true,
+  invalid,
+  error,
+  errorId,
+  id,
   ...props
-}: Readonly<React.TextareaHTMLAttributes<HTMLTextAreaElement>>) {
-  return (
+}: Readonly<Y2kTextareaProps>) {
+  const isInvalid = Boolean(invalid || error || props["aria-invalid"]);
+  const resolvedErrorId = errorId ?? (id ? `${id}-error` : undefined);
+  const describedBy = isInvalid ? (resolvedErrorId ?? props["aria-describedby"]) : props["aria-describedby"];
+
+  const textareaElement = (
     <textarea
-      className={cn(inputClasses, "min-h-20 font-mono text-base leading-snug", className)}
+      id={id}
+      aria-invalid={isInvalid ? true : undefined}
+      aria-describedby={describedBy}
+      className={cn(
+        inputClasses,
+        "min-h-20 leading-snug",
+        monospace ? "font-mono text-sm" : "font-body text-[13px] font-bold",
+        isInvalid && "border-btn-danger",
+        className,
+      )}
       {...props}
     />
   );
+
+  if (error && typeof error === "string") {
+    return (
+      <div className="flex w-full flex-col gap-1">
+        {textareaElement}
+        <FieldError id={resolvedErrorId ?? "textarea-error"}>{error}</FieldError>
+      </div>
+    );
+  }
+
+  return textareaElement;
+}
+
+export const Textarea = Y2kTextarea;
+
+export interface Y2kSelectProps
+  extends React.SelectHTMLAttributes<HTMLSelectElement> {
+  invalid?: boolean;
+  error?: ReactNode;
+  errorId?: string;
 }
 
 export function Y2kSelect({
   className,
   children,
+  invalid,
+  error,
+  errorId,
+  id,
   ...props
-}: Readonly<React.SelectHTMLAttributes<HTMLSelectElement>>) {
+}: Readonly<Y2kSelectProps>) {
+  const isInvalid = Boolean(invalid || error || props["aria-invalid"]);
+  const resolvedErrorId = errorId ?? (id ? `${id}-error` : undefined);
+  const describedBy = isInvalid ? (resolvedErrorId ?? props["aria-describedby"]) : props["aria-describedby"];
+
+  const selectElement = (
+    <div className="relative w-full">
+      <select
+        id={id}
+        aria-invalid={isInvalid ? true : undefined}
+        aria-describedby={describedBy}
+        className={cn(
+          inputClasses,
+          "appearance-none pr-8 cursor-pointer",
+          isInvalid && "border-btn-danger",
+          className,
+        )}
+        {...props}
+      >
+        {children}
+      </select>
+      <ChevronDown
+        aria-hidden="true"
+        className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 size-4 text-foreground"
+      />
+    </div>
+  );
+
+  if (error && typeof error === "string") {
+    return (
+      <div className="flex w-full flex-col gap-1">
+        {selectElement}
+        <FieldError id={resolvedErrorId ?? "select-error"}>{error}</FieldError>
+      </div>
+    );
+  }
+
+  return selectElement;
+}
+
+export const Select = Y2kSelect;
+
+export interface Y2kCheckboxProps
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> {
+  label?: ReactNode;
+  invalid?: boolean;
+  error?: ReactNode;
+  errorId?: string;
+}
+
+export function Y2kCheckbox({
+  id,
+  label,
+  checked,
+  defaultChecked,
+  invalid,
+  error,
+  errorId,
+  className,
+  disabled,
+  ...props
+}: Readonly<Y2kCheckboxProps>) {
+  const isInvalid = Boolean(invalid || error || props["aria-invalid"]);
+  const resolvedErrorId = errorId ?? (id ? `${id}-error` : undefined);
+  const describedBy = isInvalid ? (resolvedErrorId ?? props["aria-describedby"]) : props["aria-describedby"];
+  const isChecked = checked ?? defaultChecked;
+
   return (
-    <select className={cn(inputClasses, "appearance-none", className)} {...props}>
-      {children}
-    </select>
+    <div className="flex flex-col gap-1">
+      <label
+        htmlFor={id}
+        className={cn(
+          "inline-flex cursor-pointer select-none items-center gap-2 font-body text-sm font-bold text-foreground",
+          disabled && "cursor-not-allowed opacity-50",
+          className,
+        )}
+      >
+        <span className="relative flex items-center justify-center">
+          <input
+            type="checkbox"
+            id={id}
+            checked={checked}
+            defaultChecked={defaultChecked}
+            disabled={disabled}
+            aria-invalid={isInvalid ? true : undefined}
+            aria-describedby={describedBy}
+            className="peer sr-only"
+            {...props}
+          />
+          <span
+            aria-hidden="true"
+            className={cn(
+              "flex size-5 items-center justify-center border-2 border-border bg-white shadow-[2px_2px_0_var(--border)] transition-[box-shadow,background-color] duration-[80ms]",
+              "peer-focus-visible:shadow-[2px_2px_0_var(--sparkle)] peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-sparkle",
+              isChecked ? "bg-primary text-foreground" : "text-transparent",
+              isInvalid && "border-btn-danger",
+            )}
+          >
+            <Check className={cn("size-3.5 stroke-[3]", isChecked ? "block" : "hidden peer-checked:block")} />
+          </span>
+        </span>
+        {label && <span>{label}</span>}
+      </label>
+      {error && typeof error === "string" && (
+        <FieldError id={resolvedErrorId ?? "checkbox-error"}>{error}</FieldError>
+      )}
+    </div>
+  );
+}
+
+export const Checkbox = Y2kCheckbox;
+
+/* ── Radio-card group ───────────────────────────────────────── */
+
+export type RadioCardOption = {
+  value: string;
+  label: ReactNode;
+  description?: ReactNode;
+  disabled?: boolean;
+  badge?: ReactNode;
+};
+
+export interface RadioCardGroupProps {
+  name: string;
+  label?: string;
+  value?: string;
+  defaultValue?: string;
+  onChange?: (value: string) => void;
+  options: readonly RadioCardOption[];
+  className?: ClassValue;
+  disabled?: boolean;
+}
+
+export function RadioCardGroup({
+  name,
+  label,
+  value,
+  defaultValue,
+  onChange,
+  options,
+  className,
+  disabled = false,
+}: Readonly<RadioCardGroupProps>) {
+  return (
+    <fieldset
+      role="radiogroup"
+      aria-label={label}
+      className={cn("flex flex-col gap-2 border-0 p-0 m-0", className)}
+    >
+      {label && (
+        <legend className="font-body text-[11px] font-semibold tracking-wide text-muted-foreground uppercase mb-1">
+          {label}
+        </legend>
+      )}
+      <div className="grid gap-2">
+        {options.map((option, idx) => {
+          const isChecked = (value ?? defaultValue) === option.value;
+          const isDisabled = disabled || option.disabled;
+          return (
+            <label
+              key={option.value}
+              className={cn(
+                "group relative flex cursor-pointer select-none items-start gap-3 border-2 border-border p-3 transition-[filter,box-shadow,transform] duration-[80ms]",
+                isChecked
+                  ? "bg-window-body border-accent shadow-[3px_3px_0_var(--accent)]"
+                  : "bg-white shadow-[3px_3px_0_var(--border)] hover:brightness-[1.03]",
+                isDisabled && "pointer-events-none opacity-50",
+              )}
+            >
+              <input
+                type="radio"
+                name={name}
+                value={option.value}
+                checked={value !== undefined ? isChecked : undefined}
+                defaultChecked={defaultValue !== undefined ? defaultValue === option.value : undefined}
+                disabled={isDisabled}
+                onChange={() => onChange?.(option.value)}
+                className="sr-only peer"
+              />
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "flex size-6 shrink-0 items-center justify-center border-2 border-border font-pixel text-[9px]",
+                  isChecked ? "bg-accent text-foreground" : "bg-title-bar text-foreground",
+                )}
+              >
+                {idx + 1}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-body text-sm font-bold text-foreground">
+                    {option.label}
+                  </span>
+                  {option.badge}
+                </div>
+                {option.description && (
+                  <p className="mt-0.5 font-body text-xs font-semibold text-muted-foreground">
+                    {option.description}
+                  </p>
+                )}
+              </div>
+            </label>
+          );
+        })}
+      </div>
+    </fieldset>
   );
 }
 
@@ -218,8 +525,12 @@ export function Progress({
   const pct = max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 0;
   return (
     <progress
+      role="progressbar"
       value={value}
       max={max}
+      aria-valuenow={value}
+      aria-valuemin={0}
+      aria-valuemax={max}
       aria-label={label}
       className={cn(
         "y2k-progress h-[18px] w-full border-2 border-border bg-white shadow-[2px_2px_0_var(--border)]",
@@ -232,7 +543,7 @@ export function Progress({
 
 /* ── Status / XP chips ──────────────────────────────────────── */
 
-export type StageStatus = "locked" | "unlocked" | "completed";
+export type StageStatus = "locked" | "unlocked" | "available" | "completed";
 export type QuestOutcome = "passed" | "not-passed" | "not-taken";
 export type ChipStatus = StageStatus | QuestOutcome | "solved" | "bonus" | "normal";
 
@@ -246,6 +557,11 @@ const CHIP_STYLES: Record<
     icon: <Lock aria-hidden="true" className="size-3" />,
   },
   unlocked: {
+    label: "Unlocked",
+    className: "bg-primary text-foreground",
+    icon: <Star aria-hidden="true" className="size-3" />,
+  },
+  available: {
     label: "Unlocked",
     className: "bg-primary text-foreground",
     icon: <Star aria-hidden="true" className="size-3" />,
@@ -381,14 +697,37 @@ export function Table({ children, className }: Readonly<{ children: ReactNode; c
   );
 }
 
+export function Thead({ children, className }: Readonly<{ children: ReactNode; className?: ClassValue }>) {
+  return <thead className={cn("bg-title-bar", className)}>{children}</thead>;
+}
+
+export function Tbody({ children, className }: Readonly<{ children: ReactNode; className?: ClassValue }>) {
+  return <tbody className={cn("divide-y divide-border/30", className)}>{children}</tbody>;
+}
+
+export function Tr({ children, className, ...props }: Readonly<React.HTMLAttributes<HTMLTableRowElement>>) {
+  return (
+    <tr
+      className={cn("hover:bg-accent/10 transition-colors duration-[80ms]", className)}
+      {...props}
+    >
+      {children}
+    </tr>
+  );
+}
+
 export function Th({
   children,
   sorted,
+  className,
   ...props
 }: Readonly<React.ThHTMLAttributes<HTMLTableCellElement> & { sorted?: "asc" | "desc" | false }>) {
   return (
     <th
-      className="border-b-2 border-border bg-title-bar px-3 py-2 text-left font-pixel text-[9px] leading-relaxed whitespace-nowrap"
+      className={cn(
+        "border-b-2 border-border bg-title-bar px-3 py-2 text-left font-pixel text-[9px] leading-relaxed whitespace-nowrap text-foreground",
+        className,
+      )}
       {...props}
     >
       <span className="inline-flex items-center gap-1">
@@ -402,7 +741,7 @@ export function Th({
 
 export function Td({ children, className, ...props }: Readonly<React.TdHTMLAttributes<HTMLTableCellElement>>) {
   return (
-    <td className={cn("border-b border-border/40 px-3 py-2 font-body text-[13px] font-bold", className)} {...props}>
+    <td className={cn("border-b border-border/40 px-3 py-2 font-body text-[13px] font-bold text-foreground", className)} {...props}>
       {children}
     </td>
   );
@@ -414,29 +753,82 @@ export function Pager({
   page,
   totalPages,
   hrefFor,
-}: Readonly<{ page: number; totalPages: number; hrefFor: (page: number) => string }>) {
+  onPageChange,
+}: Readonly<{
+  page: number;
+  totalPages: number;
+  hrefFor?: (page: number) => string;
+  onPageChange?: (page: number) => void;
+}>) {
   const label = `Page ${page} of ${totalPages}`;
+  const isFirst = page <= 1;
+  const isLast = page >= totalPages;
+
+  const prevContent = (
+    <>
+      <ChevronLeft aria-hidden="true" className="size-3" /> Previous
+    </>
+  );
+
+  const nextContent = (
+    <>
+      Next <ChevronRight aria-hidden="true" className="size-3" />
+    </>
+  );
+
   return (
     <nav aria-label="Pagination" className="flex items-center justify-center gap-3">
-      {page > 1 ? (
+      {onPageChange ? (
+        <button
+          type="button"
+          disabled={isFirst}
+          onClick={() => onPageChange(page - 1)}
+          className={cn(
+            buttonClasses("secondary"),
+            isFirst && "opacity-40 pointer-events-none",
+          )}
+        >
+          {prevContent}
+        </button>
+      ) : !isFirst && hrefFor ? (
         <a href={hrefFor(page - 1)} className={buttonClasses("secondary")}>
-          <ChevronLeft aria-hidden="true" className="size-3" /> Previous
+          {prevContent}
         </a>
       ) : (
-        <span className={cn(buttonClasses("secondary"), "opacity-40 pointer-events-none")}>
-          <ChevronLeft aria-hidden="true" className="size-3" /> Previous
+        <span
+          aria-disabled="true"
+          className={cn(buttonClasses("secondary"), "opacity-40 pointer-events-none")}
+        >
+          {prevContent}
         </span>
       )}
+
       <output className="font-pixel text-[9px] leading-relaxed">
         {label}
       </output>
-      {page < totalPages ? (
+
+      {onPageChange ? (
+        <button
+          type="button"
+          disabled={isLast}
+          onClick={() => onPageChange(page + 1)}
+          className={cn(
+            buttonClasses("secondary"),
+            isLast && "opacity-40 pointer-events-none",
+          )}
+        >
+          {nextContent}
+        </button>
+      ) : !isLast && hrefFor ? (
         <a href={hrefFor(page + 1)} className={buttonClasses("secondary")}>
-          Next <ChevronRight aria-hidden="true" className="size-3" />
+          {nextContent}
         </a>
       ) : (
-        <span className={cn(buttonClasses("secondary"), "opacity-40 pointer-events-none")}>
-          Next <ChevronRight aria-hidden="true" className="size-3" />
+        <span
+          aria-disabled="true"
+          className={cn(buttonClasses("secondary"), "opacity-40 pointer-events-none")}
+        >
+          {nextContent}
         </span>
       )}
     </nav>
@@ -482,22 +874,33 @@ function MonitorIcon() {
 export function SkeletonWindow({
   title = "Loading…",
   label = "Loading",
-}: Readonly<{ title?: string; label?: string }>) {
+  className,
+  children,
+}: Readonly<{
+  title?: string;
+  label?: string;
+  className?: ClassValue;
+  children?: ReactNode;
+}>) {
   return (
-    <Window title={title}>
-      <output aria-label={label} className="flex flex-col gap-3 py-4">
-        <div className="h-[18px] w-full border-2 border-border bg-white shadow-[2px_2px_0_var(--border)]">
-          <div
-            className="y2k-march h-full"
-            style={{
-              width: "40%",
-              backgroundImage:
-                "repeating-linear-gradient(45deg, var(--primary) 0px, var(--primary) 8px, var(--border) 8px, var(--border) 10px)",
-              backgroundSize: "14px 14px",
-            }}
-          />
-        </div>
-        <p className="font-pixel-lg text-xl text-muted-foreground">{label}…</p>
+    <Window title={title} className={className}>
+      <output aria-busy="true" aria-label={label} className="flex flex-col gap-3 py-4">
+        {children ?? (
+          <>
+            <div className="h-[18px] w-full border-2 border-border bg-white shadow-[2px_2px_0_var(--border)]">
+              <div
+                className="y2k-march h-full"
+                style={{
+                  width: "40%",
+                  backgroundImage:
+                    "repeating-linear-gradient(45deg, var(--primary) 0px, var(--primary) 8px, var(--border) 8px, var(--border) 10px)",
+                  backgroundSize: "14px 14px",
+                }}
+              />
+            </div>
+            <p className="font-pixel-lg text-xl text-muted-foreground">{label}…</p>
+          </>
+        )}
       </output>
     </Window>
   );
@@ -509,11 +912,13 @@ export function DesktopIcon({
   icon,
   label,
   href,
+  onClick,
   className,
 }: Readonly<{
   icon: ReactNode;
   label: string;
   href?: string;
+  onClick?: () => void;
   className?: ClassValue;
 }>) {
   const content = (
@@ -526,16 +931,30 @@ export function DesktopIcon({
       </span>
     </>
   );
-  return href ? (
-    <a href={href} className={cn("flex w-16 flex-col items-center gap-1", className)}>
-      {content}
-    </a>
-  ) : (
+  if (href) {
+    return (
+      <a href={href} className={cn("flex w-16 flex-col items-center gap-1", className)}>
+        {content}
+      </a>
+    );
+  }
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn("flex w-16 flex-col items-center gap-1 cursor-pointer", className)}
+      >
+        {content}
+      </button>
+    );
+  }
+  return (
     <span className={cn("flex w-16 flex-col items-center gap-1", className)}>{content}</span>
   );
 }
 
-/* ── Badge tile / Character card ────────────────────────────── */
+/* ── Badge tile / Character card / Stage node ──────────────── */
 
 export function AvatarOrInitial({
   src,
@@ -586,6 +1005,196 @@ export function BadgeTile({
         </p>
       </div>
     </li>
+  );
+}
+
+export function CharacterCard({
+  name,
+  description,
+  imageUrl,
+  selected = false,
+  active = false,
+  disabled = false,
+  onClick,
+  className,
+  actionLabel,
+}: Readonly<{
+  name: string;
+  description?: string | null;
+  imageUrl?: string | null;
+  selected?: boolean;
+  active?: boolean;
+  disabled?: boolean;
+  onClick?: () => void;
+  className?: ClassValue;
+  actionLabel?: string;
+}>) {
+  const isSelected = selected || active;
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        "group relative flex flex-col gap-2 border-2 border-border bg-window-body p-3 text-left shadow-[3px_3px_0_var(--border)]",
+        "transition-[transform,box-shadow] duration-[80ms] linear hover:brightness-105 active:translate-x-[3px] active:translate-y-[3px] active:shadow-none",
+        isSelected && "border-accent outline outline-2 outline-accent shadow-[3px_3px_0_var(--accent)]",
+        disabled && "pointer-events-none opacity-60",
+        className,
+      )}
+    >
+      <div className="flex items-center justify-between">
+        <AvatarOrInitial src={imageUrl} name={name} className="size-10" />
+        {isSelected && <PixelHeart size={16} />}
+      </div>
+      <div className="flex flex-col gap-1">
+        <p className="font-pixel text-[9px] leading-relaxed text-foreground">{name}</p>
+        {description && (
+          <p className="font-body text-xs font-bold text-muted-foreground">{description}</p>
+        )}
+      </div>
+      <span className={cn(buttonClasses(isSelected ? "primary" : "secondary"), "w-full pointer-events-none")}>
+        {actionLabel ?? (isSelected ? "Selected" : "Choose Avatar")}
+      </span>
+    </button>
+  );
+}
+
+export function StageNode({
+  stageNumber,
+  title,
+  xpReward,
+  status = "locked",
+  href,
+  onClick,
+  className,
+}: Readonly<{
+  stageNumber: number;
+  title: string;
+  xpReward: number;
+  status: StageStatus;
+  href?: string;
+  onClick?: () => void;
+  className?: ClassValue;
+}>) {
+  const isLocked = status === "locked";
+  const isCompleted = status === "completed";
+
+  if (isLocked) {
+    return (
+      <div
+        aria-disabled="true"
+        title="Locked — finish the previous Stage first."
+        className={cn(
+          "flex items-center gap-3 border-2 border-border bg-muted/60 p-3 opacity-70 shadow-[2px_2px_0_var(--border)]",
+          className,
+        )}
+      >
+        <div className="flex size-8 shrink-0 items-center justify-center border-2 border-border bg-window-body font-pixel text-[10px]">
+          {stageNumber}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-pixel text-[9px] leading-relaxed text-foreground">{title}</span>
+            <XPChip xp={xpReward} />
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <StatusChip status="locked" />
+          <Lock aria-hidden="true" className="size-4 text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
+
+  const content = (
+    <>
+      <div className="flex size-8 shrink-0 items-center justify-center border-2 border-border bg-title-bar font-pixel text-[10px]">
+        {stageNumber}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-pixel text-[9px] leading-relaxed text-foreground">{title}</span>
+          <XPChip xp={xpReward} />
+        </div>
+      </div>
+      <StatusChip status={isCompleted ? "completed" : "unlocked"} />
+    </>
+  );
+
+  const nodeClasses = cn(
+    "flex w-full items-center gap-3 border-2 border-border bg-window-body p-3 shadow-[4px_4px_0_var(--border)]",
+    "transition-[transform,box-shadow] duration-[80ms] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_var(--border)] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none",
+    className,
+  );
+
+  if (href) {
+    return (
+      <a
+        href={href}
+        aria-label={`${title}, ${isCompleted ? "Completed" : "Unlocked"}, ${xpReward} XP`}
+        className={nodeClasses}
+      >
+        {content}
+      </a>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={`${title}, ${isCompleted ? "Completed" : "Unlocked"}, ${xpReward} XP`}
+      className={nodeClasses}
+    >
+      {content}
+    </button>
+  );
+}
+
+/* ── Toast ──────────────────────────────────────────────────── */
+
+export type ToastVariant = "success" | "error" | "info";
+
+export function Toast({
+  message,
+  variant = "success",
+  onClose,
+  className,
+}: Readonly<{
+  message: ReactNode;
+  variant?: ToastVariant;
+  onClose?: () => void;
+  className?: ClassValue;
+}>) {
+  return (
+    <div
+      role={variant === "error" ? "alert" : "status"}
+      className={cn(
+        "y2k-toast flex items-center justify-between gap-2 border-2 border-border px-3 py-2 font-body text-sm font-bold shadow-[4px_4px_0_var(--border)]",
+        variant === "success" && "bg-[#59D98F] text-foreground",
+        variant === "error" && "bg-btn-danger text-white",
+        variant === "info" && "bg-title-bar text-foreground",
+        className,
+      )}
+    >
+      <div className="flex items-center gap-2">
+        {variant === "success" && <Check aria-hidden="true" className="size-4 shrink-0" />}
+        {variant === "error" && <X aria-hidden="true" className="size-4 shrink-0" />}
+        {variant === "info" && <Info aria-hidden="true" className="size-4 shrink-0" />}
+        <span>{message}</span>
+      </div>
+      {onClose && (
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close notification"
+          className="ml-2 inline-flex size-4 items-center justify-center hover:opacity-80"
+        >
+          <X aria-hidden="true" className="size-3" />
+        </button>
+      )}
+    </div>
   );
 }
 

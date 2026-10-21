@@ -1,9 +1,8 @@
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Lock } from "lucide-react";
 import { getRegions, getStages, getZones, type Stage } from "@/lib/api-client";
-import { Breadcrumb, EmptyState, Sparkle, StatusChip, Window, XPChip, Y2kButton } from "@/components/y2k";
+import { Breadcrumb, EmptyState, Sparkle, StageNode, Window, Y2kButton } from "@/components/y2k";
 import { ErrorAlert } from "@/components/y2k-dialog";
 
 export default async function ZoneStagesPage({
@@ -76,60 +75,21 @@ export default async function ZoneStagesPage({
           </div>
         )}
         <ol className="flex flex-col gap-3">
-          {stages.map((stage, idx) => {
-            const num = idx + 1;
-            const isLocked = stage.status === "locked";
-            const isCompleted = stage.status === "completed";
-            if (isLocked) {
-              return (
-                <li key={stage.id}>
-                  <div
-                    aria-disabled="true"
-                    title="Locked — finish the previous Stage first."
-                    className="flex items-center gap-3 border-2 border-border bg-muted/60 p-3 opacity-70 shadow-[2px_2px_0_var(--border)]"
-                  >
-                    <div className="flex size-8 items-center justify-center border-2 border-border bg-window-body font-pixel text-[10px]">
-                      {num}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-pixel text-[9px] leading-relaxed text-foreground">
-                          {stage.title}
-                        </span>
-                        <XPChip xp={stage.xpReward} />
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <StatusChip status="locked" />
-                      <Lock aria-hidden="true" className="size-4" />
-                    </div>
-                  </div>
-                </li>
-              );
-            }
-            return (
-              <li key={stage.id}>
-                <Link
-                  href={`/map/${regionIdNumber}/${zoneIdNumber}/${stage.id}`}
-                  aria-label={`${stage.title}, ${isCompleted ? "Completed" : "Unlocked"}, ${stage.xpReward} XP`}
-                  className="flex items-center gap-3 border-2 border-border bg-window-body p-3 shadow-[4px_4px_0_var(--border)] transition-[transform] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_var(--border)]"
-                >
-                  <div className="flex size-8 items-center justify-center border-2 border-border bg-title-bar font-pixel text-[10px]">
-                    {num}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-pixel text-[9px] leading-relaxed text-foreground">
-                        {stage.title}
-                      </span>
-                      <XPChip xp={stage.xpReward} />
-                    </div>
-                  </div>
-                  <StatusChip status={isCompleted ? "completed" : "unlocked"} />
-                </Link>
-              </li>
-            );
-          })}
+          {stages.map((stage, idx) => (
+            <li key={stage.id}>
+              <StageNode
+                stageNumber={idx + 1}
+                title={stage.title}
+                xpReward={stage.xpReward}
+                status={stage.status}
+                href={
+                  stage.status !== "locked"
+                    ? `/map/${regionIdNumber}/${zoneIdNumber}/${stage.id}`
+                    : undefined
+                }
+              />
+            </li>
+          ))}
         </ol>
         <div className="mt-4 font-body text-sm font-bold text-muted-foreground">
           Finish a Stage to unlock the next one.

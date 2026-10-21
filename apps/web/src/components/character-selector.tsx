@@ -8,9 +8,9 @@ import { selectUserCharacter, type CharacterOption } from "@/lib/api-client";
 import { SaveButton } from "@/components/y2k-dialog";
 import {
   AvatarOrInitial,
+  CharacterCard,
   PixelHeart,
   Window,
-  buttonClasses,
 } from "@/components/y2k";
 
 interface CharacterSelectorProps {
@@ -99,29 +99,16 @@ export function CharacterSelector({
           const isActive = isCurrentActive;
 
           return (
-            <button
-              type="button"
+            <CharacterCard
               key={char.id}
+              name={char.name}
+              description={char.description}
+              imageUrl={char.imageUrl}
+              selected={isSelected || isCurrentActive}
               disabled={isLoading}
+              actionLabel={isActive ? "Selected" : "Choose Avatar"}
               onClick={() => handleSelect(char)}
-              className={`group relative flex flex-col gap-2 border-2 border-border bg-window-body p-3 text-left shadow-[3px_3px_0_var(--border)] transition-[transform,box-shadow] duration-[80ms] linear hover:brightness-105 active:translate-x-[3px] active:translate-y-[3px] active:shadow-none ${
-                isSelected || isCurrentActive ? "outline outline-2 outline-accent" : ""
-              } ${isLoading && isSelected ? "opacity-70 pointer-events-none" : ""}`}
-            >
-              <div className="flex items-center justify-between">
-                <AvatarOrInitial src={char.imageUrl} name={char.name} className="size-10" />
-                {(isSelected || isCurrentActive) && <PixelHeart size={16} />}
-              </div>
-              <div className="flex flex-col gap-1">
-                <p className="font-pixel text-[9px] leading-relaxed">{char.name}</p>
-                <p className="font-body text-xs font-bold text-muted-foreground">
-                  {char.description}
-                </p>
-              </div>
-              <span className={buttonClasses(isActive ? "primary" : "secondary") + " w-full"}>
-                {isActive ? "Selected" : "Choose Avatar"}
-              </span>
-            </button>
+            />
           );
         })}
       </div>
