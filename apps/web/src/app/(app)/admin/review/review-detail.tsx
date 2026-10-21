@@ -98,24 +98,24 @@ export function ReviewDetail({ id }: Readonly<{ id: string }>) {
         const [queue, records] = await Promise.all([
           getReviewQueue(API_URL, token),
           getReviewHistory(API_URL, token, draftId).catch((cause: unknown) => {
-            // A draft with no history route match is "not found", not a failure.
+            // No history means the draft does not exist: "not found", not a failure.
             if (cause instanceof ApiError && cause.status === 404) return null;
             throw cause;
           }),
         ]);
         if (cancelled) return;
-        const history = [...(records ?? [])].sort((a, b) => a.id - b.id);
+        const sorted = [...(records ?? [])].sort((a, b) => a.id - b.id);
         const queued = queue.find((item) => item.id === draftId);
-        const latest = history.at(-1);
+        const latest = sorted.at(-1);
         if (queued) {
-          setSubject({ ...queued, status: queued.status });
+          setSubject({ ...queued, revision: queued.submittedRevision ?? queued.revision });
         } else if (latest) {
           setSubject({ id: draftId, title: latest.title, lessonContent: latest.lessonContent, ownerId: null, revision: latest.revision, status: latest.decision });
         } else {
           setStatus("not-found");
           return;
         }
-        setHistory(history);
+        setHistory(sorted);
         setStatus("ready");
       } catch (cause) {
         // A canceled request must not report: the page that replaced this one
