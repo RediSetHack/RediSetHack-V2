@@ -509,19 +509,44 @@ export function RadioCardGroup({
 
 /* ── Progress bar ───────────────────────────────────────────── */
 
-export function Progress({
-  value,
-  max = 100,
-  label,
-  className,
-  march = true,
-}: Readonly<{
-  value: number;
-  max?: number;
+type ProgressBaseProps = {
   label?: string;
   className?: ClassValue;
   march?: boolean;
-}>) {
+};
+
+type DeterminateProgressProps = ProgressBaseProps & {
+  indeterminate?: false;
+  value: number;
+  max?: number;
+};
+
+type IndeterminateProgressProps = ProgressBaseProps & {
+  indeterminate: true;
+  value?: never;
+  max?: never;
+};
+
+export function Progress(
+  props: DeterminateProgressProps | IndeterminateProgressProps,
+) {
+  const { label, className } = props;
+
+  if (props.indeterminate) {
+    return (
+      <div
+        role="progressbar"
+        aria-label={label}
+        aria-valuetext="Working…"
+        className={cn(
+          "y2k-progress-indeterminate h-[18px] w-full border-2 border-border bg-white shadow-[2px_2px_0_var(--border)]",
+          className,
+        )}
+      />
+    );
+  }
+
+  const { value, max = 100, march = true } = props;
   const pct = max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 0;
   return (
     <progress
