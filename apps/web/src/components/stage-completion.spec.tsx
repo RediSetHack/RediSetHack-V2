@@ -37,10 +37,11 @@ describe("Stage completion navigation", () => {
     expect(markup).toContain("BACK TO ZONE");
   });
 
-  it("shows the no-XP notice instead of the button for a completed Stage", () => {
+  it("shows the no-XP notice and a disabled COMPLETED button for a completed Stage", () => {
     const markup = renderToStaticMarkup(<StageCompletion stageId={1} apiUrl="http://api.test" completed={true} zonePath="/map/1/2" />);
     expect(markup).toContain("Already completed — reading it again awards no XP.");
     expect(markup).not.toContain("MARK AS COMPLETE");
+    expect(markup).toMatch(/<button[^>]*disabled[^>]*>COMPLETED<\/button>/);
   });
 });
 

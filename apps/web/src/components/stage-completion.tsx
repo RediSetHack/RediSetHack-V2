@@ -31,10 +31,15 @@ function XpBar({
   totalXpBefore,
   xpEarned,
 }: Readonly<{ totalXpBefore?: number; xpEarned: number }>) {
-  const after = totalXpBefore === undefined ? undefined : totalXpBefore + xpEarned;
-  const span = after === undefined ? 100 : levelProgress(after).span;
-  const to = after === undefined ? 100 : levelProgress(after).intoLevel;
-  const from = totalXpBefore === undefined ? 0 : Math.min(to, Math.max(0, to - xpEarned));
+  const target = totalXpBefore === undefined ? undefined : levelProgress(totalXpBefore + xpEarned);
+  const span = target === undefined ? 100 : target.span;
+  const to = target === undefined ? 100 : target.intoLevel;
+  const from =
+    totalXpBefore === undefined || target === undefined
+      ? 0
+      : levelProgress(totalXpBefore).level === target.level
+        ? Math.min(to, levelProgress(totalXpBefore).intoLevel)
+        : 0; // levelled up: sweep the new level from empty rather than start mid-way
   const reducedMotion =
     typeof matchMedia === "function" &&
     matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -104,15 +109,14 @@ export function StageCompletion({
   return (
     <>
       <div className="mt-8 flex flex-col items-start gap-3">
-        {completed ? (
+        {completed && (
           <p className="border-2 border-border bg-window-body p-4 font-body text-sm font-bold text-muted-foreground shadow-[2px_2px_0_var(--border)]">
             Already completed — reading it again awards no XP.
           </p>
-        ) : (
-          <Y2kButton onClick={handleComplete} disabled={isLoading || hasCompleted}>
-            {isLoading ? "SAVING…" : hasCompleted ? "COMPLETED" : "MARK AS COMPLETE"}
-          </Y2kButton>
         )}
+        <Y2kButton onClick={handleComplete} disabled={isLoading || hasCompleted}>
+          {isLoading ? "SAVING…" : hasCompleted ? "COMPLETED" : "MARK AS COMPLETE"}
+        </Y2kButton>
         {error && (
           <p role="alert" className="font-body text-sm font-bold text-btn-danger">
             {error}

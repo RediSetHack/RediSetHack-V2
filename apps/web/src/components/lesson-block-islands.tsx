@@ -11,6 +11,8 @@ import { Y2kAlert } from "@/components/y2k-dialog";
  */
 
 export function CopyButton({ content }: Readonly<{ content: string }>) {
+  const [copied, setCopied] = useState(false);
+  const [failed, setFailed] = useState(false);
   return (
     <button
       type="button"
@@ -18,12 +20,14 @@ export function CopyButton({ content }: Readonly<{ content: string }>) {
       onClick={async () => {
         try {
           await navigator.clipboard.writeText(content);
+          setCopied(true);
+          setFailed(false);
         } catch {
-          // ignore
+          setFailed(true);
         }
       }}
     >
-      COPY
+      {failed ? "COPY FAILED" : copied ? "COPIED" : "COPY"}
     </button>
   );
 }
@@ -50,6 +54,11 @@ export function ImageWithFallback({
       src={url}
       alt={alt}
       className="h-auto max-w-full border-2 border-border"
+      ref={(el) => {
+        // A cached or already-failed image can finish (or fail) before React
+        // hydrates, so `onError` never fires — check the settled state on mount.
+        if (el?.complete && el.naturalWidth === 0) setFailed(true);
+      }}
       onError={() => setFailed(true)}
     />
   );

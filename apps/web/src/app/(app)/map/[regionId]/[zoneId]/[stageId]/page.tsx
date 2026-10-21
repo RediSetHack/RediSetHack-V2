@@ -2,7 +2,8 @@ import { auth } from "@clerk/nextjs/server";
 import { Fragment } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { renderLessonBlock } from "@/components/lesson-blocks";
+import { hasUnsupportedBlock, renderLessonBlock } from "@/components/lesson-blocks";
+import { UnsupportedBlockDialog } from "@/components/lesson-block-islands";
 import { StageCompletion } from "@/components/stage-completion";
 import { ApiError, getLesson, getProfile, getRegions, getZones, getStages, type Lesson } from "@/lib/api-client";
 import { normalizeLessonBlocks } from "@/lib/lesson-blocks";
@@ -79,10 +80,18 @@ export default async function StagePage({
   }
 
   const blocks = normalizeLessonBlocks(lesson.blocks);
-  const stages = await getStages(apiUrl, token ?? "", zoneIdNumber).catch(() => []);
+  const completed = lesson.status === "completed";
+  const [stages, totalXpBefore] = await Promise.all([
+    getStages(apiUrl, token ?? "", zoneIdNumber).catch(() => []),
+    // No XP animation is shown for an already-completed Stage, so skip the fetch.
+    completed
+      ? Promise.resolve(undefined)
+      : getProfile(apiUrl, token ?? "")
+          .then((profile) => profile.totalXp)
+          .catch(() => undefined),
+  ]);
   const stageIndex = stages.findIndex((stage) => stage.id === stageIdNumber);
   const nextStage = stageIndex < 0 ? undefined : stages[stageIndex + 1];
-  const totalXpBefore = await getProfile(apiUrl, token ?? "").then((profile) => profile.totalXp).catch(() => undefined);
   const blockViews = await Promise.all(blocks.map(renderLessonBlock));
 
   return (
@@ -113,6 +122,7 @@ export default async function StagePage({
             <Fragment key={`${blocks[i]!.kind}:${i}`}>{view}</Fragment>
           ))}
         </div>
+        {hasUnsupportedBlock(blocks) && <UnsupportedBlockDialog />}
         <StageCompletion
           stageId={stageIdNumber}
           nextStagePath={nextStage ? `/map/${regionIdNumber}/${zoneIdNumber}/${nextStage.id}` : undefined}

@@ -2,11 +2,7 @@ import { codeToHtml } from "shiki";
 import Link from "next/link";
 import type { RenderableBlock } from "@/lib/lesson-blocks";
 import { Window, Y2kButton } from "@/components/y2k";
-import {
-  CopyButton,
-  ImageWithFallback,
-  UnsupportedBlockDialog,
-} from "@/components/lesson-block-islands";
+import { CopyButton, ImageWithFallback } from "@/components/lesson-block-islands";
 
 async function highlight(code: string, language: string): Promise<string> {
   try {
@@ -22,7 +18,7 @@ async function highlight(code: string, language: string): Promise<string> {
 }
 
 /**
- * Highlighting is async, so the code/exercise Branch functions are plain async
+ * Highlighting is async, so the code/exercise builders are plain async
  * functions returning JSX rather than async Components. React's static renderer
  * cannot resolve an async Component passed as an element type, so the renderer
  * `await`s these directly.
@@ -30,13 +26,13 @@ async function highlight(code: string, language: string): Promise<string> {
 async function codeBlock(
   language: string,
   content: string,
-  title?: string,
+  { title, copyable = false }: Readonly<{ title?: string; copyable?: boolean }> = {},
 ) {
   const html = await highlight(content, language);
   return (
     <Window
       title={title ?? (language || "code")}
-      actions={title === undefined ? <CopyButton content={content} /> : null}
+      actions={copyable ? <CopyButton content={content} /> : null}
       controls={false}
     >
       <figure className="overflow-x-auto border-2 border-border bg-white [&_pre]:m-0 [&_pre]:overflow-x-auto [&_pre]:p-3 [&_pre]:text-sm">
@@ -64,7 +60,7 @@ async function exerciseBlock(
     <Window title="EXERCISE">
       <div className="flex flex-col gap-3">
         <p className="font-body text-sm font-bold text-foreground">{prompt}</p>
-        {await codeBlock(language, starterCode, "STARTER CODE")}
+        {await codeBlock(language, starterCode, { title: "STARTER CODE" })}
         <Link href={codelabHref}>
           <Y2kButton>OPEN IN CODELAB</Y2kButton>
         </Link>
@@ -96,17 +92,23 @@ function imageBlock(url: string, alt: string, caption?: string) {
   );
 }
 
+/** True when any block is one the renderer can't draw yet — drives the single unsupported-content dialog. */
+export function hasUnsupportedBlock(blocks: readonly RenderableBlock[]): boolean {
+  return blocks.some((block) => block.kind === "unsupported");
+}
+
 /**
  * The one generic Lesson renderer: it switches over the block union and
- * dispatches to a placeholder per block type. No per-Stage components are
- * ever written — a new Stage's content is just new block data.
+ * dispatches to a builder per block type. No per-Stage components are ever
+ * written — a new Stage's content is just new block data. An unsupported block
+ * renders nothing on its own; the page shows one dialog for the whole Lesson.
  */
 export async function renderLessonBlock(block: RenderableBlock) {
   switch (block.kind) {
     case "text":
       return textBlock(block.content);
     case "code":
-      return await codeBlock(block.language, block.content);
+      return await codeBlock(block.language, block.content, { copyable: true });
     case "exercise":
       return await exerciseBlock(
         block.prompt,
@@ -117,6 +119,7 @@ export async function renderLessonBlock(block: RenderableBlock) {
     case "image":
       return imageBlock(block.url, block.alt, block.caption);
     default:
-      return <UnsupportedBlockDialog />;
+      return null;
   }
 }
+

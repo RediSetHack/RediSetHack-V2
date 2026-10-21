@@ -105,11 +105,13 @@ describe("stage lesson page", () => {
     expect(markup).toContain("Try again");
   });
 
-  it("shows the no-XP notice and a disabled button for a completed Stage", async () => {
+  it("shows the no-XP notice and a disabled COMPLETED button for a completed Stage", async () => {
     mockGetLesson.mockResolvedValue(makeLesson({ status: "completed" }));
     const markup = renderToStaticMarkup(await StagePage(params));
     expect(markup).toContain("Already completed — reading it again awards no XP.");
+    expect(markup).toContain("COMPLETED");
     expect(markup).not.toContain("MARK AS COMPLETE");
+    expect(markup).toMatch(/<button[^>]*disabled[^>]*>COMPLETED<\/button>/);
   });
 
   it("offers MARK AS COMPLETE for an available Stage", async () => {
