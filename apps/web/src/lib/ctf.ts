@@ -44,6 +44,7 @@ export function artifactFileName(name: string): string {
   const cleaned = name
     .trim()
     .replace(/[^\w.-]+/g, "-")
-    .replace(/^[-.]+|[-.]+$/g, "");
+    .replace(/^[-.]+/, "")
+    .replace(/[-.]+$/, "");
   return cleaned.length > 0 ? cleaned : "artifact.txt";
 }

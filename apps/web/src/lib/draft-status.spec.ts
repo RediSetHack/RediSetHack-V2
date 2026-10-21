@@ -2,36 +2,19 @@ import { describe, expect, it } from "vitest";
 
 import { draftStatusChip } from "./draft-status";
 
+const STATUS_CASES = [
+  { status: "draft", chip: "normal", label: "Draft" },
+  { status: "submitted", chip: "unlocked", label: "Submitted" },
+  { status: "revision-needed", chip: "not-passed", label: "Revision needed" },
+  { status: "approved", chip: "completed", label: "Approved" },
+  { status: "rejected", chip: "not-passed", label: "Rejected" },
+] as const;
+
 describe("draftStatusChip", () => {
-  it("labels a draft that is not submitted yet", () => {
-    expect(draftStatusChip("draft")).toEqual({ chip: "normal", label: "Draft" });
-  });
-
-  it("labels a revision that is with the reviewers", () => {
-    expect(draftStatusChip("submitted")).toEqual({
-      chip: "unlocked",
-      label: "Submitted",
-    });
-  });
-
-  it("labels a revision the reviewers sent back", () => {
-    expect(draftStatusChip("revision-needed")).toEqual({
-      chip: "not-passed",
-      label: "Revision needed",
-    });
-  });
-
-  it("labels an approved revision", () => {
-    expect(draftStatusChip("approved")).toEqual({
-      chip: "completed",
-      label: "Approved",
-    });
-  });
-
-  it("labels a rejected revision", () => {
-    expect(draftStatusChip("rejected")).toEqual({
-      chip: "not-passed",
-      label: "Rejected",
-    });
-  });
+  it.each(STATUS_CASES)(
+    "labels a $status draft as $label",
+    ({ status, chip, label }) => {
+      expect(draftStatusChip(status)).toEqual({ chip, label });
+    },
+  );
 });

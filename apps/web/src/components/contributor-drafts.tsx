@@ -23,11 +23,10 @@ const BLANK = JSON.stringify([{ type: "text", content: "" }], null, 2);
  */
 export function ContributorAccessDenied() {
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
+    <dialog
+      open
       aria-labelledby="contribute-denied-title"
-      className="w-full max-w-md"
+      className="static m-0 w-full max-w-md border-0 bg-transparent p-0 text-foreground"
     >
       <Window title="CONTRIBUTORS_ONLY.EXE">
         <div className="flex flex-col items-center gap-4 py-2 text-center">
@@ -44,7 +43,7 @@ export function ContributorAccessDenied() {
           </p>
         </div>
       </Window>
-    </div>
+    </dialog>
   );
 }
 

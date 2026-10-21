@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "@clerk/nextjs";
-import { Check, Download, Flag, Target, X, Zap } from "lucide-react";
+import { Check, Download, Flag, X } from "lucide-react";
 import {
   ApiError,
   getCtfArtifact,
@@ -11,8 +11,9 @@ import {
   type CtfArtifact,
   type CtfChallenge,
 } from "@/lib/api-client";
-import { artifactFileName, CTF_DIFFICULTY_LABELS, flagVerdict } from "@/lib/ctf";
-import { StatusChip, Window, XPChip, Y2kButton, Y2kInput } from "@/components/y2k";
+import { artifactFileName, flagVerdict } from "@/lib/ctf";
+import { CtfChallengeFacts } from "@/components/ctf-challenge-facts";
+import { StatusChip, Window, Y2kButton, Y2kInput } from "@/components/y2k";
 import { FeedbackState } from "@/components/y2k-dialog";
 
 /** Saves the artifact to the learner's machine. */
@@ -99,28 +100,7 @@ export function CtfChallengeView({ apiUrl, challengeId }: Readonly<{ apiUrl: str
           )
         }
       >
-        <dl className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex items-center gap-1 font-body text-[13px] font-bold text-foreground">
-            <dt className="sr-only">Category</dt>
-            <dd className="inline-flex items-center gap-1">
-              <Target aria-hidden="true" className="size-4" />
-              {challenge.category}
-            </dd>
-          </div>
-          <div className="inline-flex items-center gap-1 font-body text-[13px] font-bold text-foreground">
-            <dt className="sr-only">Difficulty</dt>
-            <dd className="inline-flex items-center gap-1">
-              <Zap aria-hidden="true" className="size-4" />
-              {CTF_DIFFICULTY_LABELS[challenge.difficulty]}
-            </dd>
-          </div>
-          <div>
-            <dt className="sr-only">XP reward</dt>
-            <dd>
-              <XPChip xp={challenge.xpReward} />
-            </dd>
-          </div>
-        </dl>
+        <CtfChallengeFacts challenge={challenge} />
         <p className="mt-3 font-body text-sm font-bold text-foreground">{challenge.brief}</p>
       </Window>
 
@@ -157,7 +137,6 @@ export function CtfChallengeView({ apiUrl, challengeId }: Readonly<{ apiUrl: str
         </form>
         {verdict && (
           <output
-            role="status"
             className={`mt-3 flex items-start gap-2 font-body text-sm font-bold ${verdict.tone === "success" ? "text-success" : "text-btn-danger"}`}
           >
             {verdict.tone === "success" ? (

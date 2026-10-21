@@ -2,34 +2,20 @@ import { describe, expect, it } from "vitest";
 
 import { requirementStateLabel, sideQuestStatusChip } from "./side-quests";
 
+const STATUS_CASES = [
+  { status: "locked", chip: "locked", label: "Locked" },
+  { status: "available", chip: "unlocked", label: "Unlocked" },
+  { status: "in_progress", chip: "unlocked", label: "In progress" },
+  { status: "completed", chip: "completed", label: "Completed" },
+] as const;
+
 describe("sideQuestStatusChip", () => {
-  it("labels a locked Side Quest", () => {
-    expect(sideQuestStatusChip("locked")).toEqual({
-      chip: "locked",
-      label: "Locked",
-    });
-  });
-
-  it("labels an available Side Quest as unlocked", () => {
-    expect(sideQuestStatusChip("available")).toEqual({
-      chip: "unlocked",
-      label: "Unlocked",
-    });
-  });
-
-  it("labels a started Side Quest as in progress, not locked", () => {
-    expect(sideQuestStatusChip("in_progress")).toEqual({
-      chip: "unlocked",
-      label: "In progress",
-    });
-  });
-
-  it("labels a finished Side Quest as completed", () => {
-    expect(sideQuestStatusChip("completed")).toEqual({
-      chip: "completed",
-      label: "Completed",
-    });
-  });
+  it.each(STATUS_CASES)(
+    "labels a $status Side Quest as $label",
+    ({ status, chip, label }) => {
+      expect(sideQuestStatusChip(status)).toEqual({ chip, label });
+    },
+  );
 });
 
 describe("requirementStateLabel", () => {

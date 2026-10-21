@@ -67,8 +67,8 @@ describe("Contributor access denied", () => {
   it("is an info dialog that says why the drafts are closed", () => {
     const markup = renderToStaticMarkup(<ContributorAccessDenied />);
 
-    expect(markup).toContain('role="dialog"');
-    expect(markup).toContain('aria-modal="true"');
+    expect(markup).toContain("<dialog");
+    expect(markup).toContain('aria-labelledby="contribute-denied-title"');
     expect(markup).toContain("lucide-info");
     expect(markup).toContain("Only approved contributors can write drafts.");
   });
