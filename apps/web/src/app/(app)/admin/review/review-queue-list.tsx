@@ -34,13 +34,14 @@ export function ReviewQueueList() {
           setLoading(false);
         }
       } catch (cause) {
+        // A canceled request must not report: the page that replaced this one
+        // owns the shell state now.
+        if (cancelled) return;
         // A `403` means the session lost its admin rights: the shell swaps
         // itself for the ACCESS DENIED window.
         if (report(cause)) return;
-        if (!cancelled) {
-          setError(cause instanceof ApiError ? cause.message : "Could not load the review queue.");
-          setLoading(false);
-        }
+        setError(cause instanceof ApiError ? cause.message : "Could not load the review queue.");
+        setLoading(false);
       }
     })();
     return () => {

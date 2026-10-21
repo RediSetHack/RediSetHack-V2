@@ -24,10 +24,12 @@ export function RegionForm({ mode, id }: Readonly<{ mode: "create" | "edit"; id?
         setStatus("ready");
       })
       .catch((cause: unknown) => {
+        // A canceled request must not report: the page that replaced this
+        // one owns the shell state now.
+        if (cancelled) return;
         // A `403` means the session lost its admin rights: the shell swaps
         // itself for the ACCESS DENIED window.
         if (report(cause)) return;
-        if (cancelled) return;
         setStatus(cause instanceof ApiError && cause.status === 404 ? "not-found" : "error");
       });
     return () => {

@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { AdminSidebar } from "@/components/admin/sidebar";
 import { AdminBreadcrumb } from "@/components/admin/admin-breadcrumb";
-import { AdminAccessDenied, ADMIN_FORBIDDEN_COPY } from "@/components/admin/access-denied";
+import { AdminAccessDenied } from "@/components/admin/access-denied";
 import { AdminAccessProvider, useAdminAccess } from "@/components/admin/admin-access";
 
 /**
@@ -25,7 +25,7 @@ export function AdminChrome({
           <AdminBreadcrumb />
         </div>
         <div className="min-w-0 flex-1">
-          {forbidden ? <AdminAccessDenied reason={ADMIN_FORBIDDEN_COPY} /> : children}
+          {forbidden ? <AdminAccessDenied /> : children}
         </div>
       </div>
     </div>

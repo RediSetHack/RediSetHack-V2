@@ -67,7 +67,8 @@ function BackToApp({ onClick }: Readonly<{ onClick?: () => void }>) {
   );
 }
 
-/** The CONTROL_PANEL.EXE window: desktop-icon nav on lg, a `<details>` dropdown on mobile. */export function AdminSidebar() {
+/** The CONTROL_PANEL.EXE window: desktop-icon nav on lg, a `<details>` dropdown on mobile. */
+export function AdminSidebar() {
   const pathname = usePathname();
 
   return (
