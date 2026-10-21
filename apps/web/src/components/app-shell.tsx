@@ -3,7 +3,37 @@ import type { Profile, DailyEvent } from "@/lib/api-client";
 import { EventBanner } from "@/components/event-banner";
 import { PlayerChip } from "@/components/player-chip";
 import { Taskbar } from "@/components/taskbar";
-import { Decorations, Sparkle } from "@/components/y2k";
+import { Decorations, Sparkle, buttonClasses } from "@/components/y2k";
+import { cn } from "@/lib/utils";
+
+export function MinimalHeader() {
+  return (
+    <header className="relative z-10 border-b-2 border-border bg-window-body">
+      <div className="mx-auto flex w-full max-w-[1200px] flex-wrap items-center justify-between gap-3 px-4 py-2">
+        <Link href="/" className="flex items-center gap-2">
+          <Sparkle size={16} />
+          <span className="font-pixel text-[12px] leading-relaxed text-foreground">
+            REDISETHACK
+          </span>
+        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/sign-in"
+            className={cn(buttonClasses("secondary"), "h-7 px-2.5 text-[8px]")}
+          >
+            SIGN IN
+          </Link>
+          <Link
+            href="/sign-up"
+            className={cn(buttonClasses("primary"), "h-7 px-2.5 text-[8px]")}
+          >
+            SIGN UP
+          </Link>
+        </div>
+      </div>
+    </header>
+  );
+}
 
 export function AppShell({
   profile,
@@ -33,13 +63,7 @@ export function AppShell({
               REDISETHACK
             </span>
           </Link>
-          {profileError ? (
-            <p role="alert" className="font-body text-xs font-bold text-btn-danger">
-              Your profile could not be loaded.
-            </p>
-          ) : (
-            <PlayerChip profile={profile} isAdmin={isAdmin} />
-          )}
+          <PlayerChip profile={profile} isAdmin={isAdmin} error={profileError} />
         </div>
       </header>
 

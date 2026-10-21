@@ -52,16 +52,26 @@ function Clock() {
 }
 
 export function Taskbar({
-  isAdmin,
-  isContributor,
-}: Readonly<{ isAdmin: boolean; isContributor: boolean }>) {
-  const pathname = usePathname();
+  isAdmin = false,
+  isContributor = false,
+  currentPath,
+  initialStartOpen = false,
+}: Readonly<{
+  isAdmin?: boolean;
+  isContributor?: boolean;
+  currentPath?: string;
+  initialStartOpen?: boolean;
+}>) {
+  const hookPathname = usePathname();
+  const pathname = currentPath ?? hookPathname ?? "";
   const { signOut } = useClerk();
-  const [startOpen, setStartOpen] = useState(false);
+  const [startOpen, setStartOpen] = useState(initialStartOpen);
+
+  const canContribute = isContributor || isAdmin;
 
   const entries = [
     ...START_ENTRIES,
-    ...(isContributor
+    ...(canContribute
       ? [{ href: "/contribute", label: "Contribute", icon: FolderEdit, section: "more" as const }]
       : []),
     ...(isAdmin
@@ -71,10 +81,10 @@ export function Taskbar({
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 flex h-10 items-center gap-1 border-t-2 border-border bg-title-bar px-2"
+      className="fixed inset-x-0 bottom-0 z-40 flex h-10 items-center justify-between border-t-2 border-border bg-title-bar px-2 overflow-x-hidden"
       aria-label="Taskbar"
     >
-      <div className="relative">
+      <div className="relative hidden sm:block">
         <button
           type="button"
           aria-expanded={startOpen}
@@ -127,17 +137,18 @@ export function Taskbar({
         )}
       </div>
 
-      <ul className="mx-auto flex items-center gap-1 overflow-x-auto">
+      <ul className="grid w-full grid-cols-5 gap-1 sm:mx-auto sm:flex sm:w-auto sm:items-center">
         {WINDOW_BUTTONS.map((button) => {
           const active = pathname.startsWith(button.href);
           return (
-            <li key={button.href}>
+            <li key={button.href} className="flex justify-center">
               <Link
                 href={button.href}
                 aria-current={active ? "page" : undefined}
+                aria-label={button.label}
                 className={cn(
                   buttonClasses("secondary"),
-                  "h-8 gap-1.5 px-2",
+                  "h-8 w-full justify-center gap-1.5 px-2 sm:w-auto",
                   active && "translate-x-[2px] translate-y-[2px] shadow-none",
                 )}
               >
