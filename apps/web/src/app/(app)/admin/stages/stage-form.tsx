@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ResourceForm } from "@/components/admin/resource-form";
 import { EditLoadState, FormShell } from "@/components/admin/form-controls";
-import { LessonBuilder, toDraftBlocks, toLessonPayload } from "@/components/admin/lesson-builder";
+import { LessonBuilder, toDraftBlocks, toLessonPayload, validateLessonBlocks, type LessonDraftBlock } from "@/components/admin/lesson-builder";
 import { API_URL, useCatalog, useToken } from "@/components/admin/use-catalog";
 import { useAdminAccess } from "@/components/admin/admin-access";
 import { ApiError, deleteAdminStage, getAdminStage } from "@/lib/api-client";
@@ -62,11 +62,12 @@ export function StageForm({ mode, id }: Readonly<{ mode: "create" | "edit"; id?:
         mode={mode}
         initialValues={initial as unknown as Record<string, unknown>}
         requiredKeys={["zoneId", "title", "slug"]}
+        validateValues={(values) => validateLessonBlocks((values.lessonContent as LessonDraftBlock[]) ?? [])}
         toInput={(values) => stageInput(values, toLessonPayload)}
         hub="/admin/stages"
         deleteItem={deleteAdminStage}
         itemName={initial.title || "this Stage"}
-        renderFields={makeStageFields(zoneOptions, (blocks, onChange) => <LessonBuilder blocks={blocks} onChange={onChange} />)}
+        renderFields={makeStageFields(zoneOptions, (blocks, onChange, errors) => <LessonBuilder blocks={blocks} onChange={onChange} errors={errors} />)}
       />
     </FormShell>
   );

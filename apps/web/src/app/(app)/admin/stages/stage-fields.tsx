@@ -34,7 +34,7 @@ export function stageInitial(
 
 export function makeStageFields(
   zoneOptions: readonly { value: number; label: string }[],
-  lessonBuilder: (blocks: LessonDraftBlock[], onChange: (next: LessonDraftBlock[]) => void) => React.ReactNode,
+  lessonBuilder: (blocks: LessonDraftBlock[], onChange: (next: LessonDraftBlock[]) => void, errors: Record<string, string>) => React.ReactNode,
 ) {
   return function StageFields({
     values,
@@ -75,7 +75,7 @@ export function makeStageFields(
           </FormField>
         </div>
         <div className="border-t-2 border-border pt-4">
-          {lessonBuilder((values.lessonContent as LessonDraftBlock[]) ?? [], (next) => set("lessonContent", next))}
+          {lessonBuilder((values.lessonContent as LessonDraftBlock[]) ?? [], (next) => set("lessonContent", next), errors)}
         </div>
       </div>
     );

@@ -193,7 +193,13 @@ export function buildLessonPayload(blocks: readonly LessonBlock[]): LessonBlock[
           : { type: "image", url: block.url, alt: block.alt };
       }
       case "exercise":
-        return { type: "exercise", prompt: block.prompt, language: block.language, starterCode: block.starterCode };
+        return {
+          type: "exercise",
+          prompt: block.prompt,
+          language: block.language,
+          starterCode: block.starterCode,
+          ...(block.activityId === undefined ? {} : { activityId: block.activityId }),
+        };
       default:
         return block;
     }

@@ -26,6 +26,7 @@ export function ResourceForm({
   mode,
   initialValues,
   requiredKeys,
+  validateValues,
   toInput,
   hub,
   renderFields,
@@ -39,6 +40,8 @@ export function ResourceForm({
   initialValues: Record<string, unknown>;
   /** Field keys that must be non-empty before the request is sent. */
   requiredKeys: readonly string[];
+  /** Adds resource-specific inline validation before the API request. */
+  validateValues?: (values: Record<string, unknown>) => Record<string, string>;
   /** Builds the request body from the current field values. */
   toInput: (values: Record<string, unknown>) => AdminInput;
   /** The resource's hub path, e.g. `/admin/regions`. */
@@ -61,7 +64,24 @@ export function ResourceForm({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
 
-  const set = (key: string, value: unknown) => setValues((prev) => ({ ...prev, [key]: value }));
+  const set = (key: string, value: unknown) => {
+    const nextValues = { ...values, [key]: value };
+    setValues(nextValues);
+    setFormError(null);
+    setFieldErrors((previous) => {
+      const nextErrors = { ...previous };
+      if (key === "lessonContent") {
+        const revalidate = Object.keys(previous).some((field) => field.startsWith("lessonContent."));
+        for (const field of Object.keys(nextErrors)) {
+          if (field.startsWith("lessonContent")) delete nextErrors[field];
+        }
+        if (revalidate) Object.assign(nextErrors, validateValues?.(nextValues) ?? {});
+      } else {
+        delete nextErrors[key];
+      }
+      return nextErrors;
+    });
+  };
 
   const save = async () => {
     setFormError(null);
@@ -71,6 +91,7 @@ export function ResourceForm({
       // `0` is never a valid id, so a required select left on its placeholder fails.
       if (value === 0 || fieldText(value).trim().length === 0) localErrors[key] = "This field is required.";
     }
+    Object.assign(localErrors, validateValues?.(values) ?? {});
     if (Object.keys(localErrors).length > 0) {
       setFieldErrors(localErrors);
       return;
@@ -170,7 +191,8 @@ function handleApiError(
   if (cause instanceof ApiError) {
     const { fields, alert } = parseFieldIssues(cause.message);
     setFieldErrors(fields);
-    setFormError(alert ?? (Object.keys(fields).length === 0 ? cause.message : null));
+    const hasLessonFieldErrors = Object.keys(fields).some((field) => field.startsWith("lessonContent"));
+    setFormError(alert ?? (hasLessonFieldErrors || Object.keys(fields).length === 0 ? cause.message : null));
     return;
   }
   setFormError("Something went wrong. Try again.");
