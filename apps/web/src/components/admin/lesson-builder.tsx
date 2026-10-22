@@ -11,6 +11,26 @@ import { ReviewLesson } from "@/app/(app)/admin/review/review-lesson";
 
 const LANGUAGES = ["python", "javascript", "cpp", "c", "java"] as const;
 
+function LanguageField({
+  blockKey,
+  value,
+  error,
+  onChange,
+}: Readonly<{ blockKey: string; value: unknown; error?: string; onChange: (language: string) => void }>) {
+  const id = `block-${blockKey}-language`;
+  return (
+    <FormField id={id} label="Language" required error={error}>
+      <Y2kSelect id={id} value={fieldText(value, "python")} onChange={(event) => onChange(event.target.value)}>
+        {LANGUAGES.map((language) => (
+          <option key={language} value={language}>
+            {language}
+          </option>
+        ))}
+      </Y2kSelect>
+    </FormField>
+  );
+}
+
 /** One lesson block the builder edits; `key` keeps React identity across reorders. */
 export type LessonDraftBlock = { key: string; block: Record<string, unknown> };
 
@@ -117,19 +137,12 @@ export function LessonBuilder({
 
                 {type === "code" && (
                   <>
-                    <FormField id={`block-${entry.key}-language`} label="Language" required error={errors[`lessonContent.${entry.key}.language`]}>
-                      <Y2kSelect
-                        id={`block-${entry.key}-language`}
-                        value={fieldText(block.language, "python")}
-                        onChange={(event) => patch(entry.key, { ...block, language: event.target.value })}
-                      >
-                        {LANGUAGES.map((language) => (
-                          <option key={language} value={language}>
-                            {language}
-                          </option>
-                        ))}
-                      </Y2kSelect>
-                    </FormField>
+                    <LanguageField
+                      blockKey={entry.key}
+                      value={block.language}
+                      error={errors[`lessonContent.${entry.key}.language`]}
+                      onChange={(language) => patch(entry.key, { ...block, language })}
+                    />
                     <FormField id={`block-${entry.key}-code`} label="Code" required error={errors[`lessonContent.${entry.key}.content`]}>
                       <Y2kTextarea
                         id={`block-${entry.key}-code`}
@@ -150,19 +163,12 @@ export function LessonBuilder({
                         onChange={(event) => patch(entry.key, { ...block, prompt: event.target.value })}
                       />
                     </FormField>
-                    <FormField id={`block-${entry.key}-language`} label="Language" required error={errors[`lessonContent.${entry.key}.language`]}>
-                      <Y2kSelect
-                        id={`block-${entry.key}-language`}
-                        value={fieldText(block.language, "python")}
-                        onChange={(event) => patch(entry.key, { ...block, language: event.target.value })}
-                      >
-                        {LANGUAGES.map((language) => (
-                          <option key={language} value={language}>
-                            {language}
-                          </option>
-                        ))}
-                      </Y2kSelect>
-                    </FormField>
+                    <LanguageField
+                      blockKey={entry.key}
+                      value={block.language}
+                      error={errors[`lessonContent.${entry.key}.language`]}
+                      onChange={(language) => patch(entry.key, { ...block, language })}
+                    />
                     <FormField id={`block-${entry.key}-starter`} label="Starter code">
                       <Y2kTextarea
                         id={`block-${entry.key}-starter`}
