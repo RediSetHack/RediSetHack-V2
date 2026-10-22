@@ -987,8 +987,19 @@ export function AvatarOrInitial({
   className,
 }: Readonly<{ src?: string | null; name: string; className?: ClassValue }>) {
   if (src) {
-    /* eslint-disable-next-line @next/next/no-img-element -- admin-controlled image hosts; remote patterns unknown */
-    return <img src={src} alt="" className={cn("border-2 border-border bg-white object-cover", className)} />;
+    return (
+      <span className={cn("y2k-checker border-2 border-border", className)}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- admin-controlled image hosts; remote patterns unknown */}
+        <img
+          src={src}
+          alt=""
+          onError={(event) => {
+            event.currentTarget.hidden = true;
+          }}
+          className="size-full object-cover"
+        />
+      </span>
+    );
   }
   return (
     <span
