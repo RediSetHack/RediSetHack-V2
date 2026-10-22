@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { toCriteria, toCriteriaValue } from "./criteria-builder";
 import type { BadgeCriteria } from "@repo/contracts";
 import { QuestionBuilder } from "./question-builder";
-import { toDraftBlocks, toLessonPayload, LessonBuilder } from "./lesson-builder";
+import { moveLessonBlock, toDraftBlocks, toLessonPayload, LessonBuilder, validateLessonBlocks } from "./lesson-builder";
 import { newQuestion, type AdminQuestion } from "@/lib/admin-helpers";
 
 describe("QuestionBuilder", () => {
@@ -31,6 +31,22 @@ describe("QuestionBuilder", () => {
 });
 
 describe("LessonBuilder", () => {
+  it("reorders blocks and leaves boundary moves unchanged", () => {
+    const blocks = toDraftBlocks([{ type: "text", content: "one" }, { type: "text", content: "two" }]);
+    expect(moveLessonBlock(blocks, 0, 1).map(({ block }) => block.content)).toEqual(["two", "one"]);
+    expect(moveLessonBlock(blocks, 0, -1)).toEqual(blocks);
+  });
+
+  it("validates required fields for each supported block", () => {
+    const blocks = toDraftBlocks([
+      { type: "text", content: " " },
+      { type: "code", language: "", content: "" },
+      { type: "exercise", prompt: "", language: "", starterCode: "" },
+      { type: "image", url: "", alt: " " },
+    ]);
+    expect(Object.keys(validateLessonBlocks(blocks))).toHaveLength(7);
+  });
+
   it("renders each block type and the ADD BLOCK menu", () => {
     const blocks = toDraftBlocks([
       { type: "text", content: "hello" },

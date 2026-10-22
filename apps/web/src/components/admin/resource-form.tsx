@@ -26,6 +26,7 @@ export function ResourceForm({
   mode,
   initialValues,
   requiredKeys,
+  validateValues,
   toInput,
   hub,
   renderFields,
@@ -39,6 +40,7 @@ export function ResourceForm({
   initialValues: Record<string, unknown>;
   /** Field keys that must be non-empty before the request is sent. */
   requiredKeys: readonly string[];
+  validateValues?: (values: Record<string, unknown>) => Record<string, string>;
   /** Builds the request body from the current field values. */
   toInput: (values: Record<string, unknown>) => AdminInput;
   /** The resource's hub path, e.g. `/admin/regions`. */
@@ -71,6 +73,7 @@ export function ResourceForm({
       // `0` is never a valid id, so a required select left on its placeholder fails.
       if (value === 0 || fieldText(value).trim().length === 0) localErrors[key] = "This field is required.";
     }
+    Object.assign(localErrors, validateValues?.(values));
     if (Object.keys(localErrors).length > 0) {
       setFieldErrors(localErrors);
       return;

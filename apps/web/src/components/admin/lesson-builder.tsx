@@ -7,11 +7,34 @@ import { Window, Y2kButton, Y2kInput, Y2kSelect, Y2kTextarea, buttonClasses } fr
 import { Y2kDialog } from "@/components/y2k-dialog";
 import { FormField } from "@/components/admin/form-controls";
 import { fieldText, buildLessonPayload, newId } from "@/lib/admin-helpers";
+import { ReviewLesson } from "@/app/(app)/admin/review/review-lesson";
 
 const LANGUAGES = ["python", "javascript", "cpp", "c", "java"] as const;
 
 /** One lesson block the builder edits; `key` keeps React identity across reorders. */
 export type LessonDraftBlock = { key: string; block: Record<string, unknown> };
+
+export function moveLessonBlock(blocks: readonly LessonDraftBlock[], index: number, direction: -1 | 1) {
+  const target = index + direction;
+  if (index < 0 || index >= blocks.length || target < 0 || target >= blocks.length) return [...blocks];
+  const next = [...blocks];
+  const [item] = next.splice(index, 1);
+  next.splice(target, 0, item!);
+  return next;
+}
+
+export function validateLessonBlocks(blocks: readonly LessonDraftBlock[]): Record<string, string> {
+  const errors: Record<string, string> = {};
+  const required: Record<string, string[]> = {
+    text: ["content"], code: ["language", "content"], exercise: ["prompt", "language"], image: ["url", "alt"],
+  };
+  for (const { key, block } of blocks) {
+    for (const field of required[fieldText(block.type)] ?? []) {
+      if (!fieldText(block[field]).trim()) errors[`lessonContent.${key}.${field}`] = "This field is required.";
+    }
+  }
+  return errors;
+}
 
 const KNOWN_TYPES = ["text", "code", "exercise", "image"] as const;
 
@@ -33,24 +56,16 @@ export function toLessonPayload(blocks: readonly LessonDraftBlock[]) {
 export function LessonBuilder({
   blocks,
   onChange,
-}: Readonly<{ blocks: readonly LessonDraftBlock[]; onChange: (next: LessonDraftBlock[]) => void }>) {
+  errors = {},
+}: Readonly<{ blocks: readonly LessonDraftBlock[]; onChange: (next: LessonDraftBlock[]) => void; errors?: Record<string, string> }>) {
   const [previewOpen, setPreviewOpen] = useState(false);
 
   const patch = (key: string, next: Record<string, unknown>) =>
     onChange(blocks.map((entry) => (entry.key === key ? { ...entry, block: next } : entry)));
 
-  const move = (index: number, direction: -1 | 1) => {
-    const target = index + direction;
-    if (target < 0 || target >= blocks.length) return;
-    const next = [...blocks];
-    const [item] = next.splice(index, 1);
-    next.splice(target, 0, item!);
-    onChange(next);
-  };
+  const move = (index: number, direction: -1 | 1) => onChange(moveLessonBlock(blocks, index, direction));
 
   const add = (block: Record<string, unknown>) => onChange([...blocks, { key: newId("block"), block }]);
-
-  const preview = toLessonPayload(blocks).map((block, index) => ({ key: blocks[index]!.key, block }));
 
   return (
     <div className="flex flex-col gap-3">
@@ -91,7 +106,7 @@ export function LessonBuilder({
                 </div>
 
                 {type === "text" && (
-                  <FormField id={`block-${entry.key}-content`} label="Content" required>
+                  <FormField id={`block-${entry.key}-content`} label="Content" required error={errors[`lessonContent.${entry.key}.content`]}>
                     <Y2kTextarea
                       id={`block-${entry.key}-content`}
                       value={fieldText(block.content, "")}
@@ -102,7 +117,7 @@ export function LessonBuilder({
 
                 {type === "code" && (
                   <>
-                    <FormField id={`block-${entry.key}-language`} label="Language" required>
+                    <FormField id={`block-${entry.key}-language`} label="Language" required error={errors[`lessonContent.${entry.key}.language`]}>
                       <Y2kSelect
                         id={`block-${entry.key}-language`}
                         value={fieldText(block.language, "python")}
@@ -115,7 +130,7 @@ export function LessonBuilder({
                         ))}
                       </Y2kSelect>
                     </FormField>
-                    <FormField id={`block-${entry.key}-code`} label="Code" required>
+                    <FormField id={`block-${entry.key}-code`} label="Code" required error={errors[`lessonContent.${entry.key}.content`]}>
                       <Y2kTextarea
                         id={`block-${entry.key}-code`}
                         value={fieldText(block.content, "")}
@@ -128,14 +143,14 @@ export function LessonBuilder({
 
                 {type === "exercise" && (
                   <>
-                    <FormField id={`block-${entry.key}-prompt`} label="Prompt" required>
+                    <FormField id={`block-${entry.key}-prompt`} label="Prompt" required error={errors[`lessonContent.${entry.key}.prompt`]}>
                       <Y2kTextarea
                         id={`block-${entry.key}-prompt`}
                         value={fieldText(block.prompt, "")}
                         onChange={(event) => patch(entry.key, { ...block, prompt: event.target.value })}
                       />
                     </FormField>
-                    <FormField id={`block-${entry.key}-language`} label="Language" required>
+                    <FormField id={`block-${entry.key}-language`} label="Language" required error={errors[`lessonContent.${entry.key}.language`]}>
                       <Y2kSelect
                         id={`block-${entry.key}-language`}
                         value={fieldText(block.language, "python")}
@@ -161,14 +176,14 @@ export function LessonBuilder({
 
                 {type === "image" && (
                   <>
-                    <FormField id={`block-${entry.key}-url`} label="Image URL" required>
+                    <FormField id={`block-${entry.key}-url`} label="Image URL" required error={errors[`lessonContent.${entry.key}.url`]}>
                       <Y2kInput
                         id={`block-${entry.key}-url`}
                         value={fieldText(block.url, "")}
                         onChange={(event) => patch(entry.key, { ...block, url: event.target.value })}
                       />
                     </FormField>
-                    <FormField id={`block-${entry.key}-alt`} label="Alt text" required>
+                    <FormField id={`block-${entry.key}-alt`} label="Alt text" required error={errors[`lessonContent.${entry.key}.alt`]}>
                       <Y2kInput
                         id={`block-${entry.key}-alt`}
                         value={fieldText(block.alt, "")}
@@ -228,16 +243,7 @@ export function LessonBuilder({
         }
       >
         <Window title="LESSON" controls={false} className="w-full">
-          <ol className="flex flex-col gap-2">
-            {preview.map(({ key, block }) => (
-              <li key={key} className="border-2 border-border p-2">
-                <span className="font-pixel text-[9px] leading-relaxed uppercase">
-                  {(block as { type: string }).type}
-                </span>
-                <pre className="mt-1 font-mono text-xs whitespace-pre-wrap">{JSON.stringify(block, null, 2)}</pre>
-              </li>
-            ))}
-          </ol>
+          <ReviewLesson blocks={toLessonPayload(blocks) as never} />
         </Window>
       </Y2kDialog>
     </div>

@@ -8,7 +8,7 @@ import { formatXp } from "@/lib/format";
 
 export function StagesList() {
   const auth = useToken();
-  const catalog = useCatalog(auth, { stages: true });
+  const catalog = useCatalog(auth, { stages: true, quests: true });
 
   const regionByZone = useMemo(() => new Map(catalog.zones.map((zone) => [zone.id, zone.regionId])), [catalog.zones]);
   const regionName = useMemo(() => new Map(catalog.regions.map((region) => [region.id, region.name])), [catalog.regions]);
@@ -24,7 +24,7 @@ export function StagesList() {
     },
     { key: "xp", header: "XP reward", sortValue: (row) => row.xpReward, render: (row) => formatXp(row.xpReward) },
     { key: "sortOrder", header: "Sort order", sortValue: (row) => row.sortOrder, render: (row) => row.sortOrder },
-    { key: "quest", header: "Has Quest", render: () => "unknown" },
+    { key: "quest", header: "Has Quest", render: (row) => catalog.quests.some((quest) => quest.stageId === row.id) ? "Yes" : "No" },
   ];
 
   const filters: readonly ListFilter<Stage>[] = [
