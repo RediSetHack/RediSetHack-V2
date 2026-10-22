@@ -3,14 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { ResourceList, type ListColumn, type ListFilter } from "@/components/admin/resource-list";
 import { API_URL, useCatalog, useToken } from "@/components/admin/use-catalog";
-import { deleteAdminQuest, getQuests, type Quest } from "@/lib/api-client";
+import { deleteAdminQuest, getAdminQuests, type AdminQuestRecord } from "@/lib/api-client";
 import { formatMmSs, formatXp } from "@/lib/format";
 
 export function QuestsList() {
   const auth = useToken();
   const { token } = auth;
   const catalog = useCatalog(auth, { stages: true });
-  const [rows, setRows] = useState<Quest[]>([]);
+  const [rows, setRows] = useState<AdminQuestRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [version, setVersion] = useState(0);
@@ -22,7 +22,7 @@ export function QuestsList() {
       setLoading(true);
       setError(false);
       try {
-        const quests = await getQuests(API_URL, token);
+        const quests = await getAdminQuests(API_URL, token);
         if (!cancelled) {
           setRows(quests);
           setLoading(false);
@@ -54,16 +54,16 @@ export function QuestsList() {
     return `${region?.name ?? "?"} › ${zone?.name ?? "?"} › ${stageName}`;
   };
 
-  const columns: readonly ListColumn<Quest>[] = [
+  const columns: readonly ListColumn<AdminQuestRecord>[] = [
     { key: "title", header: "Title", sortValue: (row) => row.title, render: (row) => row.title },
     { key: "stage", header: "Stage", sortValue: (row) => stageLabel(row.stageId), render: (row) => stageLabel(row.stageId) },
-    { key: "questions", header: "Questions #", render: () => "—" },
+    { key: "questions", header: "Questions #", sortValue: (row) => row.questions.length, render: (row) => row.questions.length },
     { key: "time", header: "Time limit", sortValue: (row) => row.timeLimitSeconds, render: (row) => formatMmSs(row.timeLimitSeconds) },
     { key: "passing", header: "Passing %", sortValue: (row) => row.passingScore, render: (row) => `${row.passingScore}%` },
     { key: "xp", header: "XP reward", sortValue: (row) => row.xpReward, render: (row) => formatXp(row.xpReward) },
   ];
 
-  const filters: readonly ListFilter<Quest>[] = [
+  const filters: readonly ListFilter<AdminQuestRecord>[] = [
     {
       key: "region",
       label: "Region",
@@ -85,7 +85,7 @@ export function QuestsList() {
   ];
 
   return (
-    <ResourceList<Quest>
+    <ResourceList<AdminQuestRecord>
       title="QUESTS.EXE"
       rows={rows}
       columns={columns}

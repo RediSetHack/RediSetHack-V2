@@ -71,6 +71,7 @@ export abstract class StageRepository {
 }
 
 export abstract class QuestRepository {
+  abstract findAll(): Promise<Quest[]>;
   abstract findById(id: number): Promise<Quest | null>;
   abstract create(input: {
     stageId: number;

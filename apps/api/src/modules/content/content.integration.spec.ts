@@ -21,6 +21,7 @@ const ADMIN_ROUTES: Array<{
   { method: 'patch', path: '/v1/api/admin/stages/1' },
   { method: 'delete', path: '/v1/api/admin/stages/1' },
   { method: 'post', path: '/v1/api/admin/quests' },
+  { method: 'get', path: '/v1/api/admin/quests' },
   { method: 'get', path: '/v1/api/admin/quests/1' },
   { method: 'patch', path: '/v1/api/admin/quests/1' },
   { method: 'delete', path: '/v1/api/admin/quests/1' },
@@ -74,6 +75,7 @@ import { DeleteZoneUseCase } from './application/delete-zone.use-case.js';
 import { GetBadgeDefinitionUseCase } from './application/get-badge-definition.use-case.js';
 import { GetCharacterUseCase } from './application/get-character.use-case.js';
 import { GetQuestUseCase } from './application/get-quest.use-case.js';
+import { ListQuestsUseCase } from './application/list-quests.use-case.js';
 import { GetRegionUseCase } from './application/get-region.use-case.js';
 import { GetStageUseCase } from './application/get-stage.use-case.js';
 import { GetZoneUseCase } from './application/get-zone.use-case.js';
@@ -98,6 +100,7 @@ import { DeleteZoneController } from './presentation/controllers/delete-zone.con
 import { GetBadgeDefinitionController } from './presentation/controllers/get-badge-definition.controller.js';
 import { GetCharacterController } from './presentation/controllers/get-character.controller.js';
 import { GetQuestController } from './presentation/controllers/get-quest.controller.js';
+import { ListQuestsController } from './presentation/controllers/list-quests.controller.js';
 import { GetRegionController } from './presentation/controllers/get-region.controller.js';
 import { GetStageController } from './presentation/controllers/get-stage.controller.js';
 import { GetZoneController } from './presentation/controllers/get-zone.controller.js';
@@ -250,6 +253,9 @@ function makeQuestRepository(): QuestRepository {
   const store = new Map<number, Quest>();
   let nextId = 1;
   return {
+    async findAll() {
+      return [...store.values()];
+    },
     async findById(id) {
       return store.get(id) ?? null;
     },
@@ -420,6 +426,7 @@ describe('content admin CRUD', () => {
         UpdateStageController,
         DeleteStageController,
         CreateQuestController,
+        ListQuestsController,
         GetQuestController,
         UpdateQuestController,
         DeleteQuestController,
@@ -500,6 +507,10 @@ describe('content admin CRUD', () => {
         {
           provide: GetQuestUseCase,
           useFactory: () => new GetQuestUseCase(quests),
+        },
+        {
+          provide: ListQuestsUseCase,
+          useFactory: () => new ListQuestsUseCase(quests),
         },
         {
           provide: UpdateQuestUseCase,
@@ -862,6 +873,12 @@ describe('content admin CRUD', () => {
     expect(
       QuestAuthoringQuestionsSchema.parse(valid.body.questions),
     ).toHaveLength(1);
+
+    const list = await request(app.getHttpServer())
+      .get('/v1/api/admin/quests')
+      .set(admin());
+    expect(list.status).toBe(200);
+    expect(list.body).toEqual([expect.objectContaining({ id: valid.body.id, questions: valid.body.questions })]);
 
     const get = await request(app.getHttpServer())
       .get(`/v1/api/admin/quests/${valid.body.id}`)

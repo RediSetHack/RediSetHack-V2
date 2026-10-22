@@ -654,6 +654,19 @@ export const { create: createAdminStage, get: getAdminStage, update: updateAdmin
 
 const questsAdmin = adminCrud<AdminQuestRecord>("quests");
 export const { create: createAdminQuest, get: getAdminQuest, update: updateAdminQuest, remove: deleteAdminQuest } = questsAdmin;
+export async function getAdminQuests(
+  apiBaseUrl: string,
+  token: string,
+  fetchFn: typeof fetch = fetch,
+): Promise<AdminQuestRecord[]> {
+  return adminRequest(
+    'GET',
+    `${apiBaseUrl.replace(/\/$/, '')}/v1/api/admin/quests`,
+    token,
+    undefined,
+    fetchFn,
+  ) as Promise<AdminQuestRecord[]>;
+}
 
 const badgesAdmin = adminCrud<BadgeDefinition>("badges");
 export const { create: createAdminBadge, get: getAdminBadge, update: updateAdminBadge, remove: deleteAdminBadge } = badgesAdmin;
