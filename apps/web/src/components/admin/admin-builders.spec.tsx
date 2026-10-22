@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { toCriteria, toCriteriaValue } from "./criteria-builder";
 import type { BadgeCriteria } from "@repo/contracts";
 import { QuestionBuilder } from "./question-builder";
-import { moveLessonBlock, toDraftBlocks, toLessonPayload, LessonBuilder, validateLessonBlocks } from "./lesson-builder";
+import { blockErrorKey, moveLessonBlock, toDraftBlocks, toLessonPayload, LessonBuilder, validateLessonBlocks } from "./lesson-builder";
 import { newQuestion, type AdminQuestion } from "@/lib/admin-helpers";
 
 describe("QuestionBuilder", () => {
@@ -44,7 +44,19 @@ describe("LessonBuilder", () => {
       { type: "exercise", prompt: "", language: "", starterCode: "" },
       { type: "image", url: "", alt: " " },
     ]);
-    expect(Object.keys(validateLessonBlocks(blocks))).toHaveLength(7);
+    expect(validateLessonBlocks(blocks)).toEqual({
+      [blockErrorKey(blocks[0]!.key, "content")]: "Text blocks need content",
+      [blockErrorKey(blocks[1]!.key, "language")]: "Code blocks need a language",
+      [blockErrorKey(blocks[1]!.key, "content")]: "This field is required.",
+      [blockErrorKey(blocks[2]!.key, "prompt")]: "Exercises need a prompt",
+      [blockErrorKey(blocks[2]!.key, "language")]: "This field is required.",
+      [blockErrorKey(blocks[3]!.key, "alt")]: "Images need alternative text",
+      [blockErrorKey(blocks[3]!.key, "url")]: "This field is required.",
+    });
+  });
+
+  it("ignores unsupported types with inherited object property names", () => {
+    expect(validateLessonBlocks(toDraftBlocks([{ type: "constructor" }]))).toEqual({});
   });
 
   it("renders each block type and the ADD BLOCK menu", () => {
@@ -68,10 +80,15 @@ describe("LessonBuilder", () => {
   });
 
   it("round-trips draft blocks through the API payload shape", () => {
-    const payload = toLessonPayload(toDraftBlocks([{ type: "text", content: "hi" }, { type: "image", url: "u", alt: "a", caption: "  " }]));
+    const payload = toLessonPayload(toDraftBlocks([
+      { type: "text", content: "hi" },
+      { type: "image", url: "u", alt: "a", caption: "  " },
+      { type: "exercise", prompt: "graded", language: "cpp", starterCode: "", activityId: 27 },
+    ]));
     expect(payload).toEqual([
       { type: "text", content: "hi" },
       { type: "image", url: "u", alt: "a" },
+      { type: "exercise", prompt: "graded", language: "cpp", starterCode: "", activityId: 27 },
     ]);
   });
 });

@@ -24,7 +24,8 @@ export type ListFilter<T> = Readonly<{
   key: string;
   label: string;
   /** The dropdown's options (a Region/Zone/Stage cascade is built by the page). */
-  options: readonly { value: string; label: string }[];
+  options: readonly { value: string; label: string }[] | ((selected: Readonly<Record<string, string>>) => readonly { value: string; label: string }[]);
+  resetFilters?: readonly string[];
   /** `null` means the "All …" option is selected. */
   match: (row: T, value: string | null) => boolean;
 }>;
@@ -264,13 +265,17 @@ export function ResourceList<T extends { id: number }>({
               <select
                 value={filterValues[filter.key] ?? ""}
                 onChange={(event) => {
-                  setFilterValues((prev) => ({ ...prev, [filter.key]: event.target.value }));
+                  setFilterValues((prev) => {
+                    const next = { ...prev, [filter.key]: event.target.value };
+                    filter.resetFilters?.forEach((key) => { next[key] = ""; });
+                    return next;
+                  });
                   setPage(1);
                 }}
                 className="border-2 border-border bg-white px-2 py-1.5 font-body text-[13px] font-bold text-foreground shadow-[2px_2px_0_var(--border)] outline-none"
               >
                 <option value="">All</option>
-                {filter.options.map((option) => (
+                {(typeof filter.options === "function" ? filter.options(filterValues) : filter.options).map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>

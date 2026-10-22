@@ -13,6 +13,7 @@ export function StagesList() {
   const regionByZone = useMemo(() => new Map(catalog.zones.map((zone) => [zone.id, zone.regionId])), [catalog.zones]);
   const regionName = useMemo(() => new Map(catalog.regions.map((region) => [region.id, region.name])), [catalog.regions]);
   const zoneName = useMemo(() => new Map(catalog.zones.map((zone) => [zone.id, zone.name])), [catalog.zones]);
+  const questStageIds = useMemo(() => new Set(catalog.quests.map((quest) => quest.stageId)), [catalog.quests]);
 
   const columns: readonly ListColumn<Stage>[] = [
     { key: "title", header: "Title", sortValue: (row) => row.title, render: (row) => row.title },
@@ -24,7 +25,7 @@ export function StagesList() {
     },
     { key: "xp", header: "XP reward", sortValue: (row) => row.xpReward, render: (row) => formatXp(row.xpReward) },
     { key: "sortOrder", header: "Sort order", sortValue: (row) => row.sortOrder, render: (row) => row.sortOrder },
-    { key: "quest", header: "Has Quest", render: (row) => catalog.quests.some((quest) => quest.stageId === row.id) ? "Yes" : "No" },
+    { key: "quest", header: "Has Quest", render: (row) => questStageIds.has(row.id) ? "Yes" : "No" },
   ];
 
   const filters: readonly ListFilter<Stage>[] = [
@@ -32,12 +33,15 @@ export function StagesList() {
       key: "region",
       label: "Region",
       options: catalog.regions.map((region) => ({ value: String(region.id), label: region.name })),
+      resetFilters: ["zone"],
       match: (row, value) => value === null || regionByZone.get(row.zoneId) === Number(value),
     },
     {
       key: "zone",
       label: "Zone",
-      options: catalog.zones.map((zone) => ({ value: String(zone.id), label: zone.name })),
+      options: (selected) => catalog.zones
+        .filter((zone) => !selected.region || zone.regionId === Number(selected.region))
+        .map((zone) => ({ value: String(zone.id), label: zone.name })),
       match: (row, value) => value === null || row.zoneId === Number(value),
     },
   ];

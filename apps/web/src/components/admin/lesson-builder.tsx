@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, Boxes, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Window, Y2kButton, Y2kInput, Y2kSelect, Y2kTextarea, buttonClasses } from "@/components/y2k";
@@ -8,6 +8,7 @@ import { Y2kDialog } from "@/components/y2k-dialog";
 import { FormField } from "@/components/admin/form-controls";
 import { fieldText, buildLessonPayload, newId } from "@/lib/admin-helpers";
 import { ReviewLesson } from "@/app/(app)/admin/review/review-lesson";
+import { AuthoredLessonBlockSchema } from "@repo/contracts";
 
 const LANGUAGES = ["python", "javascript", "cpp", "c", "java"] as const;
 
@@ -36,6 +37,7 @@ export type LessonDraftBlock = { key: string; block: Record<string, unknown> };
 
 export function moveLessonBlock(blocks: readonly LessonDraftBlock[], index: number, direction: -1 | 1) {
   const target = index + direction;
+  // Prevent Array.splice from treating a negative index as an offset from the end.
   if (index < 0 || index >= blocks.length || target < 0 || target >= blocks.length) return [...blocks];
   const next = [...blocks];
   const [item] = next.splice(index, 1);
@@ -43,14 +45,25 @@ export function moveLessonBlock(blocks: readonly LessonDraftBlock[], index: numb
   return next;
 }
 
+export function blockErrorKey(key: string, field: string) {
+  return `lessonContent.${key}.${field}`;
+}
+
 export function validateLessonBlocks(blocks: readonly LessonDraftBlock[]): Record<string, string> {
   const errors: Record<string, string> = {};
-  const required: Record<string, string[]> = {
-    text: ["content"], code: ["language", "content"], exercise: ["prompt", "language"], image: ["url", "alt"],
-  };
   for (const { key, block } of blocks) {
-    for (const field of required[fieldText(block.type)] ?? []) {
-      if (!fieldText(block[field]).trim()) errors[`lessonContent.${key}.${field}`] = "This field is required.";
+    if (!KNOWN_TYPES.includes(fieldText(block.type) as (typeof KNOWN_TYPES)[number])) continue;
+    const result = AuthoredLessonBlockSchema.safeParse(block);
+    if (!result.success) {
+      for (const issue of result.error.issues) {
+        const field = String(issue.path[0] ?? "type");
+        errors[blockErrorKey(key, field)] = issue.message;
+      }
+    }
+    // The Stage editor also requires a nonblank code sample, exercise language,
+    // and image URL, although the shared authoring contract permits those strings to be empty.
+    for (const field of block.type === "code" ? ["content"] : block.type === "exercise" ? ["language"] : block.type === "image" ? ["url"] : []) {
+      if (!fieldText(block[field]).trim()) errors[blockErrorKey(key, field)] = "This field is required.";
     }
   }
   return errors;
@@ -86,6 +99,7 @@ export function LessonBuilder({
   const move = (index: number, direction: -1 | 1) => onChange(moveLessonBlock(blocks, index, direction));
 
   const add = (block: Record<string, unknown>) => onChange([...blocks, { key: newId("block"), block }]);
+  const previewBlocks = useMemo(() => toLessonPayload(blocks), [blocks]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -126,7 +140,7 @@ export function LessonBuilder({
                 </div>
 
                 {type === "text" && (
-                  <FormField id={`block-${entry.key}-content`} label="Content" required error={errors[`lessonContent.${entry.key}.content`]}>
+                  <FormField id={`block-${entry.key}-content`} label="Content" required error={errors[blockErrorKey(entry.key, "content")]}>
                     <Y2kTextarea
                       id={`block-${entry.key}-content`}
                       value={fieldText(block.content, "")}
@@ -140,10 +154,10 @@ export function LessonBuilder({
                     <LanguageField
                       blockKey={entry.key}
                       value={block.language}
-                      error={errors[`lessonContent.${entry.key}.language`]}
+                      error={errors[blockErrorKey(entry.key, "language")]}
                       onChange={(language) => patch(entry.key, { ...block, language })}
                     />
-                    <FormField id={`block-${entry.key}-code`} label="Code" required error={errors[`lessonContent.${entry.key}.content`]}>
+                    <FormField id={`block-${entry.key}-code`} label="Code" required error={errors[blockErrorKey(entry.key, "content")]}>
                       <Y2kTextarea
                         id={`block-${entry.key}-code`}
                         value={fieldText(block.content, "")}
@@ -156,7 +170,7 @@ export function LessonBuilder({
 
                 {type === "exercise" && (
                   <>
-                    <FormField id={`block-${entry.key}-prompt`} label="Prompt" required error={errors[`lessonContent.${entry.key}.prompt`]}>
+                    <FormField id={`block-${entry.key}-prompt`} label="Prompt" required error={errors[blockErrorKey(entry.key, "prompt")]}>
                       <Y2kTextarea
                         id={`block-${entry.key}-prompt`}
                         value={fieldText(block.prompt, "")}
@@ -166,7 +180,7 @@ export function LessonBuilder({
                     <LanguageField
                       blockKey={entry.key}
                       value={block.language}
-                      error={errors[`lessonContent.${entry.key}.language`]}
+                      error={errors[blockErrorKey(entry.key, "language")]}
                       onChange={(language) => patch(entry.key, { ...block, language })}
                     />
                     <FormField id={`block-${entry.key}-starter`} label="Starter code">
@@ -182,14 +196,14 @@ export function LessonBuilder({
 
                 {type === "image" && (
                   <>
-                    <FormField id={`block-${entry.key}-url`} label="Image URL" required error={errors[`lessonContent.${entry.key}.url`]}>
+                    <FormField id={`block-${entry.key}-url`} label="Image URL" required error={errors[blockErrorKey(entry.key, "url")]}>
                       <Y2kInput
                         id={`block-${entry.key}-url`}
                         value={fieldText(block.url, "")}
                         onChange={(event) => patch(entry.key, { ...block, url: event.target.value })}
                       />
                     </FormField>
-                    <FormField id={`block-${entry.key}-alt`} label="Alt text" required error={errors[`lessonContent.${entry.key}.alt`]}>
+                    <FormField id={`block-${entry.key}-alt`} label="Alt text" required error={errors[blockErrorKey(entry.key, "alt")]}>
                       <Y2kInput
                         id={`block-${entry.key}-alt`}
                         value={fieldText(block.alt, "")}
@@ -249,7 +263,7 @@ export function LessonBuilder({
         }
       >
         <Window title="LESSON" controls={false} className="w-full">
-          <ReviewLesson blocks={toLessonPayload(blocks) as never} />
+          <ReviewLesson blocks={previewBlocks} />
         </Window>
       </Y2kDialog>
     </div>

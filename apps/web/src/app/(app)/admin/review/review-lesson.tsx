@@ -3,10 +3,10 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { renderLessonBlock } from "@/components/lesson-blocks";
 import { normalizeLessonBlocks } from "@/lib/lesson-blocks";
-import type { ReviewQueueItem } from "@/lib/api-client";
+import type { LessonBlock } from "@repo/contracts";
 
 /** The Lesson through the learner block renderer, so a reviewer sees what learners will. */
-export function ReviewLesson({ blocks }: Readonly<{ blocks: ReviewQueueItem["lessonContent"] }>) {
+export function ReviewLesson({ blocks }: Readonly<{ blocks: readonly LessonBlock[] }>) {
   const [views, setViews] = useState<ReactNode[] | null>(null);
 
   const valid = Array.isArray(blocks);
