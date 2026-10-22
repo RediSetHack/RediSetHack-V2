@@ -206,59 +206,45 @@ export class DrizzleQuestRepository implements QuestRepository {
 
   async findAll(): Promise<Quest[]> {
     const rows = await this.database.query.quests.findMany({ orderBy: [asc(quests.id)] });
-    const questions = rows.length ? await this.database.query.questQuestions.findMany({
-      where: inArray(questQuestions.questId, rows.map(({ id }) => id)),
-      orderBy: [asc(questQuestions.sortOrder), asc(questQuestions.id)],
-    }) : [];
-    const options = questions.length ? await this.database.query.questOptions.findMany({
-      where: inArray(questOptions.questionId, questions.map(({ id }) => id)),
-      orderBy: [asc(questOptions.sortOrder), asc(questOptions.id)],
-    }) : [];
-    return rows.map((row) => {
-      const questQuestions = questions.filter((question) => question.questId === row.id);
-      return toQuest(row, questQuestions.map((question) => {
-        const questionOptions = options.filter((option) => option.questionId === question.id);
-        const correct = questionOptions.find((option) => option.isCorrect);
-        return {
-          id: question.authoringId ?? String(question.id),
-          prompt: question.prompt,
-          competencyIds: question.competencyIds,
-          difficulty: question.difficulty as Quest['questions'][number]['difficulty'],
-          options: questionOptions.map((option) => ({ id: option.authoringId ?? String(option.id), text: option.text })),
-          correctOptionId: correct?.authoringId ?? String(correct?.id ?? ''),
-        };
-      }));
-    });
+    const questions = await this.findQuestions(rows.map(({ id }) => id));
+    return rows.map((row) => toQuest(row, questions.get(row.id) ?? []));
   }
 
   async findById(id: number): Promise<Quest | null> {
     const row = await this.database.query.quests.findFirst({
       where: eq(quests.id, id),
     });
-    return row ? toQuest(row, await this.findQuestions(id)) : null;
+    if (!row) return null;
+    const questions = await this.findQuestions([id]);
+    return toQuest(row, questions.get(id) ?? []);
   }
 
-  private async findQuestions(questId: number): Promise<Quest['questions']> {
+  private async findQuestions(questIds: number[]): Promise<Map<number, Quest['questions']>> {
+    if (questIds.length === 0) return new Map();
     const questions = await this.database.query.questQuestions.findMany({
-      where: eq(questQuestions.questId, questId),
+      where: inArray(questQuestions.questId, questIds),
       orderBy: [asc(questQuestions.sortOrder), asc(questQuestions.id)],
     });
     const options = questions.length ? await this.database.query.questOptions.findMany({
       where: inArray(questOptions.questionId, questions.map(({ id }) => id)),
       orderBy: [asc(questOptions.sortOrder), asc(questOptions.id)],
     }) : [];
-    return questions.map((question) => {
+    const result = new Map<number, Quest['questions']>();
+    for (const question of questions) {
       const questionOptions = options.filter((option) => option.questionId === question.id);
       const correct = questionOptions.find((option) => option.isCorrect);
-      return {
+      const questQuestions = result.get(question.questId) ?? [];
+      questQuestions.push({
         id: question.authoringId ?? String(question.id),
         prompt: question.prompt,
         competencyIds: question.competencyIds,
         difficulty: question.difficulty as Quest['questions'][number]['difficulty'],
         options: questionOptions.map((option) => ({ id: option.authoringId ?? String(option.id), text: option.text })),
         correctOptionId: correct?.authoringId ?? String(correct?.id ?? ''),
-      };
-    });
+      });
+      result.set(question.questId, questQuestions);
+    }
+    return result;
   }
 
   async create(input: {
@@ -300,7 +286,7 @@ export class DrizzleQuestRepository implements QuestRepository {
         : await tx.query.quests.findFirst({ where: eq(quests.id, id) });
       if (!row) return null;
       if (questions !== undefined) await this.syncQuestions(tx, id, questions);
-      return toQuest(row, questions ?? await this.findQuestions(id));
+      return toQuest(row, questions ?? (await this.findQuestions([id])).get(id) ?? []);
     });
   }
 
