@@ -204,6 +204,33 @@ export class DrizzleStageRepository implements StageRepository {
 export class DrizzleQuestRepository implements QuestRepository {
   constructor(@Inject(DB) private readonly database: Database) {}
 
+  async findAll(): Promise<Quest[]> {
+    const rows = await this.database.query.quests.findMany({ orderBy: [asc(quests.id)] });
+    const questions = rows.length ? await this.database.query.questQuestions.findMany({
+      where: inArray(questQuestions.questId, rows.map(({ id }) => id)),
+      orderBy: [asc(questQuestions.sortOrder), asc(questQuestions.id)],
+    }) : [];
+    const options = questions.length ? await this.database.query.questOptions.findMany({
+      where: inArray(questOptions.questionId, questions.map(({ id }) => id)),
+      orderBy: [asc(questOptions.sortOrder), asc(questOptions.id)],
+    }) : [];
+    return rows.map((row) => {
+      const questQuestions = questions.filter((question) => question.questId === row.id);
+      return toQuest(row, questQuestions.map((question) => {
+        const questionOptions = options.filter((option) => option.questionId === question.id);
+        const correct = questionOptions.find((option) => option.isCorrect);
+        return {
+          id: question.authoringId ?? String(question.id),
+          prompt: question.prompt,
+          competencyIds: question.competencyIds,
+          difficulty: question.difficulty as Quest['questions'][number]['difficulty'],
+          options: questionOptions.map((option) => ({ id: option.authoringId ?? String(option.id), text: option.text })),
+          correctOptionId: correct?.authoringId ?? String(correct?.id ?? ''),
+        };
+      }));
+    });
+  }
+
   async findById(id: number): Promise<Quest | null> {
     const row = await this.database.query.quests.findFirst({
       where: eq(quests.id, id),

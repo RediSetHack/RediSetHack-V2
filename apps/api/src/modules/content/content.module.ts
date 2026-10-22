@@ -31,6 +31,7 @@ import { DeleteZoneUseCase } from './application/delete-zone.use-case.js';
 import { GetBadgeDefinitionUseCase } from './application/get-badge-definition.use-case.js';
 import { GetCharacterUseCase } from './application/get-character.use-case.js';
 import { GetQuestUseCase } from './application/get-quest.use-case.js';
+import { ListQuestsUseCase } from './application/list-quests.use-case.js';
 import { GetRegionUseCase } from './application/get-region.use-case.js';
 import { GetStageUseCase } from './application/get-stage.use-case.js';
 import { GetZoneUseCase } from './application/get-zone.use-case.js';
@@ -55,6 +56,7 @@ import { DeleteZoneController } from './presentation/controllers/delete-zone.con
 import { GetBadgeDefinitionController } from './presentation/controllers/get-badge-definition.controller.js';
 import { GetCharacterController } from './presentation/controllers/get-character.controller.js';
 import { GetQuestController } from './presentation/controllers/get-quest.controller.js';
+import { ListQuestsController } from './presentation/controllers/list-quests.controller.js';
 import { GetRegionController } from './presentation/controllers/get-region.controller.js';
 import { GetStageController } from './presentation/controllers/get-stage.controller.js';
 import { GetZoneController } from './presentation/controllers/get-zone.controller.js';
@@ -100,6 +102,7 @@ import { ListCharactersController } from './presentation/controllers/list-charac
     UpdateStageController,
     DeleteStageController,
     CreateQuestController,
+    ListQuestsController,
     GetQuestController,
     UpdateQuestController,
     DeleteQuestController,
@@ -197,6 +200,11 @@ import { ListCharactersController } from './presentation/controllers/list-charac
     {
       provide: GetQuestUseCase,
       useFactory: (repo: QuestRepository) => new GetQuestUseCase(repo),
+      inject: [QuestRepository],
+    },
+    {
+      provide: ListQuestsUseCase,
+      useFactory: (repo: QuestRepository) => new ListQuestsUseCase(repo),
       inject: [QuestRepository],
     },
     {
