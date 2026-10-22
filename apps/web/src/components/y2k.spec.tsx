@@ -1,6 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
+import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { AvatarImage } from "@/components/avatar-image";
 import {
+  AvatarOrInitial,
   Y2kButton,
   Button,
   Window,
@@ -33,6 +36,27 @@ import {
   DesktopIcon,
   SkeletonWindow,
 } from "@/components/y2k";
+
+describe("AvatarOrInitial", () => {
+  it("hides a failed image and remounts when its URL changes", () => {
+    const avatar = AvatarOrInitial({ src: "broken.png", name: "Ada" });
+    expect(avatar.props.className).toContain("y2k-checker");
+    expect(avatar.props.className).toContain("flex");
+    const image = AvatarImage({ src: "broken.png" }) as ReactElement<{
+      src: string;
+      className: string;
+      onError: (event: { currentTarget: { hidden: boolean } }) => void;
+    }>;
+    const imageNode = { hidden: false };
+
+    expect(image.props.className).toContain("bg-white");
+    image.props.onError({ currentTarget: imageNode });
+    expect(imageNode.hidden).toBe(true);
+
+    const updatedImage = AvatarImage({ src: "working.png" });
+    expect(updatedImage.key).toBe("working.png");
+  });
+});
 
 describe("Window", () => {
   it("renders the title and three control squares", () => {

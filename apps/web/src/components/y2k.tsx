@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import { AvatarImage } from "@/components/avatar-image";
 import { cn } from "@/lib/utils";
 import { formatXp } from "@/lib/format";
 
@@ -988,16 +989,8 @@ export function AvatarOrInitial({
 }: Readonly<{ src?: string | null; name: string; className?: ClassValue }>) {
   if (src) {
     return (
-      <span className={cn("y2k-checker border-2 border-border", className)}>
-        {/* eslint-disable-next-line @next/next/no-img-element -- admin-controlled image hosts; remote patterns unknown */}
-        <img
-          src={src}
-          alt=""
-          onError={(event) => {
-            event.currentTarget.hidden = true;
-          }}
-          className="size-full object-cover"
-        />
+      <span className={cn("y2k-checker flex border-2 border-border", className)}>
+        <AvatarImage src={src} />
       </span>
     );
   }
