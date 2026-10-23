@@ -58,8 +58,6 @@ The API reads `apps/api/.env`; the `packages/db` scripts look for a `.env` at th
 | --- | --- | --- | --- |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | **yes** | `pk_test_...` | Same publishable key as above. |
 | `CLERK_SECRET_KEY` | **yes** | `sk_test_...` | Same secret key as above. |
-| `CLERK_PUBLISHABLE_KEY` | **yes** | `pk_test_...` | |
-| `DATABASE_URL` | yes | as above | Present in the current web env file. |
 | `NEXT_PUBLIC_API_URL` | no | `http://localhost:3001` | Falls back to this default. **Inlined at build time.** |
 
 Never commit real keys. `.env` files are git-ignored.
