@@ -52,7 +52,7 @@ Put each public service behind HTTPS (platform TLS or a reverse proxy). The API 
      "name": "{{user.full_name}}"
    }
    ```
-4. Add the **webhook**: endpoint `https://<api-domain>/v1/api/clerk/webhook`, events `user.created` and `user.updated`. Copy the signing secret (`whsec_...`) into `CLERK_WEBHOOK_SECRET`. Without it the endpoint answers 503.
+4. Add the **webhook**: endpoint `https://<api-domain>/v1/api/clerk/webhook`, events `user.deleted` (required: erases the learner's data when the Clerk account is deleted), plus `user.created` and `user.updated` (backstop for email/role changes; signup itself syncs via `/v1/api/user/sync`). Copy the signing secret (`whsec_...`) into `CLERK_WEBHOOK_SECRET`. Without it the endpoint answers 503 and Clerk-side deletions never reach the database; the API still boots and login works.
 5. Production users are separate from dev users, so re-assign roles there (see [Roles](#7-roles-in-production)).
 
 ## 3. Environment variables
@@ -68,7 +68,7 @@ Set these in your platform's secret store. Never commit them, and do not bake se
 | `DATABASE_URL` | **yes** | Managed Postgres URL from step 1. |
 | `CLERK_SECRET_KEY` | **yes** | `sk_live_...` |
 | `CLERK_PUBLISHABLE_KEY` | **yes** | `pk_live_...` |
-| `CLERK_WEBHOOK_SECRET` | **yes** | `whsec_...` from the production webhook. |
+| `CLERK_WEBHOOK_SECRET` | recommended | `whsec_...` from the production webhook. Optional for boot and login; needed for account-deletion sync. |
 | `CODE_EXECUTION_API_URL` | no | Defaults to the public Piston API. Prefer a provider you control for production. |
 | `CODE_EXECUTION_SANDBOX_VERIFIED` | no | Keep `false` unless you verified the provider's isolation. |
 | `RESEARCH_PSEUDONYM_KEY` | only for research export | 32+ random chars (`openssl rand -hex 32`). Keep it stable: changing it changes the pseudonyms. |
@@ -81,8 +81,6 @@ Set these in your platform's secret store. Never commit them, and do not bake se
 | `NEXT_PUBLIC_API_URL` | **build time** | `https://<api-domain>` |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | **build time** | `pk_live_...` |
 | `CLERK_SECRET_KEY` | runtime | `sk_live_...` |
-| `CLERK_PUBLISHABLE_KEY` | runtime | `pk_live_...` |
-| `DATABASE_URL` | runtime | Same as the API (the current web env file includes it). |
 
 ## 4. Build and run the images
 
