@@ -58,8 +58,8 @@
 /* Bubblegum palette (UI/DESIGN.md). shadcn semantic vars re-pointed so
    existing utility classes keep working. No dark mode. */
 :root {
-  --background: #ff85c2;
-  --bg-grid: #ff6faf;
+  --background: #6fd6ff;
+  --bg-grid: #4cc2f0;
   --window-body: #fff5dc;
   --title-bar: #ffd84d;
   --btn-danger: #ff3d6b;
